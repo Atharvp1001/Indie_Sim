@@ -16,7 +16,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
-        rb.linearVelocity = MovementValue * MoveSpeed;
+        rb.linearVelocity = MovementValue * MoveSpeed * Time.deltaTime;
     }
 
     private void OnMove(InputValue value)
