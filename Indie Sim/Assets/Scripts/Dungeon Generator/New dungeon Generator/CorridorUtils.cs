@@ -18,7 +18,7 @@ public static class CorridorUtils
             0);
 
         // First draw horizontal corridor
-        for (int x = Mathf.Min(centerA.x, centerB.x); x <= Mathf.Max(centerA.x, centerB.x); x++)
+       /* for (int x = Mathf.Min(centerA.x, centerB.x); x <= Mathf.Max(centerA.x, centerB.x); x++)
         {
             tilemap.SetTile(new Vector3Int(x, centerA.y, 0), RoomConfig.FloorTile);
         }
@@ -28,5 +28,6 @@ public static class CorridorUtils
         {
             tilemap.SetTile(new Vector3Int(centerB.x, y, 0), RoomConfig.FloorTile);
         }
+       */
     }
 }

@@ -919,8 +919,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1131460899}
-  - component: {fileID: 1131460900}
+  - component: {fileID: 1131460902}
   - component: {fileID: 1131460901}
+  - component: {fileID: 1131460903}
+  - component: {fileID: 1131460904}
   m_Layer: 0
   m_Name: Dungeon Spawner
   m_TagString: Untagged
@@ -943,7 +945,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1131460900
+--- !u!114 &1131460901
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -952,35 +954,54 @@ MonoBehaviour:
   m_GameObject: {fileID: 1131460897}
   m_Enabled: 0
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e4536bd2036b434e848715602424267, type: 3}
+  m_Script: {fileID: 11500000, guid: 4f5c77ed79b95da43b05379507c88eeb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   tilemap: {fileID: 375523323}
-  roomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  corridorTile: {fileID: 11400000, guid: e51dd3e724ceb0449866a92d49a71c7f, type: 2}
-  mainArteryTile: {fileID: 11400000, guid: 402ec7980c5191942a2a87ff3b81b01e, type: 2}
-  leafTile: {fileID: 11400000, guid: e7512484ba7de3442ac207ffb7eb231a, type: 2}
-  parameters:
-    numMainArteryRooms: 12
-    mainRoomSpacing: 25
-    chanceForLTurn: 0.7
-    posJitterMainArtery: 0.5
-    distributiveNodeChancePerSegment: 0.8
-    minLeafNodesPerDistributive: 1
-    maxLeafNodesPerDistributive: 2
-    leafBranchLength: 12
-    posJitterLeaf: 1.5
-    mainArteryRoomSize: {x: 8, y: 8}
-    distributiveRoomSize: {x: 6, y: 6}
-    leafRoomSize: {x: 4, y: 4}
-    cornerRoomSize: {x: 3, y: 3}
-    roomSizeVariation: 0.2
-    minRoomDistance: 2
-    maxRepositionAttempts: 10
-    repositionRadius: 5
-  showDebugGizmos: 1
-  generateOnStart: 1
---- !u!114 &1131460901
+  roomGenerator: {fileID: 11400000, guid: 22b7a6a5a35d14340b5cce07d477fc4d, type: 2}
+  pathLength: 60
+  roomSizeMin: {x: 4, y: 4}
+  roomSizeMax: {x: 8, y: 8}
+  roomAttempts: 3
+--- !u!1839735485 &1131460902
+Tilemap:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1131460897}
+  m_Enabled: 0
+  m_Tiles: {}
+  m_AnimatedTiles: {}
+  m_TileAssetArray: []
+  m_TileSpriteArray: []
+  m_TileMatrixArray: []
+  m_TileColorArray: []
+  m_TileObjectToInstantiateArray: []
+  m_AnimationFrameRate: 1
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Origin: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0, y: 0, z: 1}
+  m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
+  m_TileOrientation: 0
+  m_TileOrientationMatrix:
+    e00: 1
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 1
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 1
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 1
+--- !u!114 &1131460903
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -989,17 +1010,81 @@ MonoBehaviour:
   m_GameObject: {fileID: 1131460897}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 017f24b2596cc744f81f0e49e3fd47c9, type: 3}
+  m_Script: {fileID: 11500000, guid: 329f5a7018b5de5479b9eab792897912, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  parameters:
+    numMainArteryRooms: 5
+    mainRoomSpacing: 8
+    chanceForLTurn: 0.3
+    mainArteryPositionJitter: 2
+    distributiveNodeChancePerSegment: 0.4
+    minLeafNodesPerDistributive: 1
+    maxLeafNodesPerDistributive: 3
+    leafBranchLength: 6
+    leafNodePositionJitter: 1.5
+    rareRoomChanceOnConnectiveAndCorner: 0.1
+    baseMainArteryRoomSize: {x: 6, y: 6}
+    baseDistributiveRoomSize: {x: 4, y: 4}
+    baseLeafRoomSize: {x: 5, y: 5}
+    baseCornerRoomSize: {x: 3, y: 3}
+    roomSizeVariationPercentage: 0.2
+    minRoomDistance: 2
+    maxRepositionAttempts: 10
+    repositionSearchRadius: 3
+    corridorWidth: 2
+    wallThickness: 1
+  generateOnStart: 1
+  showGizmos: 1
   tilemap: {fileID: 375523323}
-  floorTile: {fileID: 11400000, guid: 6492be5aadf2d47459fcde3a12fe10e0, type: 2}
-  mainPathRoomCount: 8
-  roomSizeMin: {x: 4, y: 4}
-  roomSizeMax: {x: 8, y: 8}
-  offshootChancePercent: 50
-  corridorWidth: 1
-  roomSpacing: 2
+  mainRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  distributiveRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  leafRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  cornerRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  corridorTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  wallTile: {fileID: 11400000, guid: 90f5048cd6f07ce49b6b96c9f7b7a6db, type: 2}
+--- !u!114 &1131460904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1131460897}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 329f5a7018b5de5479b9eab792897912, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parameters:
+    numMainArteryRooms: 5
+    mainRoomSpacing: 8
+    chanceForLTurn: 0.3
+    mainArteryPositionJitter: 2
+    distributiveNodeChancePerSegment: 0.4
+    minLeafNodesPerDistributive: 1
+    maxLeafNodesPerDistributive: 3
+    leafBranchLength: 6
+    leafNodePositionJitter: 1.5
+    rareRoomChanceOnConnectiveAndCorner: 0.1
+    baseMainArteryRoomSize: {x: 6, y: 6}
+    baseDistributiveRoomSize: {x: 4, y: 4}
+    baseLeafRoomSize: {x: 5, y: 5}
+    baseCornerRoomSize: {x: 3, y: 3}
+    roomSizeVariationPercentage: 0.2
+    minRoomDistance: 2
+    maxRepositionAttempts: 10
+    repositionSearchRadius: 3
+    corridorWidth: 2
+    wallThickness: 1
+  generateOnStart: 1
+  showGizmos: 1
+  tilemap: {fileID: 375523323}
+  mainRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  distributiveRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  leafRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  cornerRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  corridorTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  wallTile: {fileID: 11400000, guid: 90f5048cd6f07ce49b6b96c9f7b7a6db, type: 2}
 --- !u!1 &1196153476
 GameObject:
   m_ObjectHideFlags: 0
