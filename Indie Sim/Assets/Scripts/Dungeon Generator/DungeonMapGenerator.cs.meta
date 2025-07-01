@@ -1,15 +1,12 @@
 fileFormatVersion: 2
-guid: 329f5a7018b5de5479b9eab792897912
+guid: adefeef5ece7663428a2069228783679
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
   defaultReferences:
-  - tilemap: {instanceID: 0}
-  - mainRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  - distributiveRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  - leafRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  - cornerRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  - corridorTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
+  - floorTilemap: {instanceID: 0}
+  - wallTilemap: {instanceID: 0}
+  - floorTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
   - wallTile: {fileID: 11400000, guid: 90f5048cd6f07ce49b6b96c9f7b7a6db, type: 2}
   executionOrder: 0
   icon: {instanceID: 0}
