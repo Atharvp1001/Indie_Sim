@@ -1176,36 +1176,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 329f5a7018b5de5479b9eab792897912, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  parameters:
-    numMainArteryRooms: 5
-    mainRoomSpacing: 8
-    chanceForLTurn: 0.3
-    mainArteryPositionJitter: 2
-    distributiveNodeChancePerSegment: 0.4
-    minLeafNodesPerDistributive: 1
-    maxLeafNodesPerDistributive: 3
-    leafBranchLength: 6
-    leafNodePositionJitter: 1.5
-    rareRoomChanceOnConnectiveAndCorner: 0.1
-    baseMainArteryRoomSize: {x: 6, y: 6}
-    baseDistributiveRoomSize: {x: 4, y: 4}
-    baseLeafRoomSize: {x: 5, y: 5}
-    baseCornerRoomSize: {x: 3, y: 3}
-    roomSizeVariationPercentage: 0.2
-    minRoomDistance: 2
-    maxRepositionAttempts: 10
-    repositionSearchRadius: 3
-    corridorWidth: 2
-    wallThickness: 1
-  generateOnStart: 1
-  showGizmos: 1
-  tilemap: {fileID: 375523323}
-  mainRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  distributiveRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  leafRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  cornerRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  corridorTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  wallTile: {fileID: 11400000, guid: 90f5048cd6f07ce49b6b96c9f7b7a6db, type: 2}
 --- !u!114 &1131460904
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1218,36 +1188,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 329f5a7018b5de5479b9eab792897912, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  parameters:
-    numMainArteryRooms: 5
-    mainRoomSpacing: 8
-    chanceForLTurn: 0.3
-    mainArteryPositionJitter: 2
-    distributiveNodeChancePerSegment: 0.4
-    minLeafNodesPerDistributive: 1
-    maxLeafNodesPerDistributive: 3
-    leafBranchLength: 6
-    leafNodePositionJitter: 1.5
-    rareRoomChanceOnConnectiveAndCorner: 0.1
-    baseMainArteryRoomSize: {x: 6, y: 6}
-    baseDistributiveRoomSize: {x: 4, y: 4}
-    baseLeafRoomSize: {x: 5, y: 5}
-    baseCornerRoomSize: {x: 3, y: 3}
-    roomSizeVariationPercentage: 0.2
-    minRoomDistance: 2
-    maxRepositionAttempts: 10
-    repositionSearchRadius: 3
-    corridorWidth: 2
-    wallThickness: 1
-  generateOnStart: 1
-  showGizmos: 1
-  tilemap: {fileID: 375523323}
-  mainRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  distributiveRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  leafRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  cornerRoomTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  corridorTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
-  wallTile: {fileID: 11400000, guid: 90f5048cd6f07ce49b6b96c9f7b7a6db, type: 2}
 --- !u!114 &1131460905
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1261,30 +1201,99 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parameters:
-    numMainArteryRooms: 20
+    numMainArteryRooms: 11
     mainRoomSpacing: 8
-    chanceForLTurn: 0.422
-    mainArteryPositionJitter: 4
-    distributiveNodeChancePerSegment: 0.422
+    chanceForLTurn: 0.256
+    mainArteryPositionJitter: 2
+    distributiveNodeChancePerSegment: 0.683
     minLeafNodesPerDistributive: 1
     maxLeafNodesPerDistributive: 3
     leafBranchLength: 6
     leafNodePositionJitter: 1.5
+    baseStartRoomSize: {x: 8, y: 8}
+    baseEndRoomSize: {x: 8, y: 8}
     baseMainArteryRoomSize: {x: 8, y: 6}
     baseDistributiveRoomSize: {x: 4, y: 4}
     baseLeafRoomSize: {x: 12, y: 4}
     baseCornerRoomSize: {x: 3, y: 3}
-    roomSizeVariationPercentage: 0.317
-    minRoomDistance: 2
+    roomSizeVariationPercentage: 0.465
+    minRoomDistance: 4
     maxRepositionAttempts: 10
     repositionSearchRadius: 3
     corridorWidth: 2
   generateOnStart: 1
-  showGizmos: 0
+  showGizmos: 1
+  showRoomIds: 1
+  keyPrefab: {fileID: 1158670617}
   floorTilemap: {fileID: 375523323}
   wallTilemap: {fileID: 333646817}
   floorTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
   wallTile: {fileID: 11400000, guid: 90f5048cd6f07ce49b6b96c9f7b7a6db, type: 2}
+--- !u!1 &1158670617
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1158670619}
+  - component: {fileID: 1158670618}
+  - component: {fileID: 1158670620}
+  m_Layer: 8
+  m_Name: Teleporter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1158670618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1158670617}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3540cef28533d174d9350da1697beaaf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spriteRenderer: {fileID: 0}
+  keyColor: {r: 0.4245283, g: 0.046057325, b: 0.046057325, a: 1}
+--- !u!4 &1158670619
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1158670617}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 33.35203, y: 21.934446, z: -1.0510712}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1158670620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1158670617}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0377f1e967e51384eab71fefe07975d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  requiresKey: 0
+  spriteRenderer: {fileID: 0}
+  inactiveColor: {r: 1, g: 0, b: 0, a: 1}
+  activeColor: {r: 0, g: 1, b: 0, a: 1}
+  mapGenerator: {fileID: 1131460905}
+  player: {fileID: 2141531228}
 --- !u!1 &1196153476
 GameObject:
   m_ObjectHideFlags: 0
@@ -1838,3 +1847,4 @@ SceneRoots:
   - {fileID: 119612815}
   - {fileID: 6261015581385006291}
   - {fileID: 816184263}
+  - {fileID: 1158670619}
