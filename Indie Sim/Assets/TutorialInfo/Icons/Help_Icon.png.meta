@@ -122,7 +122,17 @@ TextureImporter:
     indices: 
     edges: []
     weights: []
+<<<<<<< Updated upstream:Indie Sim/Assets/TutorialInfo/Icons/Help_Icon.png.meta
   spritePackingTag: 
+=======
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      tile_0139_0: 7952597297642240959
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+>>>>>>> Stashed changes:Indie Sim/Assets/2d Assets/Tiles (Kennys)/Default/tile_0139.png.meta
   userData: 
   assetBundleName: 
   assetBundleVariant: 

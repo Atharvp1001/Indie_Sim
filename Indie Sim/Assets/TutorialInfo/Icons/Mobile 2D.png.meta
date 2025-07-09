@@ -113,8 +113,16 @@ TextureImporter:
     edges: []
     weights: []
     secondaryTextures: []
+<<<<<<< Updated upstream:Indie Sim/Assets/TutorialInfo/Icons/Mobile 2D.png.meta
     nameFileIdTable: {}
   spritePackingTag: 
+=======
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      tile_0209_0: 75924137374238523
+  mipmapLimitGroupName: 
+>>>>>>> Stashed changes:Indie Sim/Assets/2d Assets/Tiles (Kennys)/Transparent/tile_0209.png.meta
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0
   userData: 

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using UnityEngine.Tilemaps;
-
+using System.Collections;
 public enum RoomType
 {
+    START_ROOM,           // First room in the main artery
+    END_ROOM,             // Last room in the main artery
     MAIN_ARTERY_ROOM,
     DISTRIBUTIVE_NODE_ROOM,
     LEAF_NODE_ROOM,
@@ -16,6 +18,38 @@ public enum ConnectionType
 {
     ARTERY_PATH,
     VEIN_PATH
+}
+
+// Room ID Categories for easy identification
+public static class RoomIDCategories
+{
+    public const int MAIN_ROOM_START = 0;
+    public const int MAIN_ROOM_END = 100;
+    
+    public const int LEAF_ROOM_START = 100;
+    public const int LEAF_ROOM_END = 200;
+    
+    public const int DISTRIBUTIVE_ROOM_START = 200;
+    public const int DISTRIBUTIVE_ROOM_END = 300;
+    
+    public const int CORNER_ROOM_START = 300;
+    public const int CORNER_ROOM_END = 400;
+    
+    // Helper methods to determine room type from ID
+    public static bool IsMainRoom(int id) => id >= MAIN_ROOM_START && id < MAIN_ROOM_END;
+    public static bool IsLeafRoom(int id) => id >= LEAF_ROOM_START && id < LEAF_ROOM_END;
+    public static bool IsDistributiveRoom(int id) => id >= DISTRIBUTIVE_ROOM_START && id < DISTRIBUTIVE_ROOM_END;
+    public static bool IsCornerRoom(int id) => id >= CORNER_ROOM_START && id < CORNER_ROOM_END;
+    
+    // Get room type from ID
+    public static RoomType GetRoomTypeFromID(int id)
+    {
+        if (IsMainRoom(id)) return RoomType.MAIN_ARTERY_ROOM;
+        if (IsLeafRoom(id)) return RoomType.LEAF_NODE_ROOM;
+        if (IsDistributiveRoom(id)) return RoomType.DISTRIBUTIVE_NODE_ROOM;
+        if (IsCornerRoom(id)) return RoomType.ARTERY_CORNER_ROOM;
+        return RoomType.MAIN_ARTERY_ROOM; // Default
+    }
 }
 
 [System.Serializable]
@@ -68,11 +102,13 @@ public class MapParameters
     public float leafNodePositionJitter = 1.5f;
 
     [Header("Room Size Control")]
+    public Vector2Int baseStartRoomSize = new Vector2Int(8, 8);      // Start room can be larger
+    public Vector2Int baseEndRoomSize = new Vector2Int(8, 8);        // End room can be larger
     public Vector2Int baseMainArteryRoomSize = new Vector2Int(6, 6);
     public Vector2Int baseDistributiveRoomSize = new Vector2Int(4, 4);
     public Vector2Int baseLeafRoomSize = new Vector2Int(5, 5);
     public Vector2Int baseCornerRoomSize = new Vector2Int(3, 3);
-    [Range(0f, 0.5f)] public float roomSizeVariationPercentage = 0.2f;
+    [Range(0f, 1f)] public float roomSizeVariationPercentage = 0.2f;
 
     [Header("Collision & Placement Control")]
     public float minRoomDistance = 2f;
@@ -88,6 +124,9 @@ public class MapData
     public Dictionary<int, Room> rooms;
     public HashSet<Vector2Int> floorTiles;
     public HashSet<Vector2Int> wallTiles;
+    public int startRoomId = -1;  // ID of the start room
+    public int endRoomId = -1;    // ID of the end room
+    public int lastMainRoomId = -1; // For teleporter spawning
 
     public MapData()
     {
@@ -95,6 +134,17 @@ public class MapData
         floorTiles = new HashSet<Vector2Int>();
         wallTiles = new HashSet<Vector2Int>();
     }
+
+    // Helper methods to get start and end rooms
+    public Room GetStartRoom() => startRoomId >= 0 && rooms.ContainsKey(startRoomId) ? rooms[startRoomId] : null;
+    public Room GetEndRoom() => endRoomId >= 0 && rooms.ContainsKey(endRoomId) ? rooms[endRoomId] : null;
+    public Room GetLastMainRoom() => lastMainRoomId >= 0 && rooms.ContainsKey(lastMainRoomId) ? rooms[lastMainRoomId] : null;
+    
+    // Get all rooms of a specific category
+    public List<Room> GetMainRooms() => rooms.Values.Where(r => RoomIDCategories.IsMainRoom(r.uniqueId)).ToList();
+    public List<Room> GetLeafRooms() => rooms.Values.Where(r => RoomIDCategories.IsLeafRoom(r.uniqueId)).ToList();
+    public List<Room> GetDistributiveRooms() => rooms.Values.Where(r => RoomIDCategories.IsDistributiveRoom(r.uniqueId)).ToList();
+    public List<Room> GetCornerRooms() => rooms.Values.Where(r => RoomIDCategories.IsCornerRoom(r.uniqueId)).ToList();
 }
 
 public class DungeonMapGenerator : MonoBehaviour
@@ -102,6 +152,7 @@ public class DungeonMapGenerator : MonoBehaviour
     [SerializeField] private MapParameters parameters;
     [SerializeField] private bool generateOnStart = true;
     [SerializeField] public bool showGizmos = true;
+    [SerializeField] public bool showRoomIds = true;
 
     private MapData currentMapData;
     private System.Random rng;
@@ -109,8 +160,27 @@ public class DungeonMapGenerator : MonoBehaviour
     [Header("Tilemap Settings")]
     [SerializeField] private Tilemap floorTilemap;
     [SerializeField] private Tilemap wallTilemap;
-    [SerializeField] private TileBase floorTile;
+    [SerializeField] private TileBase[] floorTiles;
     [SerializeField] private TileBase wallTile;
+
+    [Header("Teleporter Settings")]
+    [SerializeField] private GameObject teleporterPrefab;
+
+    [Header("Enemy Spawning")]
+    [SerializeField] private GameObject enemySpawnerPrefab; // Assign your EnemySpawner prefab in inspector
+    [SerializeField] private bool spawnEnemySpawnersInMainRooms = true;
+    [SerializeField] private float spawnerOffsetFromCenter = 0f; // Optional offset from exact center
+
+    [Header("Key Spawning")]
+    [SerializeField] private GameObject keyPrefab;
+    [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
+
+
+    // Room ID counters for each category
+    private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
+    private int leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
+    private int distributiveRoomIdCounter = RoomIDCategories.DISTRIBUTIVE_ROOM_START;
+    private int cornerRoomIdCounter = RoomIDCategories.CORNER_ROOM_START;
 
     void Start()
     {
@@ -124,25 +194,89 @@ public class DungeonMapGenerator : MonoBehaviour
     public void GenerateNewMap()
     {
         rng = new System.Random();
+        
+        // Reset ID counters
+        mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
+        leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
+        distributiveRoomIdCounter = RoomIDCategories.DISTRIBUTIVE_ROOM_START;
+        cornerRoomIdCounter = RoomIDCategories.CORNER_ROOM_START;
+
+        ResetKeySpawnStatus();
+
         currentMapData = GenerateDungeon(parameters);
         Debug.Log($"Generated dungeon with {currentMapData.rooms.Count} rooms");
+        Debug.Log($"Start Room ID: {currentMapData.startRoomId}, End Room ID: {currentMapData.endRoomId}");
+        Debug.Log($"Last Main Room ID: {currentMapData.lastMainRoomId} (Teleporter spawn location)");
         Debug.Log($"Floor tiles: {currentMapData.floorTiles.Count}, Wall tiles: {currentMapData.wallTiles.Count}");
+        
+        // Print all room information
+        PrintRoomDebugInfo();
+        SpawnAllEnemySpawners();
         PaintTiles(currentMapData);
+        SpawnLevelObjects();
+    }
+
+    private void PrintRoomDebugInfo()
+    {
+        Debug.Log("=== ROOM DEBUG INFO ===");
+        foreach (var room in currentMapData.rooms.Values.OrderBy(r => r.uniqueId))
+        {
+            string connectionInfo = "";
+            foreach (var connection in room.connections)
+            {
+                connectionInfo += $"→{connection.connectedRoomId}({connection.type}) ";
+            }
+            
+            string categoryInfo = "";
+            if (RoomIDCategories.IsMainRoom(room.uniqueId)) categoryInfo = "[MAIN]";
+            else if (RoomIDCategories.IsLeafRoom(room.uniqueId)) categoryInfo = "[LEAF]";
+            else if (RoomIDCategories.IsDistributiveRoom(room.uniqueId)) categoryInfo = "[DISTRIBUTIVE]";
+            else if (RoomIDCategories.IsCornerRoom(room.uniqueId)) categoryInfo = "[CORNER]";
+            
+            Debug.Log($"Room ID: {room.uniqueId} {categoryInfo} | Type: {room.type} | Position: {room.worldPosition} | Size: {room.size} | Connections: {connectionInfo}");
+        }
+        Debug.Log("=== END ROOM DEBUG INFO ===");
+    }
+
+    private int GetNextRoomId(RoomType roomType)
+    {
+        return roomType switch
+        {
+            RoomType.START_ROOM => mainRoomIdCounter++,
+            RoomType.END_ROOM => mainRoomIdCounter++,
+            RoomType.MAIN_ARTERY_ROOM => mainRoomIdCounter++,
+            RoomType.LEAF_NODE_ROOM => leafRoomIdCounter++,
+            RoomType.DISTRIBUTIVE_NODE_ROOM => distributiveRoomIdCounter++,
+            RoomType.ARTERY_CORNER_ROOM => cornerRoomIdCounter++,
+            _ => mainRoomIdCounter++
+        };
     }
 
     public MapData GenerateDungeon(MapParameters param)
     {
         var mapData = new MapData();
         var mainPathIds = new List<int>();
-        int nextRoomId = 0;
 
         // Generate the room network
-        GenerateMainArtery(param, mapData.rooms, mainPathIds, ref nextRoomId);
-        InsertDistributiveNodesAndSproutLeaves(param, mapData.rooms, mainPathIds, ref nextRoomId);
-        
+        GenerateMainArtery(param, mapData.rooms, mainPathIds);
+
+        // Set start and end room IDs
+        if (mainPathIds.Count > 0)
+        {
+            mapData.startRoomId = mainPathIds[0];
+            mapData.endRoomId = mainPathIds[mainPathIds.Count - 1];
+            mapData.lastMainRoomId = mapData.endRoomId; // The last main room is where teleporter spawns
+
+            // Update room types for start and end rooms
+            mapData.rooms[mapData.startRoomId].type = RoomType.START_ROOM;
+            mapData.rooms[mapData.endRoomId].type = RoomType.END_ROOM;
+        }
+
+        InsertDistributiveNodesAndSproutLeaves(param, mapData.rooms, mainPathIds);
+
         // Generate floor tiles (rooms + corridors)
         GenerateFloorTiles(param, mapData.rooms, mapData.floorTiles);
-        
+
         // Generate walls around all floor areas
         GenerateWallTiles(mapData.floorTiles, mapData.wallTiles);
 
@@ -157,7 +291,7 @@ public class DungeonMapGenerator : MonoBehaviour
             return;
         }
 
-        if (floorTile == null || wallTile == null)
+        if (floorTiles == null || floorTiles.Length == 0 || wallTile == null)
         {
             Debug.LogError("Tiles not assigned!");
             return;
@@ -172,7 +306,7 @@ public class DungeonMapGenerator : MonoBehaviour
         // Paint floor tiles
         foreach (var floorPos in mapData.floorTiles)
         {
-            floorTilemap.SetTile((Vector3Int)floorPos, floorTile);
+            floorTilemap.SetTile((Vector3Int)floorPos, GetRandomFloorTile());
         }
 
         // Paint wall tiles
@@ -188,6 +322,8 @@ public class DungeonMapGenerator : MonoBehaviour
     {
         Vector2Int baseSize = roomType switch
         {
+            RoomType.START_ROOM => param.baseStartRoomSize,
+            RoomType.END_ROOM => param.baseEndRoomSize,
             RoomType.MAIN_ARTERY_ROOM => param.baseMainArteryRoomSize,
             RoomType.DISTRIBUTIVE_NODE_ROOM => param.baseDistributiveRoomSize,
             RoomType.LEAF_NODE_ROOM => param.baseLeafRoomSize,
@@ -204,22 +340,22 @@ public class DungeonMapGenerator : MonoBehaviour
         );
     }
 
-    private Room CreateRoom(Vector2 position, RoomType type, MapParameters param, Dictionary<int, Room> rooms, ref int nextRoomId)
+    private Room CreateRoom(Vector2 position, RoomType type, MapParameters param, Dictionary<int, Room> rooms)
     {
         var size = GetRoomSizeForType(type, param);
         var finalPosition = FindValidRoomPosition(position, size, param, rooms);
-
         var newRoom = new Room
         {
-            uniqueId = nextRoomId++,
+            uniqueId = GetNextRoomId(type),
             worldPosition = finalPosition,
             type = type,
             size = size
         };
-
         rooms[newRoom.uniqueId] = newRoom;
+
         return newRoom;
     }
+
 
     private Vector2 FindValidRoomPosition(Vector2 desiredPosition, Vector2Int roomSize, MapParameters param, Dictionary<int, Room> rooms)
     {
@@ -252,7 +388,7 @@ public class DungeonMapGenerator : MonoBehaviour
 
         foreach (var existingRoom in rooms.Values)
         {
-            var existingBounds = new Bounds(existingRoom.worldPosition, 
+            var existingBounds = new Bounds(existingRoom.worldPosition,
                 new Vector3(existingRoom.size.x + minDistance * 2, existingRoom.size.y + minDistance * 2, 0));
 
             if (newRoomBounds.Intersects(existingBounds))
@@ -264,57 +400,199 @@ public class DungeonMapGenerator : MonoBehaviour
         return true;
     }
 
+    private void SpawnKeyInRoom(Room room)
+    {
+        // Only spawn key if we haven't spawned one yet and we have a key prefab
+        if (hasKeyBeenSpawned || keyPrefab == null || room == null)
+        {
+            return;
+        }
+
+        // Calculate spawn position within the room bounds
+        Vector3 keySpawnPosition = new Vector3(
+            room.worldPosition.x + UnityEngine.Random.Range(-room.size.x * 0.3f, room.size.x * 0.3f),
+            room.worldPosition.y + UnityEngine.Random.Range(-room.size.y * 0.3f, room.size.y * 0.3f),
+            0f // Assuming 2D game
+        );
+
+        // Instantiate the key
+        GameObject spawnedKey = Instantiate(keyPrefab, keySpawnPosition, Quaternion.identity);
+
+        // Optional: Set parent for organization
+        spawnedKey.transform.SetParent(transform);
+        spawnedKey.name = $"Key_Room_{room.uniqueId}";
+
+        // Mark that key has been spawned
+        hasKeyBeenSpawned = true;
+
+        Debug.Log($"Key spawned in room {room.uniqueId} at position {keySpawnPosition}");
+    }
+
+
+    public void ResetKeySpawnStatus()
+    {
+        hasKeyBeenSpawned = false;
+        Debug.Log("Key spawn status reset - ready to spawn new key");
+    }
+
+    /// <summary>
+    /// Spawns an EnemySpawner in the center of the specified room
+    /// </summary>
+    /// <param name="room">The room to spawn the enemy spawner in</param>
+    private void SpawnEnemySpawnerInRoom(Room room)
+    {
+        // Only spawn in main artery rooms (you can modify this condition)
+        if (!spawnEnemySpawnersInMainRooms || room.type != RoomType.MAIN_ARTERY_ROOM || 
+        room.uniqueId == currentMapData.startRoomId || room.uniqueId == currentMapData.endRoomId)
+        return;
+
+
+        // Don't spawn if no prefab assigned
+        if (enemySpawnerPrefab == null)
+        {
+            Debug.LogWarning("EnemySpawner prefab not assigned to DungeonMapGenerator!");
+            return;
+        }
+
+        // Calculate center position of the room
+        Vector3 spawnerPosition = new Vector3(
+            room.worldPosition.x + spawnerOffsetFromCenter,
+            room.worldPosition.y + spawnerOffsetFromCenter,
+            0f // Z position - adjust as needed for your game
+        );
+
+        // Instantiate the enemy spawner at room center
+        GameObject spawnedSpawner = Instantiate(enemySpawnerPrefab, spawnerPosition, Quaternion.identity);
+
+        // Optional: Set up the spawner with room-specific settings
+        EnemySpawner spawnerScript = spawnedSpawner.GetComponent<EnemySpawner>();
+        if (spawnerScript != null)
+        {
+            // You can configure the spawner based on room properties
+            ConfigureSpawnerForRoom(spawnerScript, room);
+        }
+
+        // Optional: Parent the spawner to a room container for organization
+        OrganizeSpawnerInHierarchy(spawnedSpawner, room);
+
+        Debug.Log($"Enemy spawner created in room {room.uniqueId} at position {spawnerPosition}");
+    }
+
+    /// <summary>
+    /// Configure spawner settings based on room properties
+    /// </summary>
+    private void SpawnAllEnemySpawners()
+    {
+        if (currentMapData == null) return;
+
+        foreach (var room in currentMapData.rooms.Values)
+        {
+            SpawnEnemySpawnerInRoom(room);
+        }
+    }
+    /// <param name="spawner">The spawner component to configure</param>
+    /// <param name="room">The room containing the spawner</param>
+    private void ConfigureSpawnerForRoom(EnemySpawner spawner, Room room)
+    {
+        // Example configurations - adjust based on your game design
+
+        // Adjust spawn radius based on room size
+        float roomSizeMultiplier = Mathf.Max(room.size.x, room.size.y) / 10f; // Adjust divisor as needed
+        spawner.spawnRadius = Mathf.Clamp(roomSizeMultiplier * 3f, 2f, 8f); // Min 2, Max 8
+
+        // Adjust max enemies based on room size
+        int baseEnemies = 5;
+        int roomSizeBonus = Mathf.RoundToInt(roomSizeMultiplier * 2f);
+        spawner.maxEnemies = baseEnemies + roomSizeBonus;
+
+        // Adjust spawn rate (optional - make larger rooms spawn faster/slower)
+        spawner.spawnInterval = UnityEngine.Random.Range(2f, 4f); // Random spawn rate per room
+
+        Debug.Log($"Configured spawner in room {room.uniqueId}: radius={spawner.spawnRadius}, maxEnemies={spawner.maxEnemies}");
+    }
+
+    /// <summary>
+    /// Organize spawner in hierarchy for better scene management
+    /// </summary>
+    /// <param name="spawner">The spawner GameObject</param>
+    /// <param name="room">The room containing the spawner</param>
+    private void OrganizeSpawnerInHierarchy(GameObject spawner, Room room)
+    {
+        // Find or create a container for spawners
+        GameObject spawnersContainer = GameObject.Find("EnemySpawners");
+        if (spawnersContainer == null)
+        {
+            spawnersContainer = new GameObject("EnemySpawners");
+        }
+
+        // Set spawner as child of container
+        spawner.transform.SetParent(spawnersContainer.transform);
+
+        // Rename for easier identification
+        spawner.name = $"EnemySpawner_Room_{room.uniqueId}_{room.type}";
+    }
+
+
+
     private void ConnectRooms(int room1Id, int room2Id, ConnectionType connectionType, Dictionary<int, Room> rooms)
     {
         if (rooms.ContainsKey(room1Id) && rooms.ContainsKey(room2Id))
         {
+            var room1 = rooms[room1Id];
+            var room2 = rooms[room2Id];
+
             var connection1 = new RoomConnection(room2Id, connectionType);
             var connection2 = new RoomConnection(room1Id, connectionType);
 
-            if (!rooms[room1Id].connections.Any(c => c.connectedRoomId == room2Id))
-                rooms[room1Id].connections.Add(connection1);
+            if (!room1.connections.Any(c => c.connectedRoomId == room2Id))
+                room1.connections.Add(connection1);
 
-            if (!rooms[room2Id].connections.Any(c => c.connectedRoomId == room1Id))
-                rooms[room2Id].connections.Add(connection2);
+            if (!room2.connections.Any(c => c.connectedRoomId == room1Id))
+                room2.connections.Add(connection2);
         }
     }
 
-    private void GenerateMainArtery(MapParameters param, Dictionary<int, Room> rooms, List<int> mainPathIds, ref int nextRoomId)
+    private void GenerateMainArtery(MapParameters param, Dictionary<int, Room> rooms, List<int> mainPathIds)
     {
         Vector2 currentPos = Vector2.zero;
         Vector2 currentDirection = Vector2.right;
 
-        var firstRoom = CreateRoom(currentPos, RoomType.MAIN_ARTERY_ROOM, param, rooms, ref nextRoomId);
+        // Create the first room as START_ROOM initially (will be set properly later)
+        var firstRoom = CreateRoom(currentPos, RoomType.MAIN_ARTERY_ROOM, param, rooms);
         mainPathIds.Add(firstRoom.uniqueId);
+
+        // Spawn enemy spawner in first room
+        //SpawnEnemySpawnerInRoom(firstRoom);
 
         for (int i = 1; i < param.numMainArteryRooms; i++)
         {
             bool isLTurn = RandomValue() < param.chanceForLTurn;
-
             if (isLTurn && i < param.numMainArteryRooms - 1)
             {
                 currentPos += currentDirection * param.mainRoomSpacing;
                 currentPos += RandomJitterVector(param.mainArteryPositionJitter);
-
-                var cornerRoom = CreateRoom(currentPos, RoomType.ARTERY_CORNER_ROOM, param, rooms, ref nextRoomId);
+                var cornerRoom = CreateRoom(currentPos, RoomType.ARTERY_CORNER_ROOM, param, rooms);
                 ConnectRooms(mainPathIds.Last(), cornerRoom.uniqueId, ConnectionType.ARTERY_PATH, rooms);
                 mainPathIds.Add(cornerRoom.uniqueId);
-
                 currentDirection = GetRandomPerpendicularDirection(currentDirection);
             }
 
             currentPos += currentDirection * param.mainRoomSpacing;
             currentPos += RandomJitterVector(param.mainArteryPositionJitter);
-
-            var mainRoom = CreateRoom(currentPos, RoomType.MAIN_ARTERY_ROOM, param, rooms, ref nextRoomId);
+            var mainRoom = CreateRoom(currentPos, RoomType.MAIN_ARTERY_ROOM, param, rooms);
             ConnectRooms(mainPathIds.Last(), mainRoom.uniqueId, ConnectionType.ARTERY_PATH, rooms);
             mainPathIds.Add(mainRoom.uniqueId);
+
+            // Spawn enemy spawner in this main room
+            //SpawnEnemySpawnerInRoom(mainRoom);
         }
     }
 
-    private void InsertDistributiveNodesAndSproutLeaves(MapParameters param, Dictionary<int, Room> rooms, List<int> mainPathIds, ref int nextRoomId)
+
+    private void InsertDistributiveNodesAndSproutLeaves(MapParameters param, Dictionary<int, Room> rooms, List<int> mainPathIds)
     {
-        for (int i = 0; i < mainPathIds.Count - 1; i++)
+        // Skip the last segment (don't insert distributive nodes before the end room)
+        for (int i = 0; i < mainPathIds.Count - 2; i++)
         {
             if (RandomValue() < param.distributiveNodeChancePerSegment)
             {
@@ -322,7 +600,7 @@ public class DungeonMapGenerator : MonoBehaviour
                 var room2 = rooms[mainPathIds[i + 1]];
 
                 Vector2 midPos = Vector2.Lerp(room1.worldPosition, room2.worldPosition, 0.5f);
-                var distributiveRoom = CreateRoom(midPos, RoomType.DISTRIBUTIVE_NODE_ROOM, param, rooms, ref nextRoomId);
+                var distributiveRoom = CreateRoom(midPos, RoomType.DISTRIBUTIVE_NODE_ROOM, param, rooms);
 
                 room1.connections.RemoveAll(c => c.connectedRoomId == room2.uniqueId);
                 room2.connections.RemoveAll(c => c.connectedRoomId == room1.uniqueId);
@@ -334,22 +612,50 @@ public class DungeonMapGenerator : MonoBehaviour
                 for (int j = 0; j < leafCount; j++)
                 {
                     float angle = j * (2 * Mathf.PI / leafCount) + RandomRange(0, Mathf.PI / 4);
-                    SproutLeafNode(distributiveRoom, angle, param, rooms, ref nextRoomId);
+                    SproutLeafNode(distributiveRoom, angle, param, rooms);
                 }
             }
         }
     }
 
-    private void SproutLeafNode(Room fromNode, float initialAngle, MapParameters param, Dictionary<int, Room> rooms, ref int nextRoomId)
+    private void SproutLeafNode(Room fromNode, float initialAngle, MapParameters param, Dictionary<int, Room> rooms)
     {
         Vector2 direction = new Vector2(Mathf.Cos(initialAngle), Mathf.Sin(initialAngle));
         Vector2 leafPos = fromNode.worldPosition + direction * param.leafBranchLength;
         leafPos += RandomJitterVector(param.leafNodePositionJitter);
 
-        var leafRoom = CreateRoom(leafPos, RoomType.LEAF_NODE_ROOM, param, rooms, ref nextRoomId);
+        var leafRoom = CreateRoom(leafPos, RoomType.LEAF_NODE_ROOM, param, rooms);
         ConnectRooms(fromNode.uniqueId, leafRoom.uniqueId, ConnectionType.VEIN_PATH, rooms);
     }
-
+    private TileBase GetRandomFloorTile()
+    {
+        // Check if array exists and has elements
+        if (floorTiles == null || floorTiles.Length == 0)
+        {
+            Debug.LogError("Floor tiles array is null or empty! Please assign floor tiles in the inspector.");
+            return null;
+        }
+        
+        // Filter out null tiles to avoid errors
+        var validTiles = new List<TileBase>();
+        for (int i = 0; i < floorTiles.Length; i++)
+        {
+            if (floorTiles[i] != null)
+            {
+                validTiles.Add(floorTiles[i]);
+            }
+        }
+        
+        // Check if we have any valid tiles
+        if (validTiles.Count == 0)
+        {
+            Debug.LogError("No valid floor tiles found! All tiles in array are null.");
+            return null;
+        }
+        
+        // Return random valid tile
+        return validTiles[UnityEngine.Random.Range(0, validTiles.Count)];
+    }
     private void GenerateFloorTiles(MapParameters param, Dictionary<int, Room> rooms, HashSet<Vector2Int> floorTiles)
     {
         floorTiles.Clear();
@@ -360,7 +666,7 @@ public class DungeonMapGenerator : MonoBehaviour
             AddRoomTiles(room, floorTiles);
         }
 
-        // Add corridor tiles
+        // Add simple corridor tiles
         var processedConnections = new HashSet<string>();
         foreach (var room in rooms.Values)
         {
@@ -430,12 +736,12 @@ public class DungeonMapGenerator : MonoBehaviour
             if (error > 0)
             {
                 x += x_inc;
-                error -= dy;
+                error -= 2 * dy;
             }
             else
             {
                 y += y_inc;
-                error += dx;
+                error += 2 * dx;
             }
         }
 
@@ -457,7 +763,7 @@ public class DungeonMapGenerator : MonoBehaviour
                     if (x == 0 && y == 0) continue; // Skip the center tile
 
                     Vector2Int neighborTile = new Vector2Int(floorTile.x + x, floorTile.y + y);
-                    
+
                     // If this neighbor is not a floor tile, it should be a wall
                     if (!floorTiles.Contains(neighborTile))
                     {
@@ -466,6 +772,87 @@ public class DungeonMapGenerator : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void SpawnTeleporter()
+    {
+        if (currentMapData == null || teleporterPrefab == null)
+        {
+            Debug.LogWarning("SpawnTeleporter aborted: currentMapData or teleporterPrefab is null.");
+            return;
+        }
+
+        // Clear existing teleporters in the scene
+        Teleporter[] existingTeleporters = FindObjectsOfType<Teleporter>(true);
+        foreach (var teleporter in existingTeleporters)
+        {
+            if (teleporter.gameObject.scene.IsValid()) // Avoid deleting prefab from Project
+            {
+                if (Application.isPlaying)
+                    Destroy(teleporter.gameObject);
+                else
+                    DestroyImmediate(teleporter.gameObject);
+            }
+        }
+
+        // Wait one frame to ensure cleanup before spawning
+        if (teleporterPrefab != null)
+        {
+            StartCoroutine(SpawnTeleporterDelayed());
+        }
+        else
+        {
+            Debug.LogError("Teleporter prefab became null before coroutine could start.");
+        }
+    }
+
+   
+
+    private IEnumerator SpawnTeleporterDelayed()
+    {
+        yield return null; // Wait one frame to ensure objects are destroyed
+
+        Room teleporterRoom = currentMapData.GetLastMainRoom();
+        if (teleporterRoom != null)
+        {
+            GameObject teleporterInstance = Instantiate(teleporterPrefab);
+            Teleporter teleporterComponent = teleporterInstance.GetComponent<Teleporter>();
+
+            if (teleporterComponent != null)
+            {
+                teleporterComponent.SpawnInRoom(teleporterRoom);
+                teleporterComponent.SetMapGenerator(this);
+                Debug.Log($" Teleporter spawned in last main room (ID: {teleporterRoom.uniqueId}) at position {teleporterRoom.worldPosition}");
+            }
+            else
+            {
+                Debug.LogError(" Teleporter prefab must have a Teleporter component!");
+            }
+        }
+        else
+        {
+            Debug.LogError(" Could not find last main room for teleporter spawning!");
+        }
+    }
+
+    private void SpawnLevelObjects()
+    {
+        if (currentMapData == null) return;
+
+        // Spawn teleporter in the last main room
+        SpawnTeleporter();
+    }
+
+    // Helper method to check if a room ID is the last main room (for teleporter spawning)
+    public bool IsLastMainRoom(int roomId)
+    {
+        return currentMapData != null && roomId == currentMapData.lastMainRoomId;
+    }
+
+    // Helper method to get the teleporter spawn room
+    public Room GetTeleporterSpawnRoom()
+    {
+        return currentMapData?.GetLastMainRoom();
     }
 
     // Utility Functions
@@ -487,11 +874,13 @@ public class DungeonMapGenerator : MonoBehaviour
     {
         if (!showGizmos || currentMapData == null) return;
 
-        // Draw rooms
+        // Draw rooms with special colors for start and end
         foreach (var room in currentMapData.rooms.Values)
         {
             Color roomColor = room.type switch
             {
+                RoomType.START_ROOM => Color.cyan,           // Special color for start
+                RoomType.END_ROOM => Color.magenta,          // Special color for end
                 RoomType.MAIN_ARTERY_ROOM => Color.red,
                 RoomType.DISTRIBUTIVE_NODE_ROOM => Color.blue,
                 RoomType.LEAF_NODE_ROOM => Color.green,
@@ -502,6 +891,31 @@ public class DungeonMapGenerator : MonoBehaviour
             Gizmos.color = roomColor;
             Gizmos.DrawWireCube(new Vector3(room.worldPosition.x, room.worldPosition.y, 0),
                                new Vector3(room.size.x, room.size.y, 1));
+
+            // Draw special markers for start and end rooms
+            if (room.type == RoomType.START_ROOM)
+            {
+                Gizmos.color = Color.white;
+                Gizmos.DrawSphere(new Vector3(room.worldPosition.x, room.worldPosition.y, 0), 1f);
+            }
+            else if (room.type == RoomType.END_ROOM)
+            {
+                Gizmos.color = Color.black;
+                Gizmos.DrawSphere(new Vector3(room.worldPosition.x, room.worldPosition.y, 0), 1f);
+            }
+        }
+
+        // Draw room IDs if enabled
+        if (showRoomIds)
+        {
+            foreach (var room in currentMapData.rooms.Values)
+            {
+                Vector3 labelPos = new Vector3(room.worldPosition.x, room.worldPosition.y + room.size.y / 2f + 1f, 0);
+                
+                #if UNITY_EDITOR
+                UnityEditor.Handles.Label(labelPos, $"ID: {room.uniqueId}");
+                #endif
+            }
         }
 
         // Draw connections
@@ -517,9 +931,13 @@ public class DungeonMapGenerator : MonoBehaviour
                 drawnConnections.Add(connectionKey);
 
                 var connectedRoom = currentMapData.rooms[connection.connectedRoomId];
+
                 Gizmos.color = connection.type == ConnectionType.ARTERY_PATH ? Color.red : Color.green;
-                Gizmos.DrawLine(new Vector3(room.worldPosition.x, room.worldPosition.y, 0),
-                               new Vector3(connectedRoom.worldPosition.x, connectedRoom.worldPosition.y, 0));
+
+                Vector3 start = new Vector3(room.worldPosition.x, room.worldPosition.y, 0);
+                Vector3 end = new Vector3(connectedRoom.worldPosition.x, connectedRoom.worldPosition.y, 0);
+                
+                Gizmos.DrawLine(start, end);
             }
         }
     }
