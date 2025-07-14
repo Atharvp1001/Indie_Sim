@@ -2,11 +2,11 @@ using UnityEngine;
 
 public class BulletBehaviour : MonoBehaviour
 {
-    public float speed = 10f; // Bullet speed
-    public int damage = 20; // Bullet damage
-    public float lifetime = 2f; // Destroy after time
-    public float knockbackForce = 5f; // Knockback force applied to enemies
-    public LayerMask enemyLayer; // Define enemy layer to detect collisions
+    [SerializeField] private float speed = 10f; // Bullet speed
+    [SerializeField] private int damage = 20; // Bullet damage
+    [SerializeField] private float lifetime = 2f; // Destroy after time
+    [SerializeField] private float knockbackForce = 5f; // Knockback force applied to enemies
+    [SerializeField] private LayerMask enemyLayer; // Define enemy layer to detect collisions
 
     private Vector2 direction;
 
