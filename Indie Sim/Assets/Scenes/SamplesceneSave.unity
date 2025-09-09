@@ -1083,8 +1083,6 @@ GameObject:
   - component: {fileID: 1131460899}
   - component: {fileID: 1131460902}
   - component: {fileID: 1131460901}
-  - component: {fileID: 1131460903}
-  - component: {fileID: 1131460904}
   - component: {fileID: 1131460905}
   m_Layer: 0
   m_Name: Dungeon Spawner
@@ -1164,30 +1162,6 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
---- !u!114 &1131460903
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1131460897}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 329f5a7018b5de5479b9eab792897912, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1131460904
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1131460897}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 329f5a7018b5de5479b9eab792897912, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &1131460905
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1224,11 +1198,11 @@ MonoBehaviour:
   generateOnStart: 1
   showGizmos: 1
   showRoomIds: 1
-  keyPrefab: {fileID: 1158670617}
   floorTilemap: {fileID: 375523323}
   wallTilemap: {fileID: 333646817}
   floorTile: {fileID: 11400000, guid: 70b313cf482eabd4cb98310aee25223f, type: 2}
   wallTile: {fileID: 11400000, guid: 90f5048cd6f07ce49b6b96c9f7b7a6db, type: 2}
+  teleporterPrefab: {fileID: 0}
 --- !u!1 &1158670617
 GameObject:
   m_ObjectHideFlags: 0
@@ -1288,12 +1262,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0377f1e967e51384eab71fefe07975d3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  requiresKey: 0
-  spriteRenderer: {fileID: 0}
-  inactiveColor: {r: 1, g: 0, b: 0, a: 1}
-  activeColor: {r: 0, g: 1, b: 0, a: 1}
-  mapGenerator: {fileID: 1131460905}
-  player: {fileID: 2141531228}
+  activationRadius: 2
+  teleportDelay: 1
+  requiresPlayerInput: 1
+  activationKey: 101
+  teleportEffect: {fileID: 0}
+  particles: {fileID: 0}
+  teleportSound: {fileID: 0}
+  glowIntensity: 1
+  teleporterColor: {r: 0, g: 1, b: 1, a: 1}
+  interactionPrompt: {fileID: 0}
+  promptCanvas: {fileID: 0}
 --- !u!1 &1196153476
 GameObject:
   m_ObjectHideFlags: 0
