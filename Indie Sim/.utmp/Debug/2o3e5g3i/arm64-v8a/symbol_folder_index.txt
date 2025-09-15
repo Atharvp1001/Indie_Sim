@@ -1,0 +1,1 @@
+C:\Game Dev\Indie_Sim\Indie Sim\Library\PramData\AndroidApplicationController\Cache\com.DefaultCompany.com.unity.template.mobile2D\gradle-project\unityLibrary\build\intermediates\cxx\Debug\2o3e5g3i\obj\arm64-v8a
