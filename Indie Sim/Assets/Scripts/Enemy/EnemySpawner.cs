@@ -29,7 +29,7 @@ public class EnemySpawner : MonoBehaviour
         Enemy enemyScript = enemy.GetComponent<Enemy>();
         if (enemyScript != null)
         {
-            enemyScript.OnDeath += EnemyDied;
+            //enemyScript.OnDeath += EnemyDied;
         }
     }
 

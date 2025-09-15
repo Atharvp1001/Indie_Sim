@@ -9,7 +9,14 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] private float moveSpeed;
 
+    void Start()
+    {
+        // Enable multi-touch for Android
+        Input.multiTouchEnabled = true;
 
+        // Optional: Set maximum simultaneous touches
+        // Input.simulateMouseWithTouches = false; // Prevents mouse simulation interfering
+    }
     private void FixedUpdate()
     {
         Rigidbody2D.linearVelocity = new Vector2 (joystick.Horizontal*moveSpeed , joystick.Vertical * moveSpeed);
