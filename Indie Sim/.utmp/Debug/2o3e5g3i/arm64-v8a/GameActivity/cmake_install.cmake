@@ -1,4 +1,4 @@
-# Install script for directory: C:/Game Dev/Indie_Sim/Indie Sim/Library/PramData/AndroidApplicationController/Cache/com.DefaultCompany.com.unity.template.mobile2D/gradle-project/unityLibrary/src/main/cpp/GameActivity
+# Install script for directory: C:/Game Dev/Indie_Sim/Indie Sim/Library/PramData/AndroidApplicationController/Cache/com.DefaultCompany.com.unity.template.indysimalpha/gradle-project/unityLibrary/src/main/cpp/GameActivity
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

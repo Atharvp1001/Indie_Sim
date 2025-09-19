@@ -1,6 +1,46 @@
 {
     "name": "PlayerInput",
-    "maps": [],
+    "maps": [
+        {
+            "name": "Move",
+            "id": "9990b402-1176-4464-a052-88b0a04ae4ed",
+            "actions": [
+                {
+                    "name": "New action",
+                    "type": "Button",
+                    "id": "ef71f79f-cd1f-4769-a8c7-fc34e45c8e40",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "ab126aca-f050-4faf-98c5-54a86f40ec66",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Touch",
+                    "action": "New action",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bf71e71c-7627-4158-8d90-167d00fafeff",
+                    "path": "",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": ";Touch",
+                    "action": "New action",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
     "controlSchemes": [
         {
             "name": "Keyboard&Mouse",
