@@ -166,6 +166,12 @@ public class DungeonMapGenerator : MonoBehaviour
     [Header("Teleporter Settings")]
     [SerializeField] private GameObject teleporterPrefab;
 
+    [Header("Enemy Spawning")]
+    [SerializeField] private GameObject enemySpawnerPrefab; // Assign your EnemySpawner prefab in inspector
+    [SerializeField] private bool spawnEnemySpawnersInMainRooms = true;
+    [SerializeField] private float spawnerOffsetFromCenter = 0f; // Optional offset from exact center
+
+
     // Room ID counters for each category
     private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
     private int leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
@@ -332,7 +338,6 @@ public class DungeonMapGenerator : MonoBehaviour
     {
         var size = GetRoomSizeForType(type, param);
         var finalPosition = FindValidRoomPosition(position, size, param, rooms);
-
         var newRoom = new Room
         {
             uniqueId = GetNextRoomId(type),
@@ -340,10 +345,17 @@ public class DungeonMapGenerator : MonoBehaviour
             type = type,
             size = size
         };
-
         rooms[newRoom.uniqueId] = newRoom;
+
+        // Auto-spawn enemy spawners for main artery rooms (you can control this with a parameter if needed)
+        if (type == RoomType.MAIN_ARTERY_ROOM)
+        {
+            SpawnEnemySpawnerInRoom(newRoom);
+        }
+
         return newRoom;
     }
+
 
     private Vector2 FindValidRoomPosition(Vector2 desiredPosition, Vector2Int roomSize, MapParameters param, Dictionary<int, Room> rooms)
     {
@@ -388,6 +400,95 @@ public class DungeonMapGenerator : MonoBehaviour
         return true;
     }
 
+
+    /// <summary>
+    /// Spawns an EnemySpawner in the center of the specified room
+    /// </summary>
+    /// <param name="room">The room to spawn the enemy spawner in</param>
+    private void SpawnEnemySpawnerInRoom(Room room)
+    {
+        // Only spawn in main artery rooms (you can modify this condition)
+        if (!spawnEnemySpawnersInMainRooms || room.type != RoomType.MAIN_ARTERY_ROOM)
+            return;
+
+        // Don't spawn if no prefab assigned
+        if (enemySpawnerPrefab == null)
+        {
+            Debug.LogWarning("EnemySpawner prefab not assigned to DungeonMapGenerator!");
+            return;
+        }
+
+        // Calculate center position of the room
+        Vector3 spawnerPosition = new Vector3(
+            room.worldPosition.x + spawnerOffsetFromCenter,
+            room.worldPosition.y + spawnerOffsetFromCenter,
+            0f // Z position - adjust as needed for your game
+        );
+
+        // Instantiate the enemy spawner at room center
+        GameObject spawnedSpawner = Instantiate(enemySpawnerPrefab, spawnerPosition, Quaternion.identity);
+
+        // Optional: Set up the spawner with room-specific settings
+        EnemySpawner spawnerScript = spawnedSpawner.GetComponent<EnemySpawner>();
+        if (spawnerScript != null)
+        {
+            // You can configure the spawner based on room properties
+            ConfigureSpawnerForRoom(spawnerScript, room);
+        }
+
+        // Optional: Parent the spawner to a room container for organization
+        OrganizeSpawnerInHierarchy(spawnedSpawner, room);
+
+        Debug.Log($"Enemy spawner created in room {room.uniqueId} at position {spawnerPosition}");
+    }
+
+    /// <summary>
+    /// Configure spawner settings based on room properties
+    /// </summary>
+    /// <param name="spawner">The spawner component to configure</param>
+    /// <param name="room">The room containing the spawner</param>
+    private void ConfigureSpawnerForRoom(EnemySpawner spawner, Room room)
+    {
+        // Example configurations - adjust based on your game design
+
+        // Adjust spawn radius based on room size
+        float roomSizeMultiplier = Mathf.Max(room.size.x, room.size.y) / 10f; // Adjust divisor as needed
+        spawner.spawnRadius = Mathf.Clamp(roomSizeMultiplier * 3f, 2f, 8f); // Min 2, Max 8
+
+        // Adjust max enemies based on room size
+        int baseEnemies = 5;
+        int roomSizeBonus = Mathf.RoundToInt(roomSizeMultiplier * 2f);
+        spawner.maxEnemies = baseEnemies + roomSizeBonus;
+
+        // Adjust spawn rate (optional - make larger rooms spawn faster/slower)
+        spawner.spawnInterval = UnityEngine.Random.Range(2f, 4f); // Random spawn rate per room
+
+        Debug.Log($"Configured spawner in room {room.uniqueId}: radius={spawner.spawnRadius}, maxEnemies={spawner.maxEnemies}");
+    }
+
+    /// <summary>
+    /// Organize spawner in hierarchy for better scene management
+    /// </summary>
+    /// <param name="spawner">The spawner GameObject</param>
+    /// <param name="room">The room containing the spawner</param>
+    private void OrganizeSpawnerInHierarchy(GameObject spawner, Room room)
+    {
+        // Find or create a container for spawners
+        GameObject spawnersContainer = GameObject.Find("EnemySpawners");
+        if (spawnersContainer == null)
+        {
+            spawnersContainer = new GameObject("EnemySpawners");
+        }
+
+        // Set spawner as child of container
+        spawner.transform.SetParent(spawnersContainer.transform);
+
+        // Rename for easier identification
+        spawner.name = $"EnemySpawner_Room_{room.uniqueId}_{room.type}";
+    }
+
+
+
     private void ConnectRooms(int room1Id, int room2Id, ConnectionType connectionType, Dictionary<int, Room> rooms)
     {
         if (rooms.ContainsKey(room1Id) && rooms.ContainsKey(room2Id))
@@ -415,30 +516,33 @@ public class DungeonMapGenerator : MonoBehaviour
         var firstRoom = CreateRoom(currentPos, RoomType.MAIN_ARTERY_ROOM, param, rooms);
         mainPathIds.Add(firstRoom.uniqueId);
 
+        // Spawn enemy spawner in first room
+        SpawnEnemySpawnerInRoom(firstRoom);
+
         for (int i = 1; i < param.numMainArteryRooms; i++)
         {
             bool isLTurn = RandomValue() < param.chanceForLTurn;
-
             if (isLTurn && i < param.numMainArteryRooms - 1)
             {
                 currentPos += currentDirection * param.mainRoomSpacing;
                 currentPos += RandomJitterVector(param.mainArteryPositionJitter);
-
                 var cornerRoom = CreateRoom(currentPos, RoomType.ARTERY_CORNER_ROOM, param, rooms);
                 ConnectRooms(mainPathIds.Last(), cornerRoom.uniqueId, ConnectionType.ARTERY_PATH, rooms);
                 mainPathIds.Add(cornerRoom.uniqueId);
-
                 currentDirection = GetRandomPerpendicularDirection(currentDirection);
             }
 
             currentPos += currentDirection * param.mainRoomSpacing;
             currentPos += RandomJitterVector(param.mainArteryPositionJitter);
-
             var mainRoom = CreateRoom(currentPos, RoomType.MAIN_ARTERY_ROOM, param, rooms);
             ConnectRooms(mainPathIds.Last(), mainRoom.uniqueId, ConnectionType.ARTERY_PATH, rooms);
             mainPathIds.Add(mainRoom.uniqueId);
+
+            // Spawn enemy spawner in this main room
+            SpawnEnemySpawnerInRoom(mainRoom);
         }
     }
+
 
     private void InsertDistributiveNodesAndSproutLeaves(MapParameters param, Dictionary<int, Room> rooms, List<int> mainPathIds)
     {
@@ -628,6 +732,8 @@ public class DungeonMapGenerator : MonoBehaviour
             Debug.LogError("Teleporter prefab became null before coroutine could start.");
         }
     }
+
+   
 
     private IEnumerator SpawnTeleporterDelayed()
     {

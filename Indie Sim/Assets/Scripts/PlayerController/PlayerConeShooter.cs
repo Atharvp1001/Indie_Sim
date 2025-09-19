@@ -31,7 +31,7 @@ public class PlayerConeShooter : MonoBehaviour
     // Private variables
     private float nextFireTime = 0f;
     private bool wasShooting = false;
-    private List<Enemy> enemiesInCone = new List<Enemy>();
+    private List<IDamageable> damageableTargets = new List<IDamageable>(); // Updated to use interface
 
     private void FixedUpdate()
     {
@@ -57,7 +57,6 @@ public class PlayerConeShooter : MonoBehaviour
                 FireCone(shootDirection);
                 nextFireTime = Time.time + (1f / fireRate);
             }
-
             wasShooting = true;
         }
         else
@@ -78,51 +77,66 @@ public class PlayerConeShooter : MonoBehaviour
 
     private void FireCone(Vector2 direction)
     {
-        // Clear previous frame's enemies
-        enemiesInCone.Clear();
+        // Clear previous frame's targets
+        damageableTargets.Clear();
 
-        // Find all enemies in the cone
-        DetectEnemiesInCone(direction);
+        // Find all damageable targets in the cone (enemies AND spawners)
+        DetectDamageableTargetsInCone(direction);
 
-        // Damage all enemies in cone
-        foreach (Enemy enemy in enemiesInCone)
-        {
-            if (enemy != null)
-            {
-                enemy.TakeDamage(damagePerShot);
-
-                // Spawn hit effect
-                if (hitEffect != null)
-                {
-                    Instantiate(hitEffect, enemy.transform.position, Quaternion.identity);
-                }
-            }
-        }
+        // Damage all targets in cone
+        DamageAllTargetsInCone(damagePerShot);
 
         // Visual and audio effects
         PlayShootEffects();
     }
 
-    private void DetectEnemiesInCone(Vector2 direction)
+    private void DetectDamageableTargetsInCone(Vector2 direction)
     {
+        // Clear the list from previous detection
+        damageableTargets.Clear();
+
         // Get all colliders in range
         Collider2D[] colliders = Physics2D.OverlapCircleAll(firePoint.position, coneRange, enemyLayers);
 
         foreach (Collider2D collider in colliders)
         {
-            Enemy enemy = collider.GetComponent<Enemy>();
-            if (enemy == null) continue;
+            // Try to get any damageable component (Enemy, EnemySpawner, or any future damageable objects)
+            IDamageable damageable = collider.GetComponent<IDamageable>();
+            if (damageable == null) continue;
 
-            // Calculate direction to enemy
-            Vector2 directionToEnemy = (collider.transform.position - firePoint.position).normalized;
+            // Skip if already dead
+            if (damageable.IsDead()) continue;
 
-            // Calculate angle between shoot direction and enemy direction
-            float angleToEnemy = Vector2.Angle(direction, directionToEnemy);
+            // Calculate direction to target
+            Vector2 directionToTarget = (collider.transform.position - firePoint.position).normalized;
 
-            // Check if enemy is within cone angle
-            if (angleToEnemy <= coneAngle * 0.5f) // Half angle because Vector2.Angle gives the full angle
+            // Calculate angle between shoot direction and target direction
+            float angleToTarget = Vector2.Angle(direction, directionToTarget);
+
+            // Check if target is within cone angle
+            if (angleToTarget <= coneAngle * 0.5f) // Half angle because Vector2.Angle gives the full angle
             {
-                enemiesInCone.Add(enemy);
+                damageableTargets.Add(damageable);
+            }
+        }
+    }
+
+    private void DamageAllTargetsInCone(int damageAmount)
+    {
+        foreach (IDamageable target in damageableTargets)
+        {
+            if (target != null && !target.IsDead())
+            {
+                target.TakeDamage(damageAmount);
+
+                // Spawn hit effect on target
+                if (hitEffect != null)
+                {
+                    GameObject targetGameObject = target.GetGameObject();
+                    Instantiate(hitEffect, targetGameObject.transform.position, Quaternion.identity);
+                }
+
+                Debug.Log($"Damaged {target.GetGameObject().name} for {damageAmount} damage");
             }
         }
     }
@@ -146,7 +160,6 @@ public class PlayerConeShooter : MonoBehaviour
     private void UpdateConeVisual(Vector2 direction)
     {
         if (coneVisualizer == null) return;
-
         coneVisualizer.enabled = true;
 
         // Calculate cone edges
@@ -193,11 +206,14 @@ public class PlayerConeShooter : MonoBehaviour
 
     // Get current shooting info
     public bool IsShooting() { return wasShooting; }
+
     public Vector2 GetShootingDirection()
     {
         Vector2 direction = new Vector2(shootingJoystick.Horizontal, shootingJoystick.Vertical);
         return direction.magnitude > joystickDeadZone ? direction.normalized : Vector2.zero;
     }
+
+    public int GetTargetsInCone() { return damageableTargets.Count; }
 
     // Debug visualization in Scene view
     private void OnDrawGizmosSelected()
@@ -210,7 +226,7 @@ public class PlayerConeShooter : MonoBehaviour
             shootDirection = Vector2.right; // Default direction for visualization
         }
 
-        // Draw cone
+        // Draw cone range
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(firePoint.position, coneRange);
 

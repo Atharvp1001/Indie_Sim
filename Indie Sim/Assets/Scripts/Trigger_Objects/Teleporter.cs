@@ -6,371 +6,228 @@ public class Teleporter : MonoBehaviour
     [Header("Teleporter Settings")]
     [SerializeField] private float activationRadius = 2f;
     [SerializeField] private float teleportDelay = 1f;
-    [SerializeField] private bool requiresPlayerInput = true;
-    [SerializeField] private KeyCode activationKey = KeyCode.E;
-    
-    [Header("Visual Effects")]
+
+    [Header("Effects (Assign in Inspector)")]
     [SerializeField] private GameObject teleportEffect;
     [SerializeField] private ParticleSystem particles;
+    [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip teleportSound;
+
+    [Header("Visual Settings")]
     [SerializeField] private float glowIntensity = 1f;
     [SerializeField] private Color teleporterColor = Color.cyan;
-    
-    [Header("UI")]
-    [SerializeField] private GameObject interactionPrompt;
-    [SerializeField] private Canvas promptCanvas;
-    
+
+    // Core dependencies
     private DungeonMapGenerator mapGenerator;
-    private AudioSource audioSource;
+    private GameObject player;
     private SpriteRenderer spriteRenderer;
+    private Animator animator;
+
+    // State tracking
     private bool playerInRange = false;
     private bool isTeleporting = false;
-    private GameObject player;
-    private Animator animator;
-    
-    // Events
+    private int currentLevel = 1;
+
+    // Events for external systems
     public System.Action OnTeleportStarted;
     public System.Action OnTeleportCompleted;
     public System.Action OnNewLevelGenerated;
 
+    #region Unity Lifecycle
     void Start()
     {
-        SetupTeleporter();
-        FindMapGenerator();
-        SetupAudio();
-        SetupVisuals();
-        SetupUI();
+        InitializeTeleporter();
     }
 
     void Update()
     {
-        if (!isTeleporting)
-        {
-            CheckPlayerProximity();
-            HandleInput();
-        }
-        
-        UpdateVisuals();
+        UpdateVisualEffects();
     }
+    #endregion
 
-    private void SetupTeleporter()
+    #region Initialization
+    private void InitializeTeleporter()
     {
-        // Add collider if not present
-        if (GetComponent<Collider2D>() == null)
-        {
-            CircleCollider2D col = gameObject.AddComponent<CircleCollider2D>();
-            col.isTrigger = true;
-            col.radius = activationRadius;
-        }
-        
-        // Get or add animator
+        // Cache required components
+        spriteRenderer = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
-        if (animator == null)
-        {
-            animator = gameObject.AddComponent<Animator>();
-        }
-    }
 
-    private void FindMapGenerator()
-    {
-        mapGenerator = FindObjectOfType<DungeonMapGenerator>();
+        // Find map generator
+        mapGenerator = FindFirstObjectByType<DungeonMapGenerator>();
         if (mapGenerator == null)
         {
-            Debug.LogError("Teleporter: Could not find DungeonMapGenerator in scene!");
+            Debug.LogError($"Teleporter '{gameObject.name}': DungeonMapGenerator not found!");
         }
-    }
 
-    private void SetupAudio()
-    {
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-        {
-            audioSource = gameObject.AddComponent<AudioSource>();
-        }
-        audioSource.playOnAwake = false;
-    }
+        // Setup collider for trigger detection
+        SetupTriggerCollider();
 
-    private void SetupVisuals()
-    {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer == null)
-        {
-            spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
-        }
-        
-        spriteRenderer.color = teleporterColor;
-        
-        // Create default sprite if none assigned
-        if (spriteRenderer.sprite == null)
-        {
-            CreateDefaultSprite();
-        }
-        
-        // Setup particles if available
-        if (particles != null)
-        {
-            particles.startColor = teleporterColor;
-            particles.Play();
-        }
-    }
-
-    private void CreateDefaultSprite()
-    {
-        // Create a simple circle sprite
-        Texture2D texture = new Texture2D(64, 64);
-        Color[] colors = new Color[64 * 64];
-        Vector2 center = new Vector2(32, 32);
-        
-        for (int x = 0; x < 64; x++)
-        {
-            for (int y = 0; y < 64; y++)
-            {
-                float distance = Vector2.Distance(new Vector2(x, y), center);
-                if (distance <= 30)
-                {
-                    float alpha = 1f - (distance / 30f);
-                    colors[y * 64 + x] = new Color(teleporterColor.r, teleporterColor.g, teleporterColor.b, alpha);
-                }
-                else
-                {
-                    colors[y * 64 + x] = Color.clear;
-                }
-            }
-        }
-        
-        texture.SetPixels(colors);
-        texture.Apply();
-        
-        spriteRenderer.sprite = Sprite.Create(texture, new Rect(0, 0, 64, 64), new Vector2(0.5f, 0.5f));
-    }
-
-    private void SetupUI()
-    {
-        if (interactionPrompt == null)
-        {
-            CreateInteractionPrompt();
-        }
-        
-        if (interactionPrompt != null)
-        {
-            interactionPrompt.SetActive(false);
-        }
-    }
-
-    private void CreateInteractionPrompt()
-    {
-        // Create a simple UI prompt
-        GameObject promptObj = new GameObject("TeleporterPrompt");
-        promptObj.transform.SetParent(transform);
-        promptObj.transform.localPosition = Vector3.up * 2f;
-        
-        Canvas canvas = promptObj.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-        canvas.worldCamera = Camera.main;
-        canvas.sortingOrder = 10;
-        
-        promptObj.AddComponent<UnityEngine.UI.CanvasScaler>();
-        promptObj.AddComponent<UnityEngine.UI.GraphicRaycaster>();
-        
-        // Create text
-        GameObject textObj = new GameObject("Text");
-        textObj.transform.SetParent(promptObj.transform);
-        textObj.transform.localPosition = Vector3.zero;
-        textObj.transform.localScale = Vector3.one * 0.01f;
-        
-        UnityEngine.UI.Text text = textObj.AddComponent<UnityEngine.UI.Text>();
-        text.text = $"Press {activationKey} to Enter Next Level";
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.fontSize = 14;
-        text.color = Color.white;
-        text.alignment = TextAnchor.MiddleCenter;
-        
-        // Set rect transform
-        RectTransform rectTransform = textObj.GetComponent<RectTransform>();
-        rectTransform.sizeDelta = new Vector2(200, 50);
-        
-        interactionPrompt = promptObj;
-        promptCanvas = canvas;
-    }
-
-    private void CheckPlayerProximity()
-    {
-        if (player == null)
-        {
-            player = GameObject.FindGameObjectWithTag("Player");
-        }
-        
-        if (player != null)
-        {
-            float distance = Vector2.Distance(transform.position, player.transform.position);
-            bool wasInRange = playerInRange;
-            playerInRange = distance <= activationRadius;
-            
-            // Show/hide prompt based on proximity
-            if (playerInRange != wasInRange)
-            {
-                if (interactionPrompt != null)
-                {
-                    interactionPrompt.SetActive(playerInRange);
-                }
-                
-                if (playerInRange)
-                {
-                    OnPlayerEnterRange();
-                }
-                else
-                {
-                    OnPlayerExitRange();
-                }
-            }
-        }
-    }
-
-    private void HandleInput()
-    {
-        if (playerInRange && requiresPlayerInput)
-        {
-            if (Input.GetKeyDown(activationKey))
-            {
-                ActivateTeleporter();
-            }
-        }
-        else if (playerInRange && !requiresPlayerInput)
-        {
-            ActivateTeleporter();
-        }
-    }
-
-    private void UpdateVisuals()
-    {
-        if (spriteRenderer != null)
-        {
-            // Pulsing glow effect
-            float pulse = (Mathf.Sin(Time.time * 2f) + 1f) * 0.5f;
-            float intensity = glowIntensity * (0.5f + pulse * 0.5f);
-            
-            Color currentColor = teleporterColor;
-            currentColor.a = intensity;
-            spriteRenderer.color = currentColor;
-            
-            // Scale pulsing
-            float scale = 1f + pulse * 0.1f;
-            transform.localScale = Vector3.one * scale;
-        }
-    }
-
-    public void ActivateTeleporter()
-    {
-        if (isTeleporting || mapGenerator == null) return;
-        
-        StartCoroutine(TeleportSequence());
-    }
-
-    private IEnumerator TeleportSequence()
-    {
-        isTeleporting = true;
-        OnTeleportStarted?.Invoke();
-        
-        // Hide interaction prompt
-        if (interactionPrompt != null)
-        {
-            interactionPrompt.SetActive(false);
-        }
-        
-        // Play teleport sound
-        if (audioSource != null && teleportSound != null)
-        {
-            audioSource.PlayOneShot(teleportSound);
-        }
-        
-        // Trigger teleport effect
-        if (teleportEffect != null)
-        {
-            Instantiate(teleportEffect, transform.position, transform.rotation);
-        }
-        
-        // Enhanced visual effect
-        if (particles != null)
-        {
-            particles.Emit(50);
-        }
-        
-        // Animate teleporter
-        StartCoroutine(TeleportAnimation());
-        
-        // Wait for delay
-        yield return new WaitForSeconds(teleportDelay);
-        
-        // Generate new level
-        GenerateNewLevel();
-        
-        // Complete teleportation
-        OnTeleportCompleted?.Invoke();
-        isTeleporting = false;
-        
-        Debug.Log("Teleporter activated! New level generated.");
-    }
-
-    private IEnumerator TeleportAnimation()
-    {
-        float duration = teleportDelay;
-        float elapsed = 0f;
-        Vector3 originalScale = transform.localScale;
-        
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float progress = elapsed / duration;
-            
-            // Spin and scale up
-            transform.Rotate(0, 0, 360 * Time.deltaTime);
-            float scale = 1f + progress * 2f;
-            transform.localScale = originalScale * scale;
-            
-            // Intensify color
-            if (spriteRenderer != null)
-            {
-                Color color = teleporterColor;
-                color.a = 1f + progress;
-                spriteRenderer.color = color;
-            }
-            
-            yield return null;
-        }
-        
-        // Reset
-        transform.localScale = originalScale;
+        // Initialize visual settings
         if (spriteRenderer != null)
         {
             spriteRenderer.color = teleporterColor;
         }
+
+        Debug.Log($"Teleporter '{gameObject.name}' initialized successfully");
     }
 
-    private void GenerateNewLevel()
+    private void SetupTriggerCollider()
     {
-        if (mapGenerator != null)
+        CircleCollider2D triggerCollider = GetComponent<CircleCollider2D>();
+        if (triggerCollider == null)
         {
-            // Clear existing objects that might interfere
-            ClearExistingEntities();
-            
-            // Generate new map
-            mapGenerator.GenerateNewMap();
-            
-            // Move player to new start position
-            MovePlayerToStart();
-            
-            // Destroy this teleporter (new one will be spawned)
-            DestroyTeleporter();
-            
-            OnNewLevelGenerated?.Invoke();
+            triggerCollider = gameObject.AddComponent<CircleCollider2D>();
+            Debug.Log($"Added CircleCollider2D to teleporter '{gameObject.name}'");
+        }
+
+        triggerCollider.isTrigger = true;
+        triggerCollider.radius = activationRadius;
+    }
+    #endregion
+
+    #region Visual Effects
+    private void UpdateVisualEffects()
+    {
+        if (spriteRenderer == null) return;
+
+        // Create pulsing glow effect
+        float pulse = (Mathf.Sin(Time.time * 2f) + 1f) * 0.5f;
+        float intensity = glowIntensity * (0.5f + pulse * 0.5f);
+
+        // Apply color with pulsing alpha
+        Color currentColor = teleporterColor;
+        currentColor.a = intensity;
+        spriteRenderer.color = currentColor;
+
+        // Subtle scale pulsing
+        float scale = 1f + pulse * 0.1f;
+        transform.localScale = Vector3.one * scale;
+    }
+    #endregion
+
+    #region Teleportation Logic
+    public void ActivateTeleporter()
+    {
+        if (isTeleporting || mapGenerator == null)
+        {
+            Debug.LogWarning("Cannot activate teleporter: already teleporting or map generator missing");
+            return;
+        }
+
+        StartCoroutine(ExecuteTeleportSequence());
+    }
+
+    private IEnumerator ExecuteTeleportSequence()
+    {
+        isTeleporting = true;
+        OnTeleportStarted?.Invoke();
+
+        PlayTeleportEffects();
+
+        // Start teleport animation
+        StartCoroutine(AnimateTeleporter());
+
+        // Wait for teleport delay
+        yield return new WaitForSeconds(teleportDelay);
+
+        // Execute level transition
+        TransitionToNewLevel();
+
+        // Complete teleportation
+        OnTeleportCompleted?.Invoke();
+        isTeleporting = false;
+
+        Debug.Log("Teleportation completed successfully");
+    }
+
+    private void PlayTeleportEffects()
+    {
+        // Play sound effect
+        if (audioSource != null && teleportSound != null)
+        {
+            audioSource.PlayOneShot(teleportSound);
+        }
+
+        // Spawn visual effect
+        if (teleportEffect != null)
+        {
+            Instantiate(teleportEffect, transform.position, transform.rotation);
+        }
+
+        // Emit particles
+        if (particles != null)
+        {
+            particles.Emit(50);
         }
     }
 
-    private void ClearExistingEntities()
+    private IEnumerator AnimateTeleporter()
     {
-        // Clear existing teleporters
-        Teleporter[] teleporters = FindObjectsOfType<Teleporter>();
-        foreach (var teleporter in teleporters)
+        float duration = teleportDelay;
+        float elapsed = 0f;
+        Vector3 originalScale = transform.localScale;
+        Color originalColor = spriteRenderer != null ? spriteRenderer.color : teleporterColor;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = elapsed / duration;
+
+            // Rotation animation
+            transform.Rotate(0, 0, 360 * Time.deltaTime);
+
+            // Scale animation
+            float scaleMultiplier = 1f + progress * 2f;
+            transform.localScale = originalScale * scaleMultiplier;
+
+            // Color intensity animation
+            if (spriteRenderer != null)
+            {
+                Color animColor = teleporterColor;
+                animColor.a = 1f + progress;
+                spriteRenderer.color = animColor;
+            }
+
+            yield return null;
+        }
+
+        // Reset visual properties
+        transform.localScale = originalScale;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+        }
+    }
+    #endregion
+
+    #region Level Management
+    private void TransitionToNewLevel()
+    {
+        if (mapGenerator == null) return;
+
+        // Increment level counter
+        currentLevel++;
+
+        // Clear existing level objects
+        ClearCurrentLevelObjects();
+
+        // Generate new map
+        mapGenerator.GenerateNewMap();
+
+        // Move player to new starting position
+        RepositionPlayer();
+
+        // Remove this teleporter (new level will spawn its own)
+        StartCoroutine(DestroyTeleporter());
+
+        OnNewLevelGenerated?.Invoke();
+    }
+
+    private void ClearCurrentLevelObjects()
+    {
+        // Clear other teleporters (keep this one until after transition)
+        Teleporter[] otherTeleporters = FindObjectsByType<Teleporter>(FindObjectsSortMode.None);
+        foreach (var teleporter in otherTeleporters)
         {
             if (teleporter != this)
             {
@@ -379,61 +236,71 @@ public class Teleporter : MonoBehaviour
         }
     }
 
-    private void MovePlayerToStart()
+    private void RepositionPlayer()
     {
-        if (player != null && mapGenerator != null)
+        if (player == null || mapGenerator == null) return;
+
+        var mapData = mapGenerator.GetCurrentMapData();
+        if (mapData?.GetStartRoom() != null)
         {
-            var mapData = mapGenerator.GetCurrentMapData();
-            if (mapData != null)
+            var startRoom = mapData.GetStartRoom();
+            Vector3 newPosition = new Vector3(
+                startRoom.worldPosition.x,
+                startRoom.worldPosition.y,
+                player.transform.position.z
+            );
+
+            player.transform.position = newPosition;
+
+            // Reset player velocity
+            Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+            if (playerRb != null)
             {
-                var startRoom = mapData.GetStartRoom();
-                if (startRoom != null)
-                {
-                    player.transform.position = new Vector3(startRoom.worldPosition.x, startRoom.worldPosition.y, player.transform.position.z);
-                    Debug.Log($"Player moved to start room at {startRoom.worldPosition}");
-                }
+                playerRb.linearVelocity = Vector2.zero;
             }
+
+            Debug.Log($"Player repositioned to: {newPosition} - Level {currentLevel}");
         }
     }
 
-    private void DestroyTeleporter()
+    private IEnumerator DestroyTeleporter()
     {
         // Fade out effect
-        StartCoroutine(FadeOut());
-    }
-
-    private IEnumerator FadeOut()
-    {
-        float duration = 0.5f;
+        float fadeTime = 0.5f;
         float elapsed = 0f;
-        Color originalColor = spriteRenderer.color;
-        
-        while (elapsed < duration)
+        Color startColor = spriteRenderer != null ? spriteRenderer.color : teleporterColor;
+
+        while (elapsed < fadeTime)
         {
             elapsed += Time.deltaTime;
-            float alpha = 1f - (elapsed / duration);
-            
+            float alpha = 1f - (elapsed / fadeTime);
+
             if (spriteRenderer != null)
             {
-                Color color = originalColor;
-                color.a = alpha;
-                spriteRenderer.color = color;
+                Color fadeColor = startColor;
+                fadeColor.a = alpha;
+                spriteRenderer.color = fadeColor;
             }
-            
+
             yield return null;
         }
-        
+
         Destroy(gameObject);
     }
+    #endregion
 
-    // Collision detection
+    #region Trigger Events
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
         {
             player = other.gameObject;
             playerInRange = true;
-            OnPlayerEnterRange();
+
+            // Activate teleporter immediately on collision
+            ActivateTeleporter();
+
+            Debug.Log("Player collided with teleporter - Teleporting to next level!");
         }
     }
 
@@ -442,75 +309,59 @@ public class Teleporter : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerInRange = false;
-            OnPlayerExitRange();
+            Debug.Log("Player exited teleporter range");
         }
     }
+    #endregion
 
-    private void OnPlayerEnterRange()
-    {
-        if (interactionPrompt != null)
-        {
-            interactionPrompt.SetActive(true);
-        }
-        
-        Debug.Log("Player entered teleporter range");
-    }
-
-    private void OnPlayerExitRange()
-    {
-        if (interactionPrompt != null)
-        {
-            interactionPrompt.SetActive(false);
-        }
-        
-        Debug.Log("Player exited teleporter range");
-    }
-
-    // Public methods for external access
+    #region Public API
     public void SetMapGenerator(DungeonMapGenerator generator)
     {
         mapGenerator = generator;
     }
 
-    public bool IsPlayerInRange()
+    public void SetCurrentLevel(int level)
     {
-        return playerInRange;
+        currentLevel = level;
     }
 
-    public bool IsTeleporting()
-    {
-        return isTeleporting;
-    }
+    public int GetCurrentLevel() => currentLevel;
+    public bool IsPlayerInRange() => playerInRange;
+    public bool IsTeleporting() => isTeleporting;
 
-    // Spawning method to be called by the map generator
-    public void SpawnInRoom(Room room)
+    // Called by map generator when spawning teleporter
+    public void SpawnInRoom(Room room, int level = 1)
     {
-        if (room != null)
-        {
-        // Convert to tile coordinates to match your tilemap system
-            Vector3 tilePosition = new Vector3(
-                Mathf.Round(room.worldPosition.x), 
-                Mathf.Round(room.worldPosition.y), 
-                transform.position.z
-            );
-        
-            transform.position = tilePosition;
-            Debug.Log($"Teleporter spawned in room {room.uniqueId} at tile position {tilePosition}");
-        }
+        if (room == null) return;
+
+        currentLevel = level;
+
+        Vector3 spawnPosition = new Vector3(
+            Mathf.Round(room.worldPosition.x),
+            Mathf.Round(room.worldPosition.y),
+            transform.position.z
+        );
+
+        transform.position = spawnPosition;
+
+        Debug.Log($"Teleporter spawned in room {room.uniqueId} at {spawnPosition} - Level {currentLevel}");
     }
-    // Gizmos for debugging
+    #endregion
+
+    #region Debug Visualization
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.cyan;
+        // Draw activation radius
+        Gizmos.color = playerInRange ? Color.green : Color.cyan;
         Gizmos.DrawWireSphere(transform.position, activationRadius);
-        
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireCube(transform.position, Vector3.one * 0.5f);
     }
 
     private void OnDrawGizmosSelected()
     {
+        // Highlight when selected
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, activationRadius);
+        Gizmos.DrawWireCube(transform.position, Vector3.one * 0.5f);
     }
+    #endregion
 }
