@@ -676,7 +676,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1131460899}
   - component: {fileID: 1131460902}
-  - component: {fileID: 1131460901}
   - component: {fileID: 1131460905}
   m_Layer: 0
   m_Name: Dungeon Spawner
@@ -700,24 +699,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1483037788}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1131460901
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1131460897}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f5c77ed79b95da43b05379507c88eeb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tilemap: {fileID: 375523323}
-  roomGenerator: {fileID: 11400000, guid: 22b7a6a5a35d14340b5cce07d477fc4d, type: 2}
-  pathLength: 20
-  roomSizeMin: {x: 4, y: 4}
-  roomSizeMax: {x: 8, y: 8}
-  roomAttempts: 3
 --- !u!1839735485 &1131460902
 Tilemap:
   m_ObjectHideFlags: 0
@@ -800,6 +781,8 @@ MonoBehaviour:
   enemySpawnerPrefab: {fileID: 3680310007741697520, guid: 785bc85b44a6f8546b846805547bee60, type: 3}
   spawnEnemySpawnersInMainRooms: 1
   spawnerOffsetFromCenter: 0
+  keyPrefab: {fileID: 361551793940226289, guid: 8d9ee73584baa5f48b5e3b99db0c4a0a, type: 3}
+  hasKeyBeenSpawned: 0
 --- !u!114 &1229491046 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7545553901810682941, guid: c7c7561f00316e848b74de9261037559, type: 3}
@@ -889,44 +872,6 @@ Transform:
   - {fileID: 1131460899}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1844868895 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8485655876686838044, guid: edbd5360888064b468af922cde708f5e, type: 3}
-  m_PrefabInstance: {fileID: 4787297372853803439}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1844868904
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1844868895}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b65dc5f0f1d43c459395a5dbddbd51b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hasKey: 0
-  keyTag: Key
-  teleporterTag: Teleporter
-  audioSource: {fileID: 0}
-  keyPickupSound: {fileID: 0}
-  teleportDeniedSound: {fileID: 0}
---- !u!114 &1844868905
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1844868895}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bab5e37d5fe59ae4ab4fa6495caad325, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  activationRadius: 15
-  checkInterval: 0.3
-  showDebugGizmos: 1
 --- !u!1001 &1296698271535386968
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1046,10 +991,6 @@ PrefabInstance:
       propertyPath: joystick
       value: 
       objectReference: {fileID: 1229491046}
-    - target: {fileID: 256087201219941255, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: moveSpeed
-      value: 7
-      objectReference: {fileID: 0}
     - target: {fileID: 2693588683566327872, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1090,50 +1031,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: orthographic size
-      value: 7
-      objectReference: {fileID: 0}
-    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: m_BackGroundColor.b
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: m_BackGroundColor.g
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: m_BackGroundColor.r
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4161862380435632757, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: m_RenderPostProcessing
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: fireRate
-      value: 20
-      objectReference: {fileID: 0}
-    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: coneAngle
-      value: 7.8
-      objectReference: {fileID: 0}
-    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: coneRange
-      value: 6.1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: damagePerShot
-      value: 10
-      objectReference: {fileID: 0}
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: shootingJoystick
       value: 
       objectReference: {fileID: 236109540}
-    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: showConeInEditor
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 7934195939729618366, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: joystick
       value: 
@@ -1145,13 +1046,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8485655876686838044, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1844868905}
-    - targetCorrespondingSourceObject: {fileID: 8485655876686838044, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1844868904}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: edbd5360888064b468af922cde708f5e, type: 3}
 --- !u!1001 &6261015581385006291
 PrefabInstance:
