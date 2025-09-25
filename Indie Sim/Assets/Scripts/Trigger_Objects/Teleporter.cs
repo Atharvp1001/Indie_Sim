@@ -17,6 +17,11 @@ public class Teleporter : MonoBehaviour
     [SerializeField] private float glowIntensity = 1f;
     [SerializeField] private Color teleporterColor = Color.cyan;
 
+    [Header("Cleanup Settings")]
+    [SerializeField] private string[] enemyTags = { "Enemy", "EnemySpawner" };
+   
+
+
     // Core dependencies
     private DungeonMapGenerator mapGenerator;
     private GameObject player;
@@ -211,6 +216,9 @@ public class Teleporter : MonoBehaviour
         // Clear existing level objects
         ClearCurrentLevelObjects();
 
+        // NEW: Clear all enemies and spawners
+        ClearEnemiesAndSpawners();
+
         // Generate new map
         mapGenerator.GenerateNewMap();
 
@@ -222,6 +230,7 @@ public class Teleporter : MonoBehaviour
 
         OnNewLevelGenerated?.Invoke();
     }
+
 
     private void ClearCurrentLevelObjects()
     {
@@ -235,6 +244,39 @@ public class Teleporter : MonoBehaviour
             }
         }
     }
+
+    private void ClearEnemiesAndSpawners()
+    {
+        // Clear all enemies
+        ClearGameObjectsByTags(enemyTags);
+
+        
+
+        Debug.Log("Cleared all enemies, spawners, and projectiles from current level");
+    }
+
+    private void ClearGameObjectsByTags(string[] tags)
+    {
+        foreach (string tag in tags)
+        {
+            ClearGameObjectsByTag(tag);
+        }
+    }
+
+    private void ClearGameObjectsByTag(string tag)
+    {
+        GameObject[] objectsToDestroy = GameObject.FindGameObjectsWithTag(tag);
+
+        foreach (GameObject obj in objectsToDestroy)
+        {
+            // Disable object first to prevent any ongoing behavior
+            obj.SetActive(false);
+            Destroy(obj);
+        }
+
+        Debug.Log($"Destroyed {objectsToDestroy.Length} objects with tag: {tag}");
+    }
+
 
     private void RepositionPlayer()
     {

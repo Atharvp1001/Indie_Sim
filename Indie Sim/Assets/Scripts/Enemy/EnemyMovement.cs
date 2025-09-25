@@ -10,6 +10,9 @@ public class EnemyMovement : MonoBehaviour
     private float knockbackRecoveryTime = 0.5f; // Time before enemy resumes movement
     private float knockbackTimer = 0f;
 
+    // NEW: Activation check
+    private bool isActivated = false;
+
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player").transform; // Finds player by tag
@@ -19,6 +22,13 @@ public class EnemyMovement : MonoBehaviour
     void Update()
     {
         if (player == null) return; // Prevent errors if player is missing
+
+        // NEW: Check if this enemy should be activated
+        if (!isActivated && ActivateEnemies.Instance != null)
+        {
+            isActivated = ActivateEnemies.Instance.IsEnemyActivated(gameObject);
+            if (!isActivated) return; // Don't move if not activated yet
+        }
 
         if (!isKnockedBack) // Only move if not knocked back
         {
@@ -39,10 +49,10 @@ public class EnemyMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (!isKnockedBack)
-        {
-            rb.linearVelocity = movement; // Move towards player
-        }
+        // NEW: Only move if activated
+        if (!isActivated || isKnockedBack) return;
+
+        rb.linearVelocity = movement; // Move towards player
     }
 
     public void ApplyKnockback(Vector2 force)
