@@ -162,7 +162,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -187,7 +187,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 5
+  orthographic size: 7
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -234,7 +234,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -271,6 +271,9 @@ GameObject:
   - component: {fileID: 2168372277178147741}
   - component: {fileID: 441459428130447590}
   - component: {fileID: 7934195939729618366}
+  - component: {fileID: 8749358991344554026}
+  - component: {fileID: 6531144439329103242}
+  - component: {fileID: 4326419580110792452}
   m_Layer: 0
   m_Name: Temp -Player
   m_TagString: Player
@@ -310,7 +313,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Rigidbody2D: {fileID: 5045363974331740693}
   joystick: {fileID: 0}
-  moveSpeed: 4
+  moveSpeed: 7
 --- !u!61 &6221989387875595873
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -398,14 +401,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shootingJoystick: {fileID: 0}
   firePoint: {fileID: 5624597609566509571}
-  coneAngle: 45
-  coneRange: 8
+  coneAngle: 7.8
+  coneRange: 6.1
   enemyLayers:
     serializedVersion: 2
     m_Bits: 4294967295
   showConeInEditor: 1
-  fireRate: 10
-  damagePerShot: 25
+  fireRate: 20
+  damagePerShot: 10
   joystickDeadZone: 0.1
   muzzleFlashEffect: {fileID: 0}
   hitEffect: {fileID: 0}
@@ -632,3 +635,72 @@ MonoBehaviour:
   spriteToRotate: {fileID: 846267663619426444}
   rotationSpeed: 720
   deadZone: 0.1
+--- !u!114 &8749358991344554026
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bab5e37d5fe59ae4ab4fa6495caad325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  activationRadius: 15
+  checkInterval: 0.3
+  showDebugGizmos: 1
+--- !u!114 &6531144439329103242
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b65dc5f0f1d43c459395a5dbddbd51b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hasKey: 0
+  keyTag: Key
+  teleporterTag: Teleporter
+  audioSource: {fileID: 0}
+  keyPickupSound: {fileID: 0}
+  teleportDeniedSound: {fileID: 0}
+--- !u!58 &4326419580110792452
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.3

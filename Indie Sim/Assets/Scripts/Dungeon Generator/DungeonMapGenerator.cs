@@ -171,6 +171,10 @@ public class DungeonMapGenerator : MonoBehaviour
     [SerializeField] private bool spawnEnemySpawnersInMainRooms = true;
     [SerializeField] private float spawnerOffsetFromCenter = 0f; // Optional offset from exact center
 
+    [Header("Key Spawning")]
+    [SerializeField] private GameObject keyPrefab;
+    [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
+
 
     // Room ID counters for each category
     private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
@@ -196,7 +200,9 @@ public class DungeonMapGenerator : MonoBehaviour
         leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
         distributiveRoomIdCounter = RoomIDCategories.DISTRIBUTIVE_ROOM_START;
         cornerRoomIdCounter = RoomIDCategories.CORNER_ROOM_START;
-        
+
+        ResetKeySpawnStatus();
+
         currentMapData = GenerateDungeon(parameters);
         Debug.Log($"Generated dungeon with {currentMapData.rooms.Count} rooms");
         Debug.Log($"Start Room ID: {currentMapData.startRoomId}, End Room ID: {currentMapData.endRoomId}");
@@ -353,6 +359,12 @@ public class DungeonMapGenerator : MonoBehaviour
             SpawnEnemySpawnerInRoom(newRoom);
         }
 
+        // NEW: Spawn key in LeafNodeRoom (only once)
+        if (type == RoomType.LEAF_NODE_ROOM)
+        {
+            SpawnKeyInRoom(newRoom);
+        }
+
         return newRoom;
     }
 
@@ -400,6 +412,40 @@ public class DungeonMapGenerator : MonoBehaviour
         return true;
     }
 
+    private void SpawnKeyInRoom(Room room)
+    {
+        // Only spawn key if we haven't spawned one yet and we have a key prefab
+        if (hasKeyBeenSpawned || keyPrefab == null || room == null)
+        {
+            return;
+        }
+
+        // Calculate spawn position within the room bounds
+        Vector3 keySpawnPosition = new Vector3(
+            room.worldPosition.x + UnityEngine.Random.Range(-room.size.x * 0.3f, room.size.x * 0.3f),
+            room.worldPosition.y + UnityEngine.Random.Range(-room.size.y * 0.3f, room.size.y * 0.3f),
+            0f // Assuming 2D game
+        );
+
+        // Instantiate the key
+        GameObject spawnedKey = Instantiate(keyPrefab, keySpawnPosition, Quaternion.identity);
+
+        // Optional: Set parent for organization
+        spawnedKey.transform.SetParent(transform);
+        spawnedKey.name = $"Key_Room_{room.uniqueId}";
+
+        // Mark that key has been spawned
+        hasKeyBeenSpawned = true;
+
+        Debug.Log($"Key spawned in room {room.uniqueId} at position {keySpawnPosition}");
+    }
+
+
+    public void ResetKeySpawnStatus()
+    {
+        hasKeyBeenSpawned = false;
+        Debug.Log("Key spawn status reset - ready to spawn new key");
+    }
 
     /// <summary>
     /// Spawns an EnemySpawner in the center of the specified room

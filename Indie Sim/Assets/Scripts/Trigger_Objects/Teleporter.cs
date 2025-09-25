@@ -339,12 +339,22 @@ public class Teleporter : MonoBehaviour
             player = other.gameObject;
             playerInRange = true;
 
-            // Activate teleporter immediately on collision
-            ActivateTeleporter();
-
-            Debug.Log("Player collided with teleporter - Teleporting to next level!");
+            // NEW: Check if player has key before teleporting
+            PlayerKeyManagement keyManager = other.GetComponent<PlayerKeyManagement>();
+            if (keyManager != null && keyManager.HasKey)
+            {
+                // Player has key - teleport
+                ActivateTeleporter();
+                Debug.Log("Player has key - Teleporting to next level!");
+            }
+            else
+            {
+                // Player doesn't have key - do nothing
+                Debug.Log("Player needs a key to use this teleporter!");
+            }
         }
     }
+
 
     private void OnTriggerExit2D(Collider2D other)
     {
