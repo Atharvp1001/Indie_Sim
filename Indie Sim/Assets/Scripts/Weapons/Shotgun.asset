@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponName: Shotgun
   weaponIcon: {fileID: 0}
-  coneAngle: 25
-  coneRange: 8
+  coneAngle: 45
+  coneRange: 6
   fireRate: 12
   damagePerShot: 25
   shootSound: {fileID: 8300000, guid: 260582bc136b37046a7dd87436b0da31, type: 3}

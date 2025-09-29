@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponName: 
   weaponIcon: {fileID: 0}
-  coneAngle: 45
+  coneAngle: 25
   coneRange: 8
   fireRate: 10
   damagePerShot: 25

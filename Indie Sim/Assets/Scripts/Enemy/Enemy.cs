@@ -160,18 +160,6 @@ public class Enemy : MonoBehaviour, IDamageable
 
         isDead = true;
 
-        // Play death sound
-        if (audioSource != null && deathSound != null)
-        {
-            audioSource.PlayOneShot(deathSound);
-        }
-
-        // Spawn death effect
-        if (deathEffect != null)
-        {
-            Instantiate(deathEffect, transform.position, Quaternion.identity);
-        }
-
         // Notify death (important for spawner tracking)
         OnDeath?.Invoke();
 
@@ -181,41 +169,21 @@ public class Enemy : MonoBehaviour, IDamageable
         // Example: GameManager.Instance.AddScore(100);
         // Example: DropLoot();
 
-        // Start death sequence
-        StartCoroutine(DeathSequence());
+        // Let EnemyDeath script handle everything
+        EnemyDeath deathHandler = GetComponent<EnemyDeath>();
+        if (deathHandler != null)
+        {
+            deathHandler.HandleDeath();
+        }
+        else
+        {
+            // Fallback if no EnemyDeath script
+            Destroy(gameObject);
+        }
     }
 
-    private IEnumerator DeathSequence()
-    {
-        // Optional: Disable collider to prevent further interactions
-        Collider2D col = GetComponent<Collider2D>();
-        if (col != null)
-        {
-            col.enabled = false;
-        }
 
-        // Optional: Fade out or play death animation
-        if (spriteRenderer != null)
-        {
-            float fadeTime = 0.3f;
-            float elapsed = 0f;
-            Color startColor = spriteRenderer.color;
-
-            while (elapsed < fadeTime)
-            {
-                elapsed += Time.deltaTime;
-                float alpha = 1f - (elapsed / fadeTime);
-                Color fadeColor = startColor;
-                fadeColor.a = alpha;
-                spriteRenderer.color = fadeColor;
-                yield return null;
-            }
-        }
-
-        // Destroy the enemy
-        Destroy(gameObject);
-    }
-
+   
     #endregion
 
     #region Visual Effects

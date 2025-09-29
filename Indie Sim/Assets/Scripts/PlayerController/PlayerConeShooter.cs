@@ -29,7 +29,11 @@ public class PlayerConeShooter : MonoBehaviour
 
     [SerializeField] private LayerMask obstacleLayers; // Assign wall layer(s) here in Inspector
 
-
+    [Header("Particle Effects")]
+    [SerializeField] private ParticleSystem muzzleFlashParticles;
+    [SerializeField] private ParticleSystem shellEjectionParticles;
+    [SerializeField] private ParticleSystem smokeParticles;
+    private bool particlesPlaying = false;
     // Current weapon properties (gets updated when switching weapons)
     private WeaponData currentWeapon;
 
@@ -236,6 +240,16 @@ public class PlayerConeShooter : MonoBehaviour
 
     private void PlayShootEffects()
     {
+        // When gun fires, add this line:
+        CameraShake.Instance.ShakeCamera(1.5f, 0.15f); // intensity, duration
+        
+        // Camera zoom effect when firing
+        CameraZoomOnSpeed.Instance.StartFiring();
+
+        PlayMuzzleFlashParticles();
+        PlayShellEjectionParticles();
+        PlaySmokeParticles();
+
         // Use current weapon's muzzle flash
         if (currentWeapon.muzzleFlashEffect != null)
         {
@@ -249,6 +263,65 @@ public class PlayerConeShooter : MonoBehaviour
             audioSource.PlayOneShot(currentWeapon.shootSound);
         }
     }
+
+
+    private void PlayMuzzleFlashParticles()
+    {
+        if (muzzleFlashParticles != null)
+        {
+            // Ensure GameObject is active
+            if (!muzzleFlashParticles.gameObject.activeInHierarchy)
+            {
+                muzzleFlashParticles.gameObject.SetActive(true);
+            }
+
+            // Orient towards shooting direction
+            Vector2 shootDirection = GetShootingDirection();
+            if (shootDirection != Vector2.zero)
+            {
+                float angle = Mathf.Atan2(shootDirection.y, shootDirection.x) * Mathf.Rad2Deg;
+                muzzleFlashParticles.transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+            }
+
+            muzzleFlashParticles.Emit(5); // Just emit particles - no Play/Stop issues
+        }
+    }
+
+    private void PlayShellEjectionParticles()
+    {
+        if (shellEjectionParticles != null)
+        {
+            if (!shellEjectionParticles.gameObject.activeInHierarchy)
+            {
+                shellEjectionParticles.gameObject.SetActive(true);
+            }
+            shellEjectionParticles.Emit(2);
+        }
+    }
+
+    private void PlaySmokeParticles()
+    {
+        if (smokeParticles != null)
+        {
+            if (!smokeParticles.gameObject.activeInHierarchy)
+            {
+                smokeParticles.gameObject.SetActive(true);
+            }
+            smokeParticles.Emit(3);
+        }
+    }
+
+    // Simplified stop method - no need to stop when using Emit
+    private void StopAllParticles()
+    {
+        // With Emit method, particles naturally fade out
+        // No need to actively stop anything
+        particlesPlaying = false;
+    }
+
+
+
+
 
     private void UpdateConeVisual(Vector2 direction)
     {
@@ -271,8 +344,16 @@ public class PlayerConeShooter : MonoBehaviour
 
     private void OnStopShooting()
     {
-        // Any cleanup when stopping shooting
+        // Reset camera zoom when stopping shooting
+        CameraZoomOnSpeed.Instance.StopFiring();
+
+        StopAllParticles();
     }
+
+
+   
+
+
 
     // Public methods for getting current weapon info
     public WeaponData GetCurrentWeapon() { return currentWeapon; }
