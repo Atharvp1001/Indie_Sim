@@ -15,9 +15,14 @@ MonoBehaviour:
   weaponName: Shotgun
   weaponIcon: {fileID: 0}
   coneAngle: 45
-  coneRange: 6
-  fireRate: 12
+  coneRange: 4
+  fireRate: 4
   damagePerShot: 25
+  baseWidthMultiplier: 1
+  topWidthMultiplier: 0.535
+  baseDistanceRatio: 0.08
+  shapeProfile: 0
+  expansionCurve: 1
   shootSound: {fileID: 8300000, guid: 260582bc136b37046a7dd87436b0da31, type: 3}
   reloadSound: {fileID: 0}
   muzzleFlashEffect: {fileID: 0}
