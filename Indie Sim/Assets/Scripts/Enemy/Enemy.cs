@@ -13,6 +13,22 @@ public class Enemy : MonoBehaviour, IDamageable
     public float flashDuration = 0.1f;
     public Color damageColor = Color.red;
 
+    [Header("Blood Splatter Effect")]
+    public BloodSplatterEffect bloodEffect; // Reference to blood effect manager
+    private Transform playerTransform; // Reference to player for blood direction
+
+    [Header("Loot Drop")]
+    public GameObject coinPrefab; // Assign your coin prefab here
+    public int minCoins = 1; // Minimum coins to drop
+    public int maxCoins = 3; // Maximum coins to drop
+    public float coinDropForce = 3f; // How much force to apply to coins (makes them bounce)
+    public float coinSpreadRadius = 0.5f; // How spread out the coins spawn
+
+    [Header("Attack Settings")]
+    public int attackDamage = 10;
+    public float attackCooldown = 1.5f; // Time between attacks
+    private float lastAttackTime = 0f;
+
     [Header("Audio (Optional)")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip damageSound;
@@ -49,15 +65,55 @@ public class Enemy : MonoBehaviour, IDamageable
             originalColor = spriteRenderer.color;
         }
 
+        // Find the player reference for blood splatter direction
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            playerTransform = player.transform;
+        }
+        else
+        {
+            Debug.LogWarning($"Enemy '{gameObject.name}': No GameObject with 'Player' tag found. Blood splatter direction will not work.");
+        }
+
+        // If bloodEffect not assigned, try to find it in the scene
+        if (bloodEffect == null)
+        {
+            bloodEffect = FindObjectOfType<BloodSplatterEffect>();
+            if (bloodEffect == null)
+            {
+                Debug.LogWarning($"Enemy '{gameObject.name}': No BloodSplatterEffect found in scene. Create a GameObject with BloodSplatterEffect script.");
+            }
+        }
+
         // Ensure collider is set up correctly for cone detection
         Collider2D col = GetComponent<Collider2D>();
         if (col != null)
         {
-            // Can be trigger or solid - both work with Physics2D.OverlapCircleAll
             col.isTrigger = false; // Set to false for solid collision
         }
 
         Debug.Log($"Enemy '{gameObject.name}' initialized with {maxHealth} health");
+    }
+
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        // Check if touching player
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            // Check if cooldown has passed
+            if (Time.time >= lastAttackTime + attackCooldown)
+            {
+                // Attack the player
+                PlayerHealth playerHealth = collision.gameObject.GetComponent<PlayerHealth>();
+                if (playerHealth != null)
+                {
+                    playerHealth.TakeDamage(attackDamage, transform.position);
+                    lastAttackTime = Time.time;
+                    Debug.Log($"Enemy attacked player for {attackDamage} damage");
+                }
+            }
+        }
     }
 
     #region IDamageable Interface Implementation
@@ -160,6 +216,12 @@ public class Enemy : MonoBehaviour, IDamageable
 
         isDead = true;
 
+        // PLAY BLOOD SPLATTER EFFECT ON DEATH
+        SpawnBloodSplatterOnDeath();
+
+        // SPAWN COINS ON DEATH
+        DropCoins();
+
         // Notify death (important for spawner tracking)
         OnDeath?.Invoke();
 
@@ -167,7 +229,6 @@ public class Enemy : MonoBehaviour, IDamageable
 
         // Add score, drop items, etc. here
         // Example: GameManager.Instance.AddScore(100);
-        // Example: DropLoot();
 
         // Let EnemyDeath script handle everything
         EnemyDeath deathHandler = GetComponent<EnemyDeath>();
@@ -182,8 +243,81 @@ public class Enemy : MonoBehaviour, IDamageable
         }
     }
 
+    /// <summary>
+    /// Spawns blood splatter effect when enemy dies
+    /// Blood sprays away from the player (direction from player to enemy)
+    /// </summary>
+    private void SpawnBloodSplatterOnDeath()
+    {
+        // Check if blood effect system is set up
+        if (bloodEffect == null)
+        {
+            Debug.LogWarning($"Enemy '{gameObject.name}': Blood effect not assigned. Skipping blood splatter.");
+            return;
+        }
 
-   
+        // Check if player reference exists
+        if (playerTransform != null)
+        {
+            // Spawn blood at enemy position, spraying away from player
+            bloodEffect.SpawnBloodSplatter(transform.position, playerTransform.position);
+            Debug.Log($"Enemy '{gameObject.name}': Blood splatter spawned at {transform.position}");
+        }
+        else
+        {
+            Debug.LogWarning($"Enemy '{gameObject.name}': Player reference not found. Blood splatter will not have correct direction.");
+
+            // Fallback: spawn blood with random direction if no player found
+            Vector2 randomDirection = Random.insideUnitCircle.normalized;
+            bloodEffect.SpawnBloodSplatter(transform.position, randomDirection);
+        }
+    }
+
+    /// <summary>
+    /// Drops coins when enemy dies
+    /// Spawns random number of coins with slight spread and upward force
+    /// </summary>
+    private void DropCoins()
+    {
+        // Check if coin prefab is assigned
+        if (coinPrefab == null)
+        {
+            Debug.LogWarning($"Enemy '{gameObject.name}': No coin prefab assigned. Skipping coin drop.");
+            return;
+        }
+
+        // Determine how many coins to drop
+        int coinCount = Random.Range(minCoins, maxCoins + 1); // +1 because max is exclusive
+
+        Debug.Log($"Enemy '{gameObject.name}': Dropping {coinCount} coins");
+
+        // Spawn each coin
+        for (int i = 0; i < coinCount; i++)
+        {
+            // Calculate random offset position for coin spread
+            Vector2 randomOffset = Random.insideUnitCircle * coinSpreadRadius;
+            Vector3 spawnPosition = transform.position + new Vector3(randomOffset.x, randomOffset.y, 0f);
+
+            // Instantiate the coin
+            GameObject coin = Instantiate(coinPrefab, spawnPosition, Quaternion.identity);
+
+            // Optional: Add some upward force to make coins "pop" out
+            Rigidbody2D coinRb = coin.GetComponent<Rigidbody2D>();
+            if (coinRb != null)
+            {
+                // Add random upward and outward force
+                Vector2 randomForce = new Vector2(
+                    Random.Range(-coinDropForce, coinDropForce),
+                    Random.Range(coinDropForce * 0.5f, coinDropForce)
+                );
+                coinRb.AddForce(randomForce, ForceMode2D.Impulse);
+
+                // Add slight rotation for visual effect
+                coinRb.AddTorque(Random.Range(-5f, 5f), ForceMode2D.Impulse);
+            }
+        }
+    }
+
     #endregion
 
     #region Visual Effects
@@ -259,6 +393,10 @@ public class Enemy : MonoBehaviour, IDamageable
             Gizmos.color = Color.black;
             Gizmos.DrawWireSphere(transform.position, 1f);
         }
+
+        // Draw coin drop radius
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, coinSpreadRadius);
     }
 
     #endregion

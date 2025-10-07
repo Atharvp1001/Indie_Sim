@@ -116,7 +116,7 @@ public class EnemyDeath : MonoBehaviour
         corpseRenderer.sortingOrder = 2; // Set order to 2 in Floor layer
 
         // Make corpse semi-transparent
-        Color corpseColor = Color.green;
+        Color corpseColor = new Color(130 / 255f, 212 / 255f, 140 / 255f);
         corpseColor.a = corpseAlpha;
         corpseRenderer.color = corpseColor;
 

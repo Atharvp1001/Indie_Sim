@@ -184,6 +184,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2687915730168515124, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 4787297372853803441}
+    - target: {fileID: 2687915730168515124, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: GoToMainMenu
+      objectReference: {fileID: 0}
     - target: {fileID: 3411470850539551597, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
       propertyPath: statusText
       value: 
@@ -288,6 +296,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player Canvas HardcoreMode
       objectReference: {fileID: 0}
+    - target: {fileID: 8624018128983522574, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 4787297372853803441}
+    - target: {fileID: 8624018128983522574, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: Retry
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 5193241925582485772, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
@@ -298,6 +314,22 @@ PrefabInstance:
       addedObject: {fileID: 189840025}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
+--- !u!1 &110399269 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5715508341889909259, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
+  m_PrefabInstance: {fileID: 110399268}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &110399270 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 229058664614076936, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
+  m_PrefabInstance: {fileID: 110399268}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
 --- !u!1 &119612812
 GameObject:
   m_ObjectHideFlags: 0
@@ -586,6 +618,8 @@ TilemapRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -607,6 +641,7 @@ TilemapRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 2121055171
   m_SortingLayer: 2
   m_SortingOrder: 0
@@ -815,6 +850,8 @@ TilemapRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -836,6 +873,7 @@ TilemapRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -783603659
   m_SortingLayer: 1
   m_SortingOrder: 0
@@ -1133,6 +1171,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4168114898144869375, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: coinText
+      value: 
+      objectReference: {fileID: 110399270}
+    - target: {fileID: 5970754329784749663, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: deathUIPanel
+      value: 
+      objectReference: {fileID: 110399269}
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: weaponButton
       value: 
@@ -1175,6 +1221,17 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8485655876686838044, guid: edbd5360888064b468af922cde708f5e, type: 3}
   m_PrefabInstance: {fileID: 4787297372853803439}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &4787297372853803441 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5970754329784749663, guid: edbd5360888064b468af922cde708f5e, type: 3}
+  m_PrefabInstance: {fileID: 4787297372853803439}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4787297372853803440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46483fae30e321b44a43ce408bedced6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
 --- !u!4 &4787297372853803443 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2693588683566327872, guid: edbd5360888064b468af922cde708f5e, type: 3}

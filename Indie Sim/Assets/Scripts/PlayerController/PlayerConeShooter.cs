@@ -33,6 +33,11 @@ public class PlayerConeShooter : MonoBehaviour
     [SerializeField] private ParticleSystem muzzleFlashParticles;
     [SerializeField] private ParticleSystem shellEjectionParticles;
     [SerializeField] private ParticleSystem smokeParticles;
+
+    [Header("Muzzle Point Reference")]
+    public Transform muzzlePoint;
+    public Transform shellEjectionPoint;
+
     private bool particlesPlaying = false;
     // Current weapon properties (gets updated when switching weapons)
     private WeaponData currentWeapon;
@@ -253,7 +258,7 @@ public class PlayerConeShooter : MonoBehaviour
     {
         // When gun fires, add this line:
         CameraShake.Instance.ShakeCamera(1.5f, 0.15f); // intensity, duration
-        
+
         // Camera zoom effect when firing
         CameraZoomOnSpeed.Instance.StartFiring();
 
@@ -275,16 +280,18 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
-
     private void PlayMuzzleFlashParticles()
     {
-        if (muzzleFlashParticles != null)
+        if (muzzleFlashParticles != null && muzzlePoint != null)
         {
             // Ensure GameObject is active
             if (!muzzleFlashParticles.gameObject.activeInHierarchy)
             {
                 muzzleFlashParticles.gameObject.SetActive(true);
             }
+
+            // Move particle system to muzzle point position
+            muzzleFlashParticles.transform.position = muzzlePoint.position;
 
             // Orient towards shooting direction
             Vector2 shootDirection = GetShootingDirection();
@@ -300,27 +307,56 @@ public class PlayerConeShooter : MonoBehaviour
 
     private void PlayShellEjectionParticles()
     {
-        if (shellEjectionParticles != null)
+        if (shellEjectionParticles != null && shellEjectionPoint != null)
         {
             if (!shellEjectionParticles.gameObject.activeInHierarchy)
             {
                 shellEjectionParticles.gameObject.SetActive(true);
             }
+
+            // Move particle system to shell ejection point position
+            shellEjectionParticles.transform.position = shellEjectionPoint.position;
+
+           /* // Get the direction opposite to where player is facing
+            Vector2 shootDirection = GetShootingDirection();
+            Vector2 ejectionDirection = -shootDirection; // Opposite direction
+
+            if (ejectionDirection != Vector2.zero)
+            {
+                // Calculate angle for shell ejection (opposite to shooting direction)
+                float angle = Mathf.Atan2(ejectionDirection.y, ejectionDirection.x) * Mathf.Rad2Deg;
+                // Add 90 degrees to eject perpendicular/upward from the opposite side
+                shellEjectionParticles.transform.rotation = Quaternion.AngleAxis(angle , Vector3.forward);
+            }
+           */
             shellEjectionParticles.Emit(2);
         }
     }
 
     private void PlaySmokeParticles()
     {
-        if (smokeParticles != null)
+        if (smokeParticles != null && muzzlePoint != null)
         {
             if (!smokeParticles.gameObject.activeInHierarchy)
             {
                 smokeParticles.gameObject.SetActive(true);
             }
+
+            // Move particle system to muzzle point position
+            smokeParticles.transform.position = muzzlePoint.position;
+
+            // Orient towards shooting direction
+            Vector2 shootDirection = GetShootingDirection();
+            if (shootDirection != Vector2.zero)
+            {
+                float angle = Mathf.Atan2(shootDirection.y, shootDirection.x) * Mathf.Rad2Deg;
+                smokeParticles.transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+            }
+
             smokeParticles.Emit(3);
         }
     }
+
 
     // Simplified stop method - no need to stop when using Emit
     private void StopAllParticles()
