@@ -25,22 +25,22 @@ public static class RoomIDCategories
 {
     public const int MAIN_ROOM_START = 0;
     public const int MAIN_ROOM_END = 100;
-    
+
     public const int LEAF_ROOM_START = 100;
     public const int LEAF_ROOM_END = 200;
-    
+
     public const int DISTRIBUTIVE_ROOM_START = 200;
     public const int DISTRIBUTIVE_ROOM_END = 300;
-    
+
     public const int CORNER_ROOM_START = 300;
     public const int CORNER_ROOM_END = 400;
-    
+
     // Helper methods to determine room type from ID
     public static bool IsMainRoom(int id) => id >= MAIN_ROOM_START && id < MAIN_ROOM_END;
     public static bool IsLeafRoom(int id) => id >= LEAF_ROOM_START && id < LEAF_ROOM_END;
     public static bool IsDistributiveRoom(int id) => id >= DISTRIBUTIVE_ROOM_START && id < DISTRIBUTIVE_ROOM_END;
     public static bool IsCornerRoom(int id) => id >= CORNER_ROOM_START && id < CORNER_ROOM_END;
-    
+
     // Get room type from ID
     public static RoomType GetRoomTypeFromID(int id)
     {
@@ -139,7 +139,7 @@ public class MapData
     public Room GetStartRoom() => startRoomId >= 0 && rooms.ContainsKey(startRoomId) ? rooms[startRoomId] : null;
     public Room GetEndRoom() => endRoomId >= 0 && rooms.ContainsKey(endRoomId) ? rooms[endRoomId] : null;
     public Room GetLastMainRoom() => lastMainRoomId >= 0 && rooms.ContainsKey(lastMainRoomId) ? rooms[lastMainRoomId] : null;
-    
+
     // Get all rooms of a specific category
     public List<Room> GetMainRooms() => rooms.Values.Where(r => RoomIDCategories.IsMainRoom(r.uniqueId)).ToList();
     public List<Room> GetLeafRooms() => rooms.Values.Where(r => RoomIDCategories.IsLeafRoom(r.uniqueId)).ToList();
@@ -194,7 +194,7 @@ public class DungeonMapGenerator : MonoBehaviour
     public void GenerateNewMap()
     {
         rng = new System.Random();
-        
+
         // Reset ID counters
         mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
         leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
@@ -208,7 +208,7 @@ public class DungeonMapGenerator : MonoBehaviour
         Debug.Log($"Start Room ID: {currentMapData.startRoomId}, End Room ID: {currentMapData.endRoomId}");
         Debug.Log($"Last Main Room ID: {currentMapData.lastMainRoomId} (Teleporter spawn location)");
         Debug.Log($"Floor tiles: {currentMapData.floorTiles.Count}, Wall tiles: {currentMapData.wallTiles.Count}");
-        
+
         // Print all room information
         PrintRoomDebugInfo();
         SpawnAllEnemySpawners();
@@ -226,13 +226,13 @@ public class DungeonMapGenerator : MonoBehaviour
             {
                 connectionInfo += $"→{connection.connectedRoomId}({connection.type}) ";
             }
-            
+
             string categoryInfo = "";
             if (RoomIDCategories.IsMainRoom(room.uniqueId)) categoryInfo = "[MAIN]";
             else if (RoomIDCategories.IsLeafRoom(room.uniqueId)) categoryInfo = "[LEAF]";
             else if (RoomIDCategories.IsDistributiveRoom(room.uniqueId)) categoryInfo = "[DISTRIBUTIVE]";
             else if (RoomIDCategories.IsCornerRoom(room.uniqueId)) categoryInfo = "[CORNER]";
-            
+
             Debug.Log($"Room ID: {room.uniqueId} {categoryInfo} | Type: {room.type} | Position: {room.worldPosition} | Size: {room.size} | Connections: {connectionInfo}");
         }
         Debug.Log("=== END ROOM DEBUG INFO ===");
@@ -353,6 +353,14 @@ public class DungeonMapGenerator : MonoBehaviour
         };
         rooms[newRoom.uniqueId] = newRoom;
 
+     
+
+        // NEW: Spawn key in LeafNodeRoom (only once)
+        if (type == RoomType.LEAF_NODE_ROOM)
+        {
+            SpawnKeyInRoom(newRoom);
+        }
+
         return newRoom;
     }
 
@@ -442,9 +450,9 @@ public class DungeonMapGenerator : MonoBehaviour
     private void SpawnEnemySpawnerInRoom(Room room)
     {
         // Only spawn in main artery rooms (you can modify this condition)
-        if (!spawnEnemySpawnersInMainRooms || room.type != RoomType.MAIN_ARTERY_ROOM || 
+        if (!spawnEnemySpawnersInMainRooms || room.type != RoomType.MAIN_ARTERY_ROOM ||
         room.uniqueId == currentMapData.startRoomId || room.uniqueId == currentMapData.endRoomId)
-        return;
+            return;
 
 
         // Don't spawn if no prefab assigned
@@ -635,7 +643,7 @@ public class DungeonMapGenerator : MonoBehaviour
             Debug.LogError("Floor tiles array is null or empty! Please assign floor tiles in the inspector.");
             return null;
         }
-        
+
         // Filter out null tiles to avoid errors
         var validTiles = new List<TileBase>();
         for (int i = 0; i < floorTiles.Length; i++)
@@ -645,14 +653,14 @@ public class DungeonMapGenerator : MonoBehaviour
                 validTiles.Add(floorTiles[i]);
             }
         }
-        
+
         // Check if we have any valid tiles
         if (validTiles.Count == 0)
         {
             Debug.LogError("No valid floor tiles found! All tiles in array are null.");
             return null;
         }
-        
+
         // Return random valid tile
         return validTiles[UnityEngine.Random.Range(0, validTiles.Count)];
     }
@@ -806,7 +814,7 @@ public class DungeonMapGenerator : MonoBehaviour
         }
     }
 
-   
+
 
     private IEnumerator SpawnTeleporterDelayed()
     {
@@ -911,10 +919,10 @@ public class DungeonMapGenerator : MonoBehaviour
             foreach (var room in currentMapData.rooms.Values)
             {
                 Vector3 labelPos = new Vector3(room.worldPosition.x, room.worldPosition.y + room.size.y / 2f + 1f, 0);
-                
-                #if UNITY_EDITOR
+
+#if UNITY_EDITOR
                 UnityEditor.Handles.Label(labelPos, $"ID: {room.uniqueId}");
-                #endif
+#endif
             }
         }
 
@@ -936,7 +944,7 @@ public class DungeonMapGenerator : MonoBehaviour
 
                 Vector3 start = new Vector3(room.worldPosition.x, room.worldPosition.y, 0);
                 Vector3 end = new Vector3(connectedRoom.worldPosition.x, connectedRoom.worldPosition.y, 0);
-                
+
                 Gizmos.DrawLine(start, end);
             }
         }

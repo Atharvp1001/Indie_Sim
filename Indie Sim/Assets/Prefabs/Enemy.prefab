@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 3570662312240958259}
   - component: {fileID: 257384993561902794}
   - component: {fileID: 7693868267851965652}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: Enemy
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -48,9 +48,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c557c609d067344686bb2eb27a94972, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  health: 100
-  knockbackForce: 12
-  knockbackDuration: 1
+  maxHealth: 10
+  deathEffect: {fileID: 0}
+  damageNumberPrefab: {fileID: 0}
+  flashDuration: 0.1
+  damageColor: {r: 0, g: 0, b: 0, a: 1}
+  audioSource: {fileID: 0}
+  damageSound: {fileID: 0}
+  deathSound: {fileID: 0}
 --- !u!114 &3570662312240958259
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -63,7 +68,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 535400de790268346bc279cf957ece64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 2
+  speed: 3
 --- !u!50 &257384993561902794
 Rigidbody2D:
   serializedVersion: 5
@@ -125,8 +130,8 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: -0.14853957}
-  m_Radius: 0.35146043
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.18
 --- !u!1 &7865423505771993537
 GameObject:
   m_ObjectHideFlags: 0
@@ -137,7 +142,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3455191515115314830}
   - component: {fileID: 4060607709702875625}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: slime
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -200,10 +205,10 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: fb85d0e46090f1d4982886c9a9f9e253, type: 3}
+  m_SortingLayerID: -783603659
+  m_SortingLayer: 1
+  m_SortingOrder: 2
+  m_Sprite: {fileID: 8135810483803083887, guid: f001f24dd62912a4bbe4b1c7142449c7, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

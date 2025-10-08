@@ -1,0 +1,161 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2648803598333993859
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6125043308712403937}
+  - component: {fileID: 5682479238725517281}
+  - component: {fileID: 7072590991702815494}
+  m_Layer: 0
+  m_Name: Dungeon Spawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6125043308712403937
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2648803598333993859}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.024753153, y: 3.6577117, z: -0.020503491}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5103908555319618706}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1839735485 &5682479238725517281
+Tilemap:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2648803598333993859}
+  m_Enabled: 0
+  m_Tiles: {}
+  m_AnimatedTiles: {}
+  m_TileAssetArray: []
+  m_TileSpriteArray: []
+  m_TileMatrixArray: []
+  m_TileColorArray: []
+  m_TileObjectToInstantiateArray: []
+  m_AnimationFrameRate: 1
+  m_Color: {r: 0.27450982, g: 0.27450982, b: 0.27450982, a: 1}
+  m_Origin: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0, y: 0, z: 1}
+  m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
+  m_TileOrientation: 0
+  m_TileOrientationMatrix:
+    e00: 1
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 1
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 1
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 1
+--- !u!114 &7072590991702815494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2648803598333993859}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: adefeef5ece7663428a2069228783679, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parameters:
+    numMainArteryRooms: 4
+    mainRoomSpacing: 8
+    chanceForLTurn: 0.5
+    mainArteryPositionJitter: 2
+    distributiveNodeChancePerSegment: 1
+    minLeafNodesPerDistributive: 1
+    maxLeafNodesPerDistributive: 2
+    leafBranchLength: 6
+    leafNodePositionJitter: 1.5
+    baseStartRoomSize: {x: 8, y: 8}
+    baseEndRoomSize: {x: 8, y: 8}
+    baseMainArteryRoomSize: {x: 8, y: 6}
+    baseDistributiveRoomSize: {x: 4, y: 4}
+    baseLeafRoomSize: {x: 12, y: 4}
+    baseCornerRoomSize: {x: 3, y: 3}
+    roomSizeVariationPercentage: 0.465
+    minRoomDistance: 4
+    maxRepositionAttempts: 5
+    repositionSearchRadius: 3
+    corridorWidth: 2
+  generateOnStart: 1
+  showGizmos: 1
+  showRoomIds: 1
+  floorTilemap: {fileID: 0}
+  wallTilemap: {fileID: 0}
+  floorTiles:
+  - {fileID: 11400000, guid: e322f6681c2d5174dbf06850a7d2256c, type: 2}
+  - {fileID: 11400000, guid: 1209dd56dcf464444b45fc2c9fbe3f9f, type: 2}
+  - {fileID: 11400000, guid: 5c8a7832891562c43b962dcb360d50ac, type: 2}
+  - {fileID: 11400000, guid: 5c8a7832891562c43b962dcb360d50ac, type: 2}
+  - {fileID: 11400000, guid: 5c8a7832891562c43b962dcb360d50ac, type: 2}
+  - {fileID: 11400000, guid: 5c8a7832891562c43b962dcb360d50ac, type: 2}
+  - {fileID: 11400000, guid: 5c8a7832891562c43b962dcb360d50ac, type: 2}
+  - {fileID: 11400000, guid: 5c8a7832891562c43b962dcb360d50ac, type: 2}
+  - {fileID: 11400000, guid: 5c8a7832891562c43b962dcb360d50ac, type: 2}
+  - {fileID: 11400000, guid: 5c8a7832891562c43b962dcb360d50ac, type: 2}
+  wallTile: {fileID: 11400000, guid: 6eb2062362430934cb064f233befd82b, type: 2}
+  teleporterPrefab: {fileID: 4745575045145191664, guid: af192055a030fbe45b3cf6c3ea6426fa, type: 3}
+  enemySpawnerPrefab: {fileID: 3680310007741697520, guid: 785bc85b44a6f8546b846805547bee60, type: 3}
+  spawnEnemySpawnersInMainRooms: 1
+  spawnerOffsetFromCenter: 0
+  keyPrefab: {fileID: 361551793940226289, guid: 8d9ee73584baa5f48b5e3b99db0c4a0a, type: 3}
+  hasKeyBeenSpawned: 0
+--- !u!1 &4594193554663712499
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5103908555319618706}
+  m_Layer: 0
+  m_Name: Map_Generator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5103908555319618706
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4594193554663712499}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.9972324, y: -3.1862724, z: -0.0039037638}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6125043308712403937}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
