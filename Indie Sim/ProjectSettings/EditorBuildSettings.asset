@@ -8,7 +8,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Test Scenes/SampleScene.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Test Scenes/DungeonGeneratorTest.unity
     guid: 8b288767e0e2f0449a475e9830162a6e
   - enabled: 0
@@ -17,6 +17,15 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Test Scenes/ShootTest.unity
     guid: f5f51c171ceebd3459b07b2fd39ffd97
+  - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: b1fffd4dd89a25d47b6d114e653eb5af
+  - enabled: 1
+    path: Assets/Scenes/CasualMode.unity
+    guid: 46981ef6568efe1459ccd516e1a0316f
+  - enabled: 1
+    path: Assets/Scenes/HardcoreMode.unity
+    guid: 6da243c7b5c32f74e9431094393b3ef8
   m_configObjects:
     com.unity.adaptiveperformance.google.android.provider_settings: {fileID: 11400000, guid: 83ce9056178cf2849b146fce0665d566, type: 2}
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 3257b4a80cb28494eae1fac225750df8, type: 2}

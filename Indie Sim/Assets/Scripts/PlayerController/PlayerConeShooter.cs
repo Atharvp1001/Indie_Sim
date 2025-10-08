@@ -29,7 +29,16 @@ public class PlayerConeShooter : MonoBehaviour
 
     [SerializeField] private LayerMask obstacleLayers; // Assign wall layer(s) here in Inspector
 
+    [Header("Particle Effects")]
+    [SerializeField] private ParticleSystem muzzleFlashParticles;
+    [SerializeField] private ParticleSystem shellEjectionParticles;
+    [SerializeField] private ParticleSystem smokeParticles;
 
+    [Header("Muzzle Point Reference")]
+    public Transform muzzlePoint;
+    public Transform shellEjectionPoint;
+
+    private bool particlesPlaying = false;
     // Current weapon properties (gets updated when switching weapons)
     private WeaponData currentWeapon;
 
@@ -193,15 +202,26 @@ public class PlayerConeShooter : MonoBehaviour
             if (damageable.IsDead()) continue;
 
             Vector2 directionToTarget = (collider.transform.position - firePoint.position).normalized;
-            float angleToTarget = Vector2.Angle(direction, directionToTarget);
+            float distanceToTarget = Vector2.Distance(firePoint.position, collider.transform.position);
 
-            // Use current weapon's cone angle
-            if (angleToTarget <= currentWeapon.coneAngle * 0.5f)
+            // Check if target is within trapezium shape
+            if (IsTargetInTrapezium(firePoint.position, direction, distanceToTarget, directionToTarget))
             {
                 damageableTargets.Add(damageable);
             }
         }
     }
+
+    private bool IsTargetInTrapezium(Vector2 origin, Vector2 direction, float distance, Vector2 directionToTarget)
+    {
+        // Use weapon-specific trapezium settings
+        float allowedAngle = currentWeapon.GetAngleAtDistance(distance);
+        float angleToTarget = Vector2.Angle(direction, directionToTarget);
+
+        return angleToTarget <= allowedAngle;
+    }
+
+
 
     private void DamageAllTargetsInCone(int damageAmount)
     {
@@ -236,6 +256,16 @@ public class PlayerConeShooter : MonoBehaviour
 
     private void PlayShootEffects()
     {
+        // When gun fires, add this line:
+        CameraShake.Instance.ShakeCamera(1.5f, 0.15f); // intensity, duration
+
+        // Camera zoom effect when firing
+        CameraZoomOnSpeed.Instance.StartFiring();
+
+        PlayMuzzleFlashParticles();
+        PlayShellEjectionParticles();
+        PlaySmokeParticles();
+
         // Use current weapon's muzzle flash
         if (currentWeapon.muzzleFlashEffect != null)
         {
@@ -250,29 +280,126 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
+    private void PlayMuzzleFlashParticles()
+    {
+        if (muzzleFlashParticles != null && muzzlePoint != null)
+        {
+            // Ensure GameObject is active
+            if (!muzzleFlashParticles.gameObject.activeInHierarchy)
+            {
+                muzzleFlashParticles.gameObject.SetActive(true);
+            }
+
+            // Move particle system to muzzle point position
+            muzzleFlashParticles.transform.position = muzzlePoint.position;
+
+            // Orient towards shooting direction
+            Vector2 shootDirection = GetShootingDirection();
+            if (shootDirection != Vector2.zero)
+            {
+                float angle = Mathf.Atan2(shootDirection.y, shootDirection.x) * Mathf.Rad2Deg;
+                muzzleFlashParticles.transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+            }
+
+            muzzleFlashParticles.Emit(5); // Just emit particles - no Play/Stop issues
+        }
+    }
+
+    private void PlayShellEjectionParticles()
+    {
+        if (shellEjectionParticles != null && shellEjectionPoint != null)
+        {
+            if (!shellEjectionParticles.gameObject.activeInHierarchy)
+            {
+                shellEjectionParticles.gameObject.SetActive(true);
+            }
+
+            // Move particle system to shell ejection point position
+            shellEjectionParticles.transform.position = shellEjectionPoint.position;
+
+           /* // Get the direction opposite to where player is facing
+            Vector2 shootDirection = GetShootingDirection();
+            Vector2 ejectionDirection = -shootDirection; // Opposite direction
+
+            if (ejectionDirection != Vector2.zero)
+            {
+                // Calculate angle for shell ejection (opposite to shooting direction)
+                float angle = Mathf.Atan2(ejectionDirection.y, ejectionDirection.x) * Mathf.Rad2Deg;
+                // Add 90 degrees to eject perpendicular/upward from the opposite side
+                shellEjectionParticles.transform.rotation = Quaternion.AngleAxis(angle , Vector3.forward);
+            }
+           */
+            shellEjectionParticles.Emit(2);
+        }
+    }
+
+    private void PlaySmokeParticles()
+    {
+        if (smokeParticles != null && muzzlePoint != null)
+        {
+            if (!smokeParticles.gameObject.activeInHierarchy)
+            {
+                smokeParticles.gameObject.SetActive(true);
+            }
+
+            // Move particle system to muzzle point position
+            smokeParticles.transform.position = muzzlePoint.position;
+
+            // Orient towards shooting direction
+            Vector2 shootDirection = GetShootingDirection();
+            if (shootDirection != Vector2.zero)
+            {
+                float angle = Mathf.Atan2(shootDirection.y, shootDirection.x) * Mathf.Rad2Deg;
+                smokeParticles.transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
+            }
+
+            smokeParticles.Emit(3);
+        }
+    }
+
+
+    // Simplified stop method - no need to stop when using Emit
+    private void StopAllParticles()
+    {
+        // With Emit method, particles naturally fade out
+        // No need to actively stop anything
+        particlesPlaying = false;
+    }
+
+
+
+
+
     private void UpdateConeVisual(Vector2 direction)
     {
         if (coneVisualizer == null || currentWeapon == null) return;
         coneVisualizer.enabled = true;
 
-        // Use current weapon's cone angle and range
-        float halfAngle = currentWeapon.coneAngle * 0.5f * Mathf.Deg2Rad;
+        // Get trapezium points from weapon data
+        Vector2[] trapeziumPoints = currentWeapon.GetTrapeziumPoints(firePoint.position, direction);
 
-        Vector3 centerDirection = new Vector3(direction.x, direction.y, 0) * currentWeapon.coneRange;
-        Vector3 leftEdge = Quaternion.Euler(0, 0, currentWeapon.coneAngle * 0.5f) * centerDirection;
-        Vector3 rightEdge = Quaternion.Euler(0, 0, -currentWeapon.coneAngle * 0.5f) * centerDirection;
-
-        coneVisualizer.positionCount = 4;
-        coneVisualizer.SetPosition(0, firePoint.position);
-        coneVisualizer.SetPosition(1, firePoint.position + leftEdge);
-        coneVisualizer.SetPosition(2, firePoint.position + rightEdge);
-        coneVisualizer.SetPosition(3, firePoint.position);
+        // Draw trapezium shape (5 points to close the shape)
+        coneVisualizer.positionCount = 5;
+        coneVisualizer.SetPosition(0, trapeziumPoints[0]); // Base left
+        coneVisualizer.SetPosition(1, trapeziumPoints[3]); // Top left  
+        coneVisualizer.SetPosition(2, trapeziumPoints[2]); // Top right
+        coneVisualizer.SetPosition(3, trapeziumPoints[1]); // Base right
+        coneVisualizer.SetPosition(4, trapeziumPoints[0]); // Close shape
     }
+
 
     private void OnStopShooting()
     {
-        // Any cleanup when stopping shooting
+        // Reset camera zoom when stopping shooting
+        CameraZoomOnSpeed.Instance.StopFiring();
+
+        StopAllParticles();
     }
+
+
+   
+
+
 
     // Public methods for getting current weapon info
     public WeaponData GetCurrentWeapon() { return currentWeapon; }
@@ -298,19 +425,40 @@ public class PlayerConeShooter : MonoBehaviour
             shootDirection = Vector2.right;
         }
 
-        // Draw cone range using current weapon's range
+        // Draw range circle
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(firePoint.position, currentWeapon.coneRange);
 
-        // Draw cone edges using current weapon's angle
-        float halfAngle = currentWeapon.coneAngle * 0.5f;
-        Vector3 centerDirection = new Vector3(shootDirection.x, shootDirection.y, 0) * currentWeapon.coneRange;
-        Vector3 leftEdge = Quaternion.Euler(0, 0, halfAngle) * centerDirection;
-        Vector3 rightEdge = Quaternion.Euler(0, 0, -halfAngle) * centerDirection;
+        // Get trapezium points
+        Vector2[] points = currentWeapon.GetTrapeziumPoints(firePoint.position, shootDirection);
 
+        // Draw trapezium outline
         Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(firePoint.position, firePoint.position + leftEdge);
-        Gizmos.DrawLine(firePoint.position, firePoint.position + rightEdge);
-        Gizmos.DrawLine(firePoint.position + leftEdge, firePoint.position + rightEdge);
+        for (int i = 0; i < 4; i++)
+        {
+            Vector2 current = points[i];
+            Vector2 next = points[(i + 1) % 4];
+            Gizmos.DrawLine(current, next);
+        }
+
+        // Draw expansion lines at different distances to show the curve
+        Gizmos.color = Color.cyan;
+        int steps = 5;
+        for (int i = 1; i < steps; i++)
+        {
+            float t = (float)i / steps;
+            float distance = Mathf.Lerp(currentWeapon.GetBaseDistance(), currentWeapon.coneRange, t);
+            float angle = currentWeapon.GetAngleAtDistance(distance) * Mathf.Deg2Rad;
+
+            Vector2 center = (Vector2)firePoint.position + shootDirection * distance;
+            Vector2 perpendicular = new Vector2(-shootDirection.y, shootDirection.x);
+            float width = distance * Mathf.Tan(angle);
+
+            Vector2 left = center - perpendicular * width;
+            Vector2 right = center + perpendicular * width;
+            Gizmos.DrawLine(left, right);
+        }
     }
+
+
 }

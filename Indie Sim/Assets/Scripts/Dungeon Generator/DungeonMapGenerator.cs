@@ -174,7 +174,7 @@ public class DungeonMapGenerator : MonoBehaviour
     [Header("Key Spawning")]
     [SerializeField] private GameObject keyPrefab;
     [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
-
+    [SerializeField] private bool SpawnKeyInLeafRooms = true; // Control key spawning in leaf rooms
 
     // Room ID counters for each category
     private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
@@ -356,7 +356,7 @@ public class DungeonMapGenerator : MonoBehaviour
      
 
         // NEW: Spawn key in LeafNodeRoom (only once)
-        if (type == RoomType.LEAF_NODE_ROOM)
+        if (type == RoomType.LEAF_NODE_ROOM && SpawnKeyInLeafRooms)
         {
             SpawnKeyInRoom(newRoom);
         }

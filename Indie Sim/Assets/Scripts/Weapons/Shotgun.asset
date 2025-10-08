@@ -14,10 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponName: Shotgun
   weaponIcon: {fileID: 0}
-  coneAngle: 25
-  coneRange: 8
-  fireRate: 12
+  coneAngle: 45
+  coneRange: 4
+  fireRate: 2
   damagePerShot: 25
+  baseWidthMultiplier: 1
+  topWidthMultiplier: 0.535
+  baseDistanceRatio: 0.08
+  shapeProfile: 0
+  expansionCurve: 1
   shootSound: {fileID: 8300000, guid: 260582bc136b37046a7dd87436b0da31, type: 3}
   reloadSound: {fileID: 0}
   muzzleFlashEffect: {fileID: 0}
