@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Linq;
 using UnityEngine.Tilemaps;
 using System.Collections;
+
 public enum RoomType
 {
     START_ROOM,           // First room in the main artery
@@ -89,7 +90,9 @@ public class Room
 public class MapParameters
 {
     [Header("Main Artery Control")]
-    public int numMainArteryRooms = 5;
+
+    public int minMainArteryRooms = 3;
+    public int maxMainArteryRooms = 7;
     public float mainRoomSpacing = 8f;
     [Range(0f, 1f)] public float chanceForLTurn = 0.3f;
     public float mainArteryPositionJitter = 2f;
@@ -174,7 +177,7 @@ public class DungeonMapGenerator : MonoBehaviour
     [Header("Key Spawning")]
     [SerializeField] private GameObject keyPrefab;
     [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
-    [SerializeField] private bool SpawnKeyInLeafRooms = true; // Control key spawning in leaf rooms
+
 
     // Room ID counters for each category
     private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
@@ -353,10 +356,10 @@ public class DungeonMapGenerator : MonoBehaviour
         };
         rooms[newRoom.uniqueId] = newRoom;
 
-     
+
 
         // NEW: Spawn key in LeafNodeRoom (only once)
-        if (type == RoomType.LEAF_NODE_ROOM && SpawnKeyInLeafRooms)
+        if (type == RoomType.LEAF_NODE_ROOM)
         {
             SpawnKeyInRoom(newRoom);
         }
@@ -571,11 +574,12 @@ public class DungeonMapGenerator : MonoBehaviour
 
         // Spawn enemy spawner in first room
         //SpawnEnemySpawnerInRoom(firstRoom);
+        int numMainArteryRooms = UnityEngine.Random.Range(param.minMainArteryRooms, param.maxMainArteryRooms + 1);
 
-        for (int i = 1; i < param.numMainArteryRooms; i++)
+        for (int i = 1; i < numMainArteryRooms; i++)
         {
             bool isLTurn = RandomValue() < param.chanceForLTurn;
-            if (isLTurn && i < param.numMainArteryRooms - 1)
+            if (isLTurn && i < numMainArteryRooms - 1)
             {
                 currentPos += currentDirection * param.mainRoomSpacing;
                 currentPos += RandomJitterVector(param.mainArteryPositionJitter);

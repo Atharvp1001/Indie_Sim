@@ -160,7 +160,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 077cd720ee4cf1848b33f709bf1ee98e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  corpseSprite: {fileID: -6563042932146795803, guid: f001f24dd62912a4bbe4b1c7142449c7, type: 3}
+  corpseSprite: {fileID: 21300000, guid: 85e51e8b9565828459d2f09375339671, type: 3}
   leaveCorpse: 1
   corpseLifetime: 5
   corpseAlpha: 0.8
@@ -350,6 +350,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3455191515115314830}
   - component: {fileID: 4060607709702875625}
+  - component: {fileID: 5598514688985381337}
   m_Layer: 7
   m_Name: slime
   m_TagString: Untagged
@@ -367,8 +368,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.34239, y: 0.34239, z: 0.34239}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 5567092838738821391}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -419,7 +420,7 @@ SpriteRenderer:
   m_SortingLayerID: -783603659
   m_SortingLayer: 1
   m_SortingOrder: 5
-  m_Sprite: {fileID: 8135810483803083887, guid: f001f24dd62912a4bbe4b1c7142449c7, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 31e7b041bd63b084794088946194888d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -430,6 +431,28 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &5598514688985381337
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7865423505771993537}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 23806c0955db2944682a54859dd48603, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &8917013868964461277
 PrefabInstance:
   m_ObjectHideFlags: 0
