@@ -6,6 +6,7 @@ public class Enemy : MonoBehaviour, IDamageable
 {
     [Header("Enemy Settings")]
     public int maxHealth = 100;
+    public float knockbackStrength = 10f; // Adjust this value to control knockback strength
     public GameObject deathEffect;
     public GameObject damageNumberPrefab; // Optional floating damage numbers
 
@@ -40,6 +41,7 @@ public class Enemy : MonoBehaviour, IDamageable
     private Color originalColor;
     private Coroutine flashCoroutine;
     private bool isDead = false;
+    private EnemyMovement enemyMovement;
 
     // Events
     public System.Action OnDeath;
@@ -58,6 +60,7 @@ public class Enemy : MonoBehaviour, IDamageable
         // Get components
         spriteRenderer = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
+        enemyMovement = GetComponent<EnemyMovement>();
 
         // Store original color for flash effect
         if (spriteRenderer != null)
@@ -165,6 +168,16 @@ public class Enemy : MonoBehaviour, IDamageable
 
         // Notify health change
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
+
+        //Apply knockback when enemy takes damage
+        // Calculate knockback direction (away from player)
+        Vector2 knockbackDirection = (transform.position - playerTransform.position).normalized;
+        // Multiply direction by knockback strength to create the force
+        
+        Vector2 knockbackForce = knockbackDirection * knockbackStrength;
+        enemyMovement.ApplyKnockback(knockbackForce);
+
+
 
         Debug.Log($"Enemy '{gameObject.name}' took {damage} damage. Health: {currentHealth}/{maxHealth}");
 

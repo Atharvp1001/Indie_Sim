@@ -7,8 +7,12 @@ public class EnemyMovement : MonoBehaviour
     private Rigidbody2D rb;
     private Vector2 movement;
     private bool isKnockedBack = false; // Prevents movement when knocked back
-    private float knockbackRecoveryTime = 0.5f; // Time before enemy resumes movement
+    private float knockbackRecoveryTime = 0.2f; // Time before enemy resumes movement
     private float knockbackTimer = 0f;
+    
+    [Header("Knockback Settings")]
+    [SerializeField] private float normalDrag = 0f; // Normal movement drag
+    [SerializeField] private float knockbackDrag = 15f; // High drag during knockback for quick stop
 
     // NEW: Activation check
     private bool isActivated = false;
@@ -45,6 +49,17 @@ public class EnemyMovement : MonoBehaviour
                 isKnockedBack = false;
             }
         }
+        if (isKnockedBack)
+        {
+            knockbackTimer -= Time.deltaTime;
+
+            if (knockbackTimer <= 0f)
+            {
+                isKnockedBack = false;
+                rb.linearVelocity = Vector2.zero; // Snap to stop
+                rb.linearDamping = normalDrag; // Reset to normal drag
+            }
+        }
     }
 
     void FixedUpdate()
@@ -58,8 +73,13 @@ public class EnemyMovement : MonoBehaviour
     public void ApplyKnockback(Vector2 force)
     {
         rb.linearVelocity = Vector2.zero; // Reset velocity
+
+        // Temporarily increase drag for punchy, short knockback
+        rb.linearDamping = knockbackDrag; // High drag = quick stop
+
         rb.AddForce(force, ForceMode2D.Impulse); // Apply knockback
         isKnockedBack = true;
         knockbackTimer = knockbackRecoveryTime; // Set timer to resume movement
     }
+
 }

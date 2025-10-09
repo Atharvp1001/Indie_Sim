@@ -52,7 +52,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c557c609d067344686bb2eb27a94972, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 10
+  maxHealth: 50
+  knockbackStrength: 25
   deathEffect: {fileID: 0}
   damageNumberPrefab: {fileID: 0}
   flashDuration: 0.1
@@ -63,7 +64,7 @@ MonoBehaviour:
   maxCoins: 3
   coinDropForce: 3
   coinSpreadRadius: 0.5
-  attackDamage: 50
+  attackDamage: 25
   attackCooldown: 1.5
   audioSource: {fileID: 0}
   damageSound: {fileID: 0}
@@ -81,6 +82,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 3
+  normalDrag: 1
+  knockbackDrag: 25
 --- !u!50 &257384993561902794
 Rigidbody2D:
   serializedVersion: 5

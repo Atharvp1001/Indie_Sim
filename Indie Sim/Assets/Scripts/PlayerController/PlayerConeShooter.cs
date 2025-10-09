@@ -225,6 +225,71 @@ public class PlayerConeShooter : MonoBehaviour
 
     private void DamageAllTargetsInCone(int damageAmount)
     {
+        // Check weapon type and call appropriate damage method
+        if (currentWeapon.weaponType == WeaponData.WeaponType.Standard)
+        {
+            // Standard weapons (Pistol, AK) - damage only the closest enemy
+            DamageClosestTarget(damageAmount);
+        }
+        else if (currentWeapon.weaponType == WeaponData.WeaponType.Shotgun)
+        {
+            // Shotgun - damage all enemies in cone
+            DamageAllTargets(damageAmount);
+        }
+    }
+
+    // NEW METHOD: Damages only the closest enemy (for Standard weapons like Pistol and AK)
+    private void DamageClosestTarget(int damageAmount)
+    {
+        if (damageableTargets.Count == 0) return;
+
+        IDamageable closestTarget = null;
+        float closestDistance = Mathf.Infinity;
+        GameObject closestTargetGO = null;
+
+        // Loop through all targets in cone and find the closest one
+        foreach (IDamageable target in damageableTargets)
+        {
+            if (target == null || target.IsDead()) continue;
+
+            GameObject targetGO = target.GetGameObject();
+            float distanceToTarget = Vector3.Distance(firePoint.position, targetGO.transform.position);
+
+            // Check if this is closer than the current closest
+            if (distanceToTarget < closestDistance)
+            {
+                Vector3 directionToTarget = (targetGO.transform.position - firePoint.position).normalized;
+
+                // Raycast to check for obstacles between player and this target
+                RaycastHit2D hit = Physics2D.Raycast(firePoint.position, directionToTarget, distanceToTarget, obstacleLayers);
+
+                // If there's an obstacle, skip this target
+                if (hit.collider != null) continue;
+
+                // This is the new closest target
+                closestDistance = distanceToTarget;
+                closestTarget = target;
+                closestTargetGO = targetGO;
+            }
+        }
+
+        // Damage the closest target if we found one
+        if (closestTarget != null && closestTargetGO != null)
+        {
+            closestTarget.TakeDamage(damageAmount);
+
+            if (currentWeapon.hitEffect != null)
+            {
+                Instantiate(currentWeapon.hitEffect, closestTargetGO.transform.position, Quaternion.identity);
+            }
+
+            Debug.Log($"Damaged {closestTargetGO.name} for {damageAmount} damage with {currentWeapon.weaponName} (Closest Target)");
+        }
+    }
+
+    // NEW METHOD: Damages all enemies in cone (for Shotgun)
+    private void DamageAllTargets(int damageAmount)
+    {
         foreach (IDamageable target in damageableTargets)
         {
             if (target != null && !target.IsDead())
@@ -249,10 +314,11 @@ public class PlayerConeShooter : MonoBehaviour
                     Instantiate(currentWeapon.hitEffect, targetGO.transform.position, Quaternion.identity);
                 }
 
-                Debug.Log($"Damaged {targetGO.name} for {damageAmount} damage with {currentWeapon.weaponName}");
+                Debug.Log($"Damaged {targetGO.name} for {damageAmount} damage with {currentWeapon.weaponName} (Shotgun - All Targets)");
             }
         }
     }
+
 
     private void PlayShootEffects()
     {
