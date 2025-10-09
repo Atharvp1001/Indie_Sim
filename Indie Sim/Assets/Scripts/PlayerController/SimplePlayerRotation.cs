@@ -58,7 +58,7 @@ public class SimplePlayerRotation : MonoBehaviour
     private void RotateTowards(Vector2 input)
     {
         float targetAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg - 90f;
-        Quaternion targetRotation = Quaternion.AngleAxis(targetAngle + 90f, Vector3.forward);
+        Quaternion targetRotation = Quaternion.AngleAxis(targetAngle + 135f, Vector3.forward);
 
         if (spriteToRotate == null) spriteToRotate = transform;
         spriteToRotate.rotation = Quaternion.RotateTowards(

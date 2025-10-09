@@ -8,10 +8,13 @@ public class PlayerHealth : MonoBehaviour
     public int maxHealth = 100;
     private int currentHealth;
 
-    [Header("Invincibility Settings")]
-    public float invincibilityDuration = 1f; // How long player is invincible after taking damage
-    private bool isInvincible = false;
+    [Header("Damage Cooldown Settings")]
+    public float damageCooldown = 1f; // Cooldown time before player can be damaged again
+    private float nextDamageTime = 0f; // Tracks when player can be damaged next
+
+    [Header("Visual Feedback Settings")]
     public float flashSpeed = 0.1f; // How fast the sprite flashes
+    public float flashDuration = 1f; // How long the flashing lasts
 
     [Header("Knockback Settings")]
     public float knockbackForce = 5f; // How hard player gets knocked back
@@ -28,6 +31,10 @@ public class PlayerHealth : MonoBehaviour
     private Rigidbody2D rb;
     private Color originalColor;
     private bool isDead = false;
+    private bool isFlashing = false; // Track if currently flashing
+    private PlayerController playerController; // Reference to player movement script
+    private SimplePlayerRotation playerRotation; // Reference to player rotation script
+
 
     void Start()
     {
@@ -35,8 +42,9 @@ public class PlayerHealth : MonoBehaviour
 
         // Get SpriteRenderer from child object (the player sprite)
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-
+        playerController = GetComponent<PlayerController>();
         playerCollider = GetComponent<Collider2D>();
+        playerRotation = GetComponent<SimplePlayerRotation>();
         rb = GetComponent<Rigidbody2D>();
 
         if (spriteRenderer != null)
@@ -66,14 +74,21 @@ public class PlayerHealth : MonoBehaviour
     /// <param name="enemyPosition">Position of the enemy (for knockback direction)</param>
     public void TakeDamage(int damage, Vector3 enemyPosition)
     {
-        // Can't take damage if invincible or dead
-        if (isInvincible || isDead) return;
+        // Check if player is on cooldown (can't take damage yet)
+        if (Time.time < nextDamageTime || isDead)
+        {
+            Debug.Log("Player is on damage cooldown - cannot take damage yet");
+            return;
+        }
 
         // Reduce health
         currentHealth -= damage;
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
         Debug.Log($"Player took {damage} damage. Health: {currentHealth}/{maxHealth}");
+
+        // Set the next time player can take damage (current time + cooldown)
+        nextDamageTime = Time.time + damageCooldown;
 
         // Apply knockback away from enemy
         ApplyKnockback(enemyPosition);
@@ -85,8 +100,11 @@ public class PlayerHealth : MonoBehaviour
         }
         else
         {
-            // Start invincibility frames
-            StartCoroutine(InvincibilityFrames());
+            // Start visual feedback (flashing) but keep collider enabled
+            if (!isFlashing)
+            {
+                StartCoroutine(FlashEffect());
+            }
         }
     }
 
@@ -109,46 +127,47 @@ public class PlayerHealth : MonoBehaviour
     }
 
     /// <summary>
-    /// Invincibility frames with flashing sprite effect
+    /// Visual flashing effect during damage cooldown - COLLIDER STAYS ENABLED
     /// </summary>
-    private IEnumerator InvincibilityFrames()
+    private IEnumerator FlashEffect()
     {
-        isInvincible = true;
+        isFlashing = true;
 
-        // Disable collider during invincibility
-        if (playerCollider != null)
-        {
-            playerCollider.enabled = false;
-        }
+        // NOTE: We do NOT disable the collider anymore - this fixes both bugs:
+        // 1. Enemies can't pass through and overlap with player
+        // 2. Player stays inside map bounds
 
-        Debug.Log("Player is now invincible");
+        Debug.Log("Player flashing effect started (damage cooldown active)");
 
         float elapsedTime = 0f;
 
-        // Flash the sprite during invincibility
-        while (elapsedTime < invincibilityDuration)
+        // Flash the sprite during cooldown
+        while (elapsedTime < flashDuration)
         {
-            // Toggle sprite visibility (flashing effect)
-            spriteRenderer.color = new Color(originalColor.r, originalColor.g, originalColor.b, 0.3f); // Low alpha
+            // Toggle sprite transparency (flashing effect)
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = new Color(originalColor.r, originalColor.g, originalColor.b, 0.3f); // Low alpha
+            }
             yield return new WaitForSeconds(flashSpeed);
 
-            spriteRenderer.color = originalColor; // Full alpha
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = originalColor; // Full alpha
+            }
             yield return new WaitForSeconds(flashSpeed);
 
             elapsedTime += flashSpeed * 2;
         }
 
         // Restore sprite to normal
-        spriteRenderer.color = originalColor;
-
-        // Re-enable collider
-        if (playerCollider != null)
+        if (spriteRenderer != null)
         {
-            playerCollider.enabled = true;
+            spriteRenderer.color = originalColor;
         }
 
-        isInvincible = false;
-        Debug.Log("Invincibility ended");
+        isFlashing = false;
+        Debug.Log("Flashing effect ended");
     }
 
     /// <summary>
@@ -160,6 +179,19 @@ public class PlayerHealth : MonoBehaviour
 
         isDead = true;
         Debug.Log("Player died!");
+
+        // Stop any ongoing flash effect
+        StopAllCoroutines();
+
+        //stop player movement
+        playerController.enabled = false;
+        playerRotation.enabled = false;
+
+        // Restore normal color
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+        }
 
         // Change to death sprite
         if (deathSprite != null && spriteRenderer != null)
@@ -174,7 +206,7 @@ public class PlayerHealth : MonoBehaviour
             rb.bodyType = RigidbodyType2D.Kinematic; // Disable physics (using bodyType instead of isKinematic)
         }
 
-        // Disable player collider
+        // Disable player collider ONLY on death
         if (playerCollider != null)
         {
             playerCollider.enabled = false;
@@ -226,5 +258,5 @@ public class PlayerHealth : MonoBehaviour
     public int GetCurrentHealth() { return currentHealth; }
     public int GetMaxHealth() { return maxHealth; }
     public bool IsDead() { return isDead; }
-    public bool IsInvincible() { return isInvincible; }
+    public bool IsOnDamageCooldown() { return Time.time < nextDamageTime; } // New getter for cooldown status
 }
