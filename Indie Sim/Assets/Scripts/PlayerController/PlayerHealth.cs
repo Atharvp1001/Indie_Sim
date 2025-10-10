@@ -34,7 +34,8 @@ public class PlayerHealth : MonoBehaviour
     private bool isFlashing = false; // Track if currently flashing
     private PlayerController playerController; // Reference to player movement script
     private SimplePlayerRotation playerRotation; // Reference to player rotation script
-
+    private PlayerAutoAimShooter playerAutoAimShooter; // Reference to auto-aim shooter script
+    private PlayerConeShooter playerConeShooter; // Reference to cone shooter script
 
     void Start()
     {
@@ -45,6 +46,8 @@ public class PlayerHealth : MonoBehaviour
         playerController = GetComponent<PlayerController>();
         playerCollider = GetComponent<Collider2D>();
         playerRotation = GetComponent<SimplePlayerRotation>();
+        playerAutoAimShooter = GetComponent<PlayerAutoAimShooter>();
+        playerConeShooter = GetComponent<PlayerConeShooter>();
         rb = GetComponent<Rigidbody2D>();
 
         if (spriteRenderer != null)
@@ -186,6 +189,10 @@ public class PlayerHealth : MonoBehaviour
         //stop player movement
         playerController.enabled = false;
         playerRotation.enabled = false;
+
+        //stop shooting 
+        playerAutoAimShooter.enabled = false;
+        playerConeShooter.enabled = false;
 
         // Restore normal color
         if (spriteRenderer != null)

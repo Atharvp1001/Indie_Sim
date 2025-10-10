@@ -320,7 +320,7 @@ public class PlayerConeShooter : MonoBehaviour
     }
 
 
-    private void PlayShootEffects()
+    public void PlayShootEffects()
     {
         // When gun fires, add this line:
         CameraShake.Instance.ShakeCamera(1.5f, 0.15f); // intensity, duration
@@ -346,7 +346,7 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
-    private void PlayMuzzleFlashParticles()
+    public void PlayMuzzleFlashParticles()
     {
         if (muzzleFlashParticles != null && muzzlePoint != null)
         {
@@ -371,7 +371,7 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
-    private void PlayShellEjectionParticles()
+    public void PlayShellEjectionParticles()
     {
         if (shellEjectionParticles != null && shellEjectionPoint != null)
         {
@@ -379,11 +379,11 @@ public class PlayerConeShooter : MonoBehaviour
             {
                 shellEjectionParticles.gameObject.SetActive(true);
             }
-
+            /*
             // Move particle system to shell ejection point position
             shellEjectionParticles.transform.position = shellEjectionPoint.position;
 
-           /* // Get the direction opposite to where player is facing
+            // Get the direction opposite to where player is facing
             Vector2 shootDirection = GetShootingDirection();
             Vector2 ejectionDirection = -shootDirection; // Opposite direction
 
@@ -391,15 +391,19 @@ public class PlayerConeShooter : MonoBehaviour
             {
                 // Calculate angle for shell ejection (opposite to shooting direction)
                 float angle = Mathf.Atan2(ejectionDirection.y, ejectionDirection.x) * Mathf.Rad2Deg;
-                // Add 90 degrees to eject perpendicular/upward from the opposite side
-                shellEjectionParticles.transform.rotation = Quaternion.AngleAxis(angle , Vector3.forward);
+
+                // For 2D: Rotate around Z-axis only, keep X at -90 to keep particles in XY plane
+                shellEjectionParticles.transform.rotation = Quaternion.Euler(-90f, 0f, angle);
             }
-           */
+            */
+
             shellEjectionParticles.Emit(2);
         }
+
     }
 
-    private void PlaySmokeParticles()
+
+    public void PlaySmokeParticles()
     {
         if (smokeParticles != null && muzzlePoint != null)
         {
@@ -425,7 +429,7 @@ public class PlayerConeShooter : MonoBehaviour
 
 
     // Simplified stop method - no need to stop when using Emit
-    private void StopAllParticles()
+    public void StopAllParticles()
     {
         // With Emit method, particles naturally fade out
         // No need to actively stop anything

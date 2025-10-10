@@ -97,27 +97,45 @@ public class PlayerAutoAimShooter : MonoBehaviour
         IDamageable damageable = targetCollider.GetComponent<IDamageable>();
         if (damageable != null && !damageable.IsDead())
         {
-            // Damage the target and spawn effects as before
+            // Damage the target
             damageable.TakeDamage(weapon.damagePerShot);
 
+            // Call all the particle effects from PlayerConeShooter
+            if (playerConeShooter != null)
+            {
+                playerConeShooter.PlayShootEffects(); // This plays ALL effects including particles, camera shake, sounds
+            }
+
+            // Spawn hit effect at target location
             if (weapon.hitEffect != null)
             {
                 Instantiate(weapon.hitEffect, targetCollider.transform.position, Quaternion.identity);
             }
 
-            if (weapon.muzzleFlashEffect != null)
-            {
-                GameObject flash = Instantiate(weapon.muzzleFlashEffect, firePoint.position, firePoint.rotation);
-                Destroy(flash, 0.1f);
-            }
-
-            if (audioSource != null && weapon.shootSound != null)
-            {
-                audioSource.PlayOneShot(weapon.shootSound);
-            }
-
             Debug.Log($"Auto-aim damaged {targetCollider.name} for {weapon.damagePerShot} damage with {weapon.weaponName}");
         }
     }
+
+    /// <summary>
+    /// Returns the direction from the player to the current auto-aim target
+    /// Returns Vector2.zero if no target is found
+    /// </summary>
+    public Vector2 GetAutoAimDirection()
+    {
+        if (firePoint == null) return Vector2.zero;
+
+        // Find the current auto-aim target
+        Collider2D nearestEnemy = FindNearestEnemy();
+
+        if (nearestEnemy != null)
+        {
+            // Calculate direction from fire point to target
+            Vector2 direction = (nearestEnemy.transform.position - firePoint.position).normalized;
+            return direction;
+        }
+
+        return Vector2.zero; // No target found
+    }
+
 
 }

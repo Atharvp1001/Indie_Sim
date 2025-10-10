@@ -1034,6 +1034,10 @@ PrefabInstance:
       propertyPath: joystick
       value: 
       objectReference: {fileID: 1229491046}
+    - target: {fileID: 882940776345714267, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: autoAimRange
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 2693588683566327872, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1078,10 +1082,26 @@ PrefabInstance:
       propertyPath: coinText
       value: 
       objectReference: {fileID: 1704926181}
+    - target: {fileID: 5045363974331740693, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Interpolate
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5045363974331740693, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5970754329784749663, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: deathUIPanel
       value: 
       objectReference: {fileID: 1926563896}
+    - target: {fileID: 6589811386408084634, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: ShapeModule.m_Rotation.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6589811386408084634, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: ShapeModule.m_Rotation.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: weaponButton
       value: 
@@ -1091,12 +1111,24 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 236109540}
     - target: {fileID: 7934195939729618366, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: autoAimShooter
+      value: 
+      objectReference: {fileID: 1784120754}
+    - target: {fileID: 7934195939729618366, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: movementJoystick
       value: 
       objectReference: {fileID: 1229491046}
     - target: {fileID: 8485655876686838044, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: m_Name
       value: Temp -Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 8533886947772131614, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8533886947772131614, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
