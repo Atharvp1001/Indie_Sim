@@ -17,14 +17,14 @@ MonoBehaviour:
   weaponType: 1
   coneAngle: 45
   coneRange: 4
-  fireRate: 2
+  fireRate: 1.6
   damagePerShot: 25
   baseWidthMultiplier: 1
   topWidthMultiplier: 0.535
   baseDistanceRatio: 0.08
   shapeProfile: 0
   expansionCurve: 1
-  shootSound: {fileID: 8300000, guid: 260582bc136b37046a7dd87436b0da31, type: 3}
+  shootSound: {fileID: 8300000, guid: 9a97d2f9de37cbc4da02b0583629457f, type: 3}
   reloadSound: {fileID: 0}
   muzzleFlashEffect: {fileID: 0}
   hitEffect: {fileID: 0}

@@ -14,16 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   weaponName: Pistol
   weaponIcon: {fileID: 0}
+  weaponType: 0
   coneAngle: 15
   coneRange: 4
   fireRate: 6
-  damagePerShot: 25
+  damagePerShot: 0
   baseWidthMultiplier: 1
   topWidthMultiplier: 0.7
   baseDistanceRatio: 0.08
   shapeProfile: 0
   expansionCurve: 1
-  shootSound: {fileID: 8300000, guid: 260582bc136b37046a7dd87436b0da31, type: 3}
+  shootSound: {fileID: 8300000, guid: 4187b147dcadba644abe68462c740e3a, type: 3}
   reloadSound: {fileID: 0}
   muzzleFlashEffect: {fileID: 0}
   hitEffect: {fileID: 0}

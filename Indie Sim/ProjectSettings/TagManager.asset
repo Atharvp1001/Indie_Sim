@@ -8,6 +8,7 @@ TagManager:
   - EnemySpawner
   - Key
   - Teleporter
+  - Coin
   layers:
   - Default
   - TransparentFX

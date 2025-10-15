@@ -20,12 +20,12 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientSkyColor: {r: 0.7660377, g: 0.7660377, b: 0.7660377, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 3
-  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
+  m_SubtractiveShadowColor: {r: 1, g: 1, b: 1, a: 1}
   m_SkyboxMaterial: {fileID: 0}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
@@ -94,7 +94,7 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 20201, guid: 0000000000000000f000000000000000, type: 0}
-  m_LightingSettings: {fileID: 0}
+  m_LightingSettings: {fileID: 4890085278179872738, guid: 834a434274f41cb479254dd24b1d2f16, type: 2}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -1034,6 +1034,10 @@ PrefabInstance:
       propertyPath: joystick
       value: 
       objectReference: {fileID: 1229491046}
+    - target: {fileID: 882940776345714267, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: autoAimRange
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 2693588683566327872, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1078,10 +1082,26 @@ PrefabInstance:
       propertyPath: coinText
       value: 
       objectReference: {fileID: 1704926181}
+    - target: {fileID: 5045363974331740693, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Interpolate
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5045363974331740693, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5970754329784749663, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: deathUIPanel
       value: 
       objectReference: {fileID: 1926563896}
+    - target: {fileID: 6589811386408084634, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: ShapeModule.m_Rotation.x
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 6589811386408084634, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: ShapeModule.m_Rotation.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: weaponButton
       value: 
@@ -1091,12 +1111,24 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 236109540}
     - target: {fileID: 7934195939729618366, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: autoAimShooter
+      value: 
+      objectReference: {fileID: 1784120754}
+    - target: {fileID: 7934195939729618366, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: movementJoystick
       value: 
       objectReference: {fileID: 1229491046}
     - target: {fileID: 8485655876686838044, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: m_Name
       value: Temp -Player
+      objectReference: {fileID: 0}
+    - target: {fileID: 8533886947772131614, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8533886947772131614, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1195,10 +1227,6 @@ PrefabInstance:
     - target: {fileID: 1773204433277557146, guid: 2515409c008b7164e9a9a4f7e3e7758a, type: 3}
       propertyPath: m_Name
       value: Enemy
-      objectReference: {fileID: 0}
-    - target: {fileID: 2988419187499292438, guid: 2515409c008b7164e9a9a4f7e3e7758a, type: 3}
-      propertyPath: knockbackStrength
-      value: 25
       objectReference: {fileID: 0}
     - target: {fileID: 5567092838738821391, guid: 2515409c008b7164e9a9a4f7e3e7758a, type: 3}
       propertyPath: m_LocalPosition.x

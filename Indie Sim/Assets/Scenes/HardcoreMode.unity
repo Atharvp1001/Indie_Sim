@@ -1306,6 +1306,14 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7072590991702815494, guid: 41501a982adc60044ae795f99a7e5eae, type: 3}
+      propertyPath: parameters.maxMainArteryRooms
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7072590991702815494, guid: 41501a982adc60044ae795f99a7e5eae, type: 3}
+      propertyPath: parameters.minMainArteryRooms
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7072590991702815494, guid: 41501a982adc60044ae795f99a7e5eae, type: 3}
       propertyPath: parameters.numMainArteryRooms
       value: 12
       objectReference: {fileID: 0}
