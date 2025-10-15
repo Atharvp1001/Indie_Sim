@@ -179,6 +179,10 @@ public class DungeonMapGenerator : MonoBehaviour
     [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
 
 
+    [Header("Spawner Respawn Settings")]
+    [SerializeField] private float spawnerRespawnDelay = 10f; // Time before respawning
+    [SerializeField] private float minRespawnDistanceFromPlayer = 20f; // Min distance from player
+
     // Room ID counters for each category
     private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
     private int leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
@@ -952,6 +956,57 @@ public class DungeonMapGenerator : MonoBehaviour
                 Gizmos.DrawLine(start, end);
             }
         }
+    }
+
+        public void OnSpawnerDestroyed(Vector3 destroyedPosition)
+    {
+        StartCoroutine(RespawnSpawnerDelayed(destroyedPosition));
+    }
+
+    private IEnumerator RespawnSpawnerDelayed(Vector3 destroyedPosition)
+    {
+        yield return new WaitForSeconds(spawnerRespawnDelay);
+        
+        // Find player
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
+        {
+            Debug.LogWarning("Player not found for spawner respawn!");
+            yield break;
+        }
+
+        // Find valid room far from player
+        Room targetRoom = FindFarRoomFromPlayer(player.transform.position);
+        
+        if (targetRoom != null && enemySpawnerPrefab != null)
+        {
+            SpawnEnemySpawnerInRoom(targetRoom);
+            Debug.Log($"Spawner respawned in room {targetRoom.uniqueId}");
+        }
+    }
+
+    private Room FindFarRoomFromPlayer(Vector3 playerPosition)
+    {
+        // Get all main artery rooms except start and end
+        var validRooms = currentMapData.rooms.Values
+            .Where(r => r.type == RoomType.MAIN_ARTERY_ROOM && 
+                        r.uniqueId != currentMapData.startRoomId && 
+                        r.uniqueId != currentMapData.endRoomId)
+            .ToList();
+
+        // Filter rooms far from player
+        var farRooms = validRooms
+            .Where(r => Vector2.Distance(playerPosition, r.worldPosition) >= minRespawnDistanceFromPlayer)
+            .ToList();
+
+        if (farRooms.Count == 0)
+        {
+            Debug.LogWarning("No rooms far enough from player, using any valid room");
+            farRooms = validRooms;
+        }
+
+        // Return random far room
+        return farRooms.Count > 0 ? farRooms[UnityEngine.Random.Range(0, farRooms.Count)] : null;
     }
 
     public MapData GetCurrentMapData() => currentMapData;
