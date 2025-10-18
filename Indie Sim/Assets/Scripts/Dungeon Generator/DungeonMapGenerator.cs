@@ -178,6 +178,9 @@ public class DungeonMapGenerator : MonoBehaviour
     [SerializeField] private GameObject keyPrefab;
     [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
 
+    [Header("Boss Spawning")]
+    [SerializeField] private GameObject bossPrefab;
+    [SerializeField] private bool enableBossSpawning = true;
 
     [Header("Spawner Respawn Settings")]
     [SerializeField] private float spawnerRespawnDelay = 10f; // Time before respawning
@@ -188,9 +191,13 @@ public class DungeonMapGenerator : MonoBehaviour
     private int leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
     private int distributiveRoomIdCounter = RoomIDCategories.DISTRIBUTIVE_ROOM_START;
     private int cornerRoomIdCounter = RoomIDCategories.CORNER_ROOM_START;
-
+    private GameObject currentBossInstance;
+    private int teleporterUsageCount = 0;
+    private float gameStartTime;
     void Start()
     {
+        gameStartTime = Time.time;
+
         if (generateOnStart)
         {
             GenerateNewMap();
@@ -320,6 +327,12 @@ public class DungeonMapGenerator : MonoBehaviour
         foreach (var wallPos in mapData.wallTiles)
         {
             wallTilemap.SetTile((Vector3Int)wallPos, wallTile);
+        }
+        
+        if (wallTilemap.gameObject.tag != "Walls")
+        {
+            wallTilemap.gameObject.tag = "Walls";
+            Debug.Log("Wall tilemap tagged as 'Walls'");
         }
 
         Debug.Log("Tile painting complete");
@@ -510,7 +523,7 @@ public class DungeonMapGenerator : MonoBehaviour
     private void ConfigureSpawnerForRoom(EnemySpawner spawner, Room room)
     {
         // Example configurations - adjust based on your game design
-
+        spawner.mapGenerator = this;
         // Adjust spawn radius based on room size
         float roomSizeMultiplier = Mathf.Max(room.size.x, room.size.y) / 10f; // Adjust divisor as needed
         spawner.spawnRadius = Mathf.Clamp(roomSizeMultiplier * 3f, 2f, 8f); // Min 2, Max 8
@@ -851,6 +864,14 @@ public class DungeonMapGenerator : MonoBehaviour
         }
     }
 
+    public void OnTeleporterUsed()
+    {
+        teleporterUsageCount++;
+        Debug.Log($"Teleporter used! Total uses: {teleporterUsageCount}");
+        
+        CheckBossSpawnConditions();
+    }
+
     private void SpawnLevelObjects()
     {
         if (currentMapData == null) return;
@@ -989,8 +1010,8 @@ public class DungeonMapGenerator : MonoBehaviour
     {
         // Get all main artery rooms except start and end
         var validRooms = currentMapData.rooms.Values
-            .Where(r => r.type == RoomType.MAIN_ARTERY_ROOM && 
-                        r.uniqueId != currentMapData.startRoomId && 
+            .Where(r => r.type == RoomType.MAIN_ARTERY_ROOM &&
+                        r.uniqueId != currentMapData.startRoomId &&
                         r.uniqueId != currentMapData.endRoomId)
             .ToList();
 
@@ -1008,7 +1029,100 @@ public class DungeonMapGenerator : MonoBehaviour
         // Return random far room
         return farRooms.Count > 0 ? farRooms[UnityEngine.Random.Range(0, farRooms.Count)] : null;
     }
+    
 
+    private void CheckBossSpawnConditions()
+    {
+        if (!enableBossSpawning || bossPrefab == null) return;
+        if (currentBossInstance != null) return; // Boss already active
+
+        if (currentMapData == null || currentMapData.rooms.Count == 0) return;
+
+        BossEnemy bossStats = bossPrefab.GetComponent<BossEnemy>();
+        if (bossStats == null)
+        {
+            Debug.LogError("Boss prefab must have BossEnemy component!");
+            return;
+        }
+
+        float timePlayed = Time.time - gameStartTime;
+        int minUses = bossStats.GetMinTeleporterUses();
+        int maxUses = bossStats.GetMaxTeleporterUses();
+        float maxTime = bossStats.GetMaxSpawnTime();
+
+        // Check if conditions met
+        bool teleporterCondition = teleporterUsageCount >= minUses && teleporterUsageCount <= maxUses;
+        bool timeCondition = timePlayed >= maxTime;
+
+        if (teleporterCondition || timeCondition)
+        {
+            SpawnBoss();
+        }
+    }
+
+    private void SpawnBoss()
+    {
+        if (currentMapData == null) return;
+
+        // Find player
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
+        {
+            Debug.LogWarning("Cannot spawn boss: Player not found!");
+            return;
+        }
+
+        // Find a room far from player
+        Room spawnRoom = FindFarthestRoomFromPlayer(player.transform.position);
+        
+        if (spawnRoom == null)
+        {
+            Debug.LogWarning("No suitable room found for boss spawn!");
+            return;
+        }
+
+        // Spawn boss
+        currentBossInstance = Instantiate(bossPrefab, spawnRoom.worldPosition, Quaternion.identity);
+        
+        // Subscribe to death event
+        BossEnemy boss = currentBossInstance.GetComponent<BossEnemy>();
+        if (boss != null)
+        {
+            boss.OnDeath += OnBossDefeated;
+        }
+
+        Debug.Log($"Boss spawned in room {spawnRoom.uniqueId} at {spawnRoom.worldPosition}");
+    }
+
+    private void OnBossDefeated()
+    {
+        Debug.Log("Boss defeated! Resetting spawn conditions...");
+        currentBossInstance = null;
+        teleporterUsageCount = 0;
+        gameStartTime = Time.time; // Reset timer
+    }
+
+    private Room FindFarthestRoomFromPlayer(Vector3 playerPosition)
+    {
+        Room farthestRoom = null;
+        float maxDistance = 0f;
+
+        foreach (var room in currentMapData.rooms.Values)
+        {
+            // Skip start and end rooms
+            if (room.uniqueId == currentMapData.startRoomId || 
+                room.uniqueId == currentMapData.endRoomId) continue;
+
+            float distance = Vector2.Distance(playerPosition, room.worldPosition);
+            if (distance > maxDistance)
+            {
+                maxDistance = distance;
+                farthestRoom = room;
+            }
+        }
+
+        return farthestRoom;
+    }
     public MapData GetCurrentMapData() => currentMapData;
     public MapParameters GetParameters() => parameters;
 }

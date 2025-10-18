@@ -9,6 +9,9 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     public float spawnInterval = 3f; // Time between spawns
     public int maxEnemies = 10; // Max number of enemies at a time
 
+    [Header("Respawn Reference")]
+    public DungeonMapGenerator mapGenerator;
+
     [Header("Health System")]
     [SerializeField] private int maxHealth = 100;
     [SerializeField] private int currentHealth;
@@ -199,6 +202,11 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
         Debug.Log("EnemySpawner destroyed!");
 
+                // Notify map generator for respawn
+        if (mapGenerator != null)
+        {
+            mapGenerator.OnSpawnerDestroyed(transform.position);
+        }
         // Start destruction sequence
         StartCoroutine(DeathSequence());
     }

@@ -228,6 +228,12 @@ public class Teleporter : MonoBehaviour
         // Remove this teleporter (new level will spawn its own)
         StartCoroutine(DestroyTeleporter());
 
+        if (mapGenerator != null)
+        {
+            mapGenerator.OnTeleporterUsed();
+        }
+
+
         OnNewLevelGenerated?.Invoke();
     }
 
