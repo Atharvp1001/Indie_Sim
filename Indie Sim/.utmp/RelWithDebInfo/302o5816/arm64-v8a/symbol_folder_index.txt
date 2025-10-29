@@ -1,0 +1,1 @@
+C:\Game Dev\Indie_Sim\Indie Sim\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\build\intermediates\cxx\RelWithDebInfo\302o5816\obj\arm64-v8a

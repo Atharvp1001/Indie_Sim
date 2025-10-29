@@ -18,7 +18,7 @@ MonoBehaviour:
   coneAngle: 15
   coneRange: 4
   fireRate: 6
-  damagePerShot: 0
+  damagePerShot: 20
   baseWidthMultiplier: 1
   topWidthMultiplier: 0.7
   baseDistanceRatio: 0.08
