@@ -114,7 +114,7 @@ public class OptionsMenu : MonoBehaviour
         if (!isGamePaused) return;
 
         isGamePaused = false;
-        Time.timeScale = originalTimeScale; // Resume the game
+        Time.timeScale = 1f; // Resume the game
 
         // Hide options menu
         if (optionsPanel != null)
