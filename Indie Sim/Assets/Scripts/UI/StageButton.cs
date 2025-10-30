@@ -15,8 +15,11 @@ public class StageButton : MonoBehaviour
     public string casualModeSceneName = "CasualModeScene";
 
     [Header("Button Settings")]
-    [Tooltip("Is this stage unlocked and playable?")]
-    public bool isUnlocked = true;
+    [Tooltip("Stage index (0-based) - auto-set from stageConfig")]
+    public int stageIndex = -1;
+
+    [Tooltip("Is this stage unlocked and playable? (Set automatically on Start)")]
+    public bool isUnlocked = false;
 
     [Header("Visual Feedback (Optional)")]
     [Tooltip("Overlay that shows when stage is locked")]
@@ -39,7 +42,6 @@ public class StageButton : MonoBehaviour
     public TextMeshProUGUI lockStatusText;
 
     private Button button;
-    private bool isInitialized = false;
 
     void Start()
     {
@@ -48,18 +50,39 @@ public class StageButton : MonoBehaviour
         // Validate stage config
         if (stageConfig == null)
         {
-            Debug.LogError($"StageButton on {gameObject.name}: No StageConfigSO assigned!");
+            Debug.LogError($"<color=red>StageButton on {gameObject.name}: No StageConfigSO assigned!</color>");
             button.interactable = false;
             return;
         }
+
+        // Calculate stage index from stageConfig
+        stageIndex = stageConfig.stageNumber - 1; // Convert to 0-based index
+
+        // Check unlock status from StageUnlockManager
+        CheckUnlockStatus();
 
         // Setup button click listener
         button.onClick.AddListener(OnStageButtonClicked);
 
         // Update visual state
         UpdateButtonVisuals();
+    }
 
-        isInitialized = true;
+    /// <summary>
+    /// Check if this stage is unlocked from StageUnlockManager
+    /// </summary>
+    void CheckUnlockStatus()
+    {
+        if (StageUnlockManager.Instance != null)
+        {
+            isUnlocked = StageUnlockManager.Instance.IsStageUnlocked(stageIndex);
+            Debug.Log($"<color=cyan>Stage {stageIndex + 1} unlock check: {(isUnlocked ? "UNLOCKED" : "LOCKED")}</color>");
+        }
+        else
+        {
+            Debug.LogWarning($"<color=yellow>StageUnlockManager not found! Defaulting Stage {stageIndex + 1} to locked.</color>");
+            isUnlocked = false;
+        }
     }
 
     /// <summary>
@@ -69,17 +92,16 @@ public class StageButton : MonoBehaviour
     {
         if (!isUnlocked)
         {
-            Debug.LogWarning($"Stage {stageConfig.stageNumber} is locked!");
             ShowLockedMessage();
             return;
         }
 
-        Debug.Log($"<color=cyan>Loading Stage {stageConfig.stageNumber}</color>");
+        Debug.Log($"<color=cyan>Loading Stage {stageConfig.stageNumber}...</color>");
 
         // Make sure PersistentDataManager exists
         if (PersistentDataManager.Instance == null)
         {
-            Debug.LogError("PersistentDataManager not found! Make sure it exists in the scene.");
+            Debug.LogError("<color=red>PersistentDataManager not found! Make sure it exists in the scene.</color>");
             return;
         }
 
@@ -98,10 +120,16 @@ public class StageButton : MonoBehaviour
     /// <summary>
     /// Update button visual elements based on lock state
     /// </summary>
-    void UpdateButtonVisuals()
+    public void UpdateButtonVisuals()
     {
+        if (button == null) // Safety check
+            button = GetComponent<Button>();
+
         // Update button interactability
-        button.interactable = isUnlocked;
+        if (button != null)
+        {
+            button.interactable = isUnlocked;
+        }
 
         // Update locked overlay visibility
         if (lockedOverlay != null)
@@ -116,7 +144,7 @@ public class StageButton : MonoBehaviour
         }
 
         // Update text displays
-        if (stageNumberText != null)
+        if (stageNumberText != null && stageConfig != null)
         {
             stageNumberText.text = $"Stage {stageConfig.stageNumber}";
         }
@@ -135,7 +163,6 @@ public class StageButton : MonoBehaviour
     {
         if (isUnlocked)
         {
-            Debug.LogWarning($"Stage {stageConfig.stageNumber} is already unlocked!");
             return;
         }
 
@@ -152,7 +179,6 @@ public class StageButton : MonoBehaviour
     {
         if (!isUnlocked)
         {
-            Debug.LogWarning($"Stage {stageConfig.stageNumber} is already locked!");
             return;
         }
 
@@ -163,6 +189,15 @@ public class StageButton : MonoBehaviour
     }
 
     /// <summary>
+    /// Refresh unlock status from StageUnlockManager
+    /// </summary>
+    public void RefreshUnlockStatus()
+    {
+        CheckUnlockStatus();
+        UpdateButtonVisuals();
+    }
+
+    /// <summary>
     /// Show a message when player tries to click locked stage
     /// </summary>
     void ShowLockedMessage()
@@ -170,7 +205,7 @@ public class StageButton : MonoBehaviour
         Debug.Log($"<color=orange>Stage {stageConfig.stageNumber} is locked! Complete previous stages to unlock.</color>");
 
         // TODO: You can add a UI popup here later
-        // For now, just log it
+        // Example: lockedMessagePanel.SetActive(true);
     }
 
     /// <summary>
@@ -178,11 +213,21 @@ public class StageButton : MonoBehaviour
     /// </summary>
     public int GetStageNumber()
     {
-        return stageConfig.stageNumber;
+        return stageConfig != null ? stageConfig.stageNumber : -1;
     }
 
     public int GetNumberOfLevels()
     {
-        return stageConfig.numberOfLevels;
+        return stageConfig != null ? stageConfig.numberOfLevels : 0;
+    }
+
+    /// <summary>
+    /// Force refresh the button visuals (useful for editor or runtime changes)
+    /// </summary>
+    [ContextMenu("Update Visuals")]
+    public void ForceUpdateVisuals()
+    {
+        CheckUnlockStatus();
+        UpdateButtonVisuals();
     }
 }

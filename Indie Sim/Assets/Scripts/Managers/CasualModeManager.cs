@@ -32,7 +32,6 @@ public class CasualGameModeManager : MonoBehaviour
     [Tooltip("Base coins awarded per level completion")]
     public int baseCoinReward = 50;
 
-
     [Header("Events")]
     public UnityEvent<int> OnLevelCompleted;
     public UnityEvent<int> OnStageCompleted;
@@ -63,21 +62,29 @@ public class CasualGameModeManager : MonoBehaviour
             // Use only the selected stage
             stageConfigs = new StageConfigSO[] { PersistentDataManager.Instance.selectedStageConfig };
             currentStageIndex = 0;
-            currentLevelIndex = 0;
-            totalLevelsCompleted = 0;
 
-            Debug.Log($"<color=cyan>Loaded Stage {stageConfigs[0].stageNumber} from menu selection</color>");
+            // Load saved level index - DEFAULT TO 0 if not set
+            currentLevelIndex = PersistentDataManager.Instance.currentSession.currentLevelIndex;
+            if (currentLevelIndex < 0) // Safety check - never allow negative index
+            {
+                currentLevelIndex = 0;
+                Debug.Log("<color=yellow>Starting fresh - currentLevelIndex set to 0</color>");
+            }
+
+            totalLevelsCompleted = PersistentDataManager.Instance.currentSession.totalLevelsCompleted;
+
+            Debug.Log($"<color=cyan>Loaded Stage {stageConfigs[0].stageNumber}, Level {currentLevelIndex} from session</color>");
         }
         else
         {
-            // Fallback: if no stage selected but stageConfigs is assigned, use the first one
+            // Fallback
             if (stageConfigs != null && stageConfigs.Length > 0)
             {
                 Debug.LogWarning("No stage selected from menu - using first stage in array for testing");
             }
             else
             {
-                Debug.LogError("No stage configurations available! Assign stages in Inspector or load from menu.");
+                Debug.LogError("No stage configurations available!");
                 return;
             }
         }
@@ -96,10 +103,17 @@ public class CasualGameModeManager : MonoBehaviour
             baseMapParameters = new MapParameters();
         }
 
+        // Validate stage config was loaded correctly
+        if (stageConfigs == null || stageConfigs.Length == 0)
+        {
+            Debug.LogError("No stage configs loaded - cannot continue!");
+            return;
+        }
+
         Debug.Log($"Starting Casual Game Mode - Stage {stageConfigs[0].stageNumber}");
         PrintGameModeInfo();
 
-        // Generate the first dungeon
+        // Generate the current dungeon
         GenerateCurrentDungeon();
     }
 
@@ -174,17 +188,18 @@ public class CasualGameModeManager : MonoBehaviour
     /// <summary>
     /// Call this when a level is completed
     /// </summary>
-    /// <summary>
-    /// Call this when a level is completed
-    /// </summary>
     public void CompleteCurrentLevel()
     {
-        // FIRST LINE - Check for loop
+        // Check for infinite loop
         if (totalLevelsCompleted > 100)
         {
             Debug.LogError("LOOP DETECTED! Aborting!");
-            return; // Stop the loop
+            return;
         }
+
+        Debug.Log($"<color=cyan>BEFORE INCREMENT: currentLevelIndex = {currentLevelIndex}</color>");
+        Debug.Log($"<color=cyan>numberOfLevels = {stageConfigs[currentStageIndex].numberOfLevels}</color>");
+
         Debug.Log($"<color=lime>✓ Level {CurrentLevelNumber} of Stage {CurrentStageNumber} COMPLETED!</color>");
 
         // Award coins
@@ -193,27 +208,34 @@ public class CasualGameModeManager : MonoBehaviour
             PersistentDataManager.Instance.AddCoins(baseCoinReward);
         }
 
+        // Increment counters
         currentLevelIndex++;
         totalLevelsCompleted++;
+
+        Debug.Log($"<color=cyan>AFTER INCREMENT: currentLevelIndex = {currentLevelIndex}</color>");
 
         // Save progress
         if (PersistentDataManager.Instance != null)
         {
-            PersistentDataManager.Instance.SaveProgress(currentStageIndex, currentLevelIndex, totalLevelsCompleted);
+            PersistentDataManager.Instance.currentSession.currentLevelIndex = currentLevelIndex;
+            PersistentDataManager.Instance.currentSession.totalLevelsCompleted = totalLevelsCompleted;
         }
 
         OnLevelCompleted?.Invoke(totalLevelsCompleted);
 
         Debug.Log($"<color=orange>Progress: {GetProgressString()} ({GetProgressPercentage():F1}%)</color>");
 
+        Debug.Log($"<color=yellow>Checking: {currentLevelIndex} >= {stageConfigs[currentStageIndex].numberOfLevels} ?</color>");
+
         // Check if we've completed all levels in this stage
         if (currentLevelIndex >= stageConfigs[currentStageIndex].numberOfLevels)
         {
+            Debug.Log("<color=green>YES - All levels in this stage completed!</color>");
             CompleteCurrentStage();
         }
         else
         {
-            // Load store scene between levels
+            Debug.Log($"<color=red>NO - Moving to next level ({currentLevelIndex + 1})...</color>");
             LoadStoreScene();
         }
     }
@@ -227,8 +249,6 @@ public class CasualGameModeManager : MonoBehaviour
         SceneManager.LoadScene(storeSceneName);
     }
 
-
-
     /// <summary>
     /// Called when a stage is completed
     /// </summary>
@@ -238,7 +258,13 @@ public class CasualGameModeManager : MonoBehaviour
 
         OnStageCompleted?.Invoke(CurrentStageNumber);
 
-        // Save that this stage was completed (unlocks next stage)
+        // Notify StageUnlockManager to unlock next stage
+        if (StageUnlockManager.Instance != null)
+        {
+            StageUnlockManager.Instance.CompleteStage(currentStageIndex);
+        }
+
+        // Save that this stage was completed
         int completedStageNumber = stageConfigs[0].stageNumber;
         PlayerPrefs.SetInt("HighestCompletedStage", completedStageNumber);
         PlayerPrefs.Save();
@@ -248,7 +274,7 @@ public class CasualGameModeManager : MonoBehaviour
         // Check if there's a next stage available
         if (HasNextStage())
         {
-            // Go to store before next stage
+            // Go to store before returning to menu
             LoadStoreSceneForStageTransition();
         }
         else
@@ -286,10 +312,14 @@ public class CasualGameModeManager : MonoBehaviour
     /// </summary>
     private int GetTotalStagesInGame()
     {
-        // This should match the number of stage configs you have
-        // For now, we'll use PlayerPrefs or hardcode it
-        // Better approach: Store this in PersistentDataManager
-        return 3; // Change this to match your total stage count
+        // Get from StageUnlockManager if available
+        if (StageUnlockManager.Instance != null && StageUnlockManager.Instance.allStages != null)
+        {
+            return StageUnlockManager.Instance.allStages.Length;
+        }
+
+        // Fallback
+        return 3;
     }
 
     /// <summary>
@@ -316,15 +346,24 @@ public class CasualGameModeManager : MonoBehaviour
         SceneManager.LoadScene(menuSceneName);
     }
 
-
-
     /// <summary>
     /// Called when returning from store - continue to next level
     /// </summary>
     public void ContinueAfterStore()
     {
-        Debug.Log("Continuing after store...");
-        GenerateCurrentDungeon();
+        Debug.Log($"<color=cyan>Continue after store - Current Level Index: {currentLevelIndex}</color>");
+
+        // Check if we still have levels to play
+        if (currentLevelIndex < stageConfigs[currentStageIndex].numberOfLevels)
+        {
+            Debug.Log($"<color=green>Loading Level {currentLevelIndex + 1}...</color>");
+            GenerateCurrentDungeon();
+        }
+        else
+        {
+            Debug.Log("<color=yellow>No more levels - returning to menu</color>");
+            LoadCasualModeMenu();
+        }
     }
 
     /// <summary>
@@ -362,6 +401,12 @@ public class CasualGameModeManager : MonoBehaviour
         currentStageIndex = 0;
         currentLevelIndex = 0;
         totalLevelsCompleted = 0;
+
+        if (PersistentDataManager.Instance != null)
+        {
+            PersistentDataManager.Instance.currentSession.currentLevelIndex = 1;
+            PersistentDataManager.Instance.currentSession.totalLevelsCompleted = 0;
+        }
 
         Debug.Log("<color=red>Progression RESET - Starting from Stage 1, Level 1</color>");
         GenerateCurrentDungeon();
@@ -406,7 +451,6 @@ public class CasualGameModeManager : MonoBehaviour
     }
 
     [ContextMenu("Print Current Status")]
-    [ContextMenu("Print Current Status")]
     public void PrintCurrentStatus()
     {
         Debug.Log("========== CURRENT STATUS ==========");
@@ -420,12 +464,11 @@ public class CasualGameModeManager : MonoBehaviour
         {
             var session = PersistentDataManager.Instance.currentSession;
             Debug.Log($"Coins: {session.coins}");
-            Debug.Log($"Health: {session.currentHealth}/{session.maxHealth}");
+            Debug.Log($"Session Level Number: {session.currentLevelIndex}");
         }
 
         Debug.Log("====================================");
     }
-
 
     [ContextMenu("Force Complete Stage")]
     public void ForceCompleteStage()
