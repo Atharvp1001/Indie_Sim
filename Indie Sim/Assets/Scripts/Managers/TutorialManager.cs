@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro; // Required for TextMeshPro
+using TMPro;
 
 public class TutorialManager : MonoBehaviour
 {
@@ -24,6 +24,7 @@ public class TutorialManager : MonoBehaviour
     public float tutorialDuration = 5f;
 
     private bool tutorialSkipped = false;
+    private Coroutine countdownCoroutine; // Track the coroutine
 
     void Start()
     {
@@ -31,8 +32,17 @@ public class TutorialManager : MonoBehaviour
         StartTutorial();
     }
 
-    void StartTutorial()
+    public void StartTutorial()
     {
+        // Reset the skipped flag
+        tutorialSkipped = false;
+
+        // Stop any existing countdown coroutine
+        if (countdownCoroutine != null)
+        {
+            StopCoroutine(countdownCoroutine);
+        }
+
         // Pause the game
         Time.timeScale = 0f;
 
@@ -48,11 +58,12 @@ public class TutorialManager : MonoBehaviour
         // Set up the skip button
         if (skipButton != null)
         {
+            skipButton.onClick.RemoveAllListeners();
             skipButton.onClick.AddListener(SkipTutorial);
         }
 
         // Start the countdown timer
-        StartCoroutine(TutorialCountdown());
+        countdownCoroutine = StartCoroutine(TutorialCountdown());
     }
 
     IEnumerator TutorialCountdown()
@@ -121,6 +132,9 @@ public class TutorialManager : MonoBehaviour
         {
             skipButton.onClick.RemoveListener(SkipTutorial);
         }
+
+        // Clear coroutine reference
+        countdownCoroutine = null;
     }
 
     void DisablePlayerScripts()

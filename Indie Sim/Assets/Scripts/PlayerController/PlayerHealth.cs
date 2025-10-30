@@ -24,6 +24,7 @@ public class PlayerHealth : MonoBehaviour
     public Sprite deathSprite; // Sprite to show when player dies
     public float deathDelay = 3f; // How long to wait before showing death UI
     public GameObject deathUIPanel; // UI panel with retry/main menu buttons
+    public Sprite aliveSprite; // Sprite to show when player is alive
 
     [Header("References")]
     private SpriteRenderer spriteRenderer;
@@ -36,6 +37,7 @@ public class PlayerHealth : MonoBehaviour
     private SimplePlayerRotation playerRotation; // Reference to player rotation script
     private PlayerAutoAimShooter playerAutoAimShooter; // Reference to auto-aim shooter script
     private PlayerConeShooter playerConeShooter; // Reference to cone shooter script
+    private CasualGameModeManager casualGameModeManager;
 
     void Start()
     {
@@ -67,6 +69,12 @@ public class PlayerHealth : MonoBehaviour
         }
 
         Debug.Log($"Player initialized with {maxHealth} health");
+
+        casualGameModeManager = FindObjectOfType<CasualGameModeManager>();
+        if (casualGameModeManager == null)
+        {
+            Debug.LogWarning("CasualGameModeManager not found in scene");
+        }
     }
 
 
@@ -242,14 +250,104 @@ public class PlayerHealth : MonoBehaviour
     }
 
     /// <summary>
-    /// Retry button - reload current scene
+    /// Retry button - reload current level with specific requirements
     /// </summary>
     public void Retry()
     {
-        Time.timeScale = 1f; // Unpause
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        Debug.Log("Restarting level");
+        // 1. Close the death UI panel
+        if (deathUIPanel != null)
+        {
+            deathUIPanel.SetActive(false);
+        }
+
+        // 2. Reposition player to (0, 0, 0)
+        transform.position = Vector3.zero;
+        Debug.Log("Player repositioned to (0, 0, 0)");
+
+        // 3. Reset player state (health, visuals, components)
+        ResetPlayerStateForRetry();
+
+        // 4. Unpause the game temporarily (tutorial will pause it again)
+        Time.timeScale = 1f;
+
+        // 5. Regenerate the current dungeon level
+        if (casualGameModeManager != null)
+        {
+            Debug.Log("Regenerating current dungeon level");
+            casualGameModeManager.GenerateCurrentDungeon();
+        }
+
+        // 6. Restart the tutorial
+        TutorialManager tutorialManager = FindObjectOfType<TutorialManager>();
+        if (tutorialManager != null)
+        {
+            Debug.Log("Restarting tutorial");
+            tutorialManager.StartTutorial();
+        }
+        else
+        {
+            Debug.LogWarning("TutorialManager not found in scene!");
+        }
+
+        // 7. Make sure auto aim shooter stays DISABLED (tutorial will handle enabling it if needed)
+        if (playerAutoAimShooter != null)
+        {
+            playerAutoAimShooter.enabled = false;
+            Debug.Log("Auto-aim shooter kept disabled for tutorial");
+        }
     }
+
+    /// <summary>
+    /// Reset player state for retry - does NOT enable auto-aim shooter
+    /// </summary>
+    private void ResetPlayerStateForRetry()
+    {
+        // Reset health
+        currentHealth = maxHealth;
+        isDead = false;
+
+        // Reset visuals
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+            // If you have an alive sprite, restore it here
+            spriteRenderer.sprite = aliveSprite;
+        }
+
+        // Enable collider
+        if (playerCollider != null)
+        {
+            playerCollider.enabled = true;
+        }
+
+        // Enable player controller (movement)
+        if (playerController != null)
+        {
+            playerController.enabled = true;
+        }
+
+        // Enable rotation
+        if (playerRotation != null)
+        {
+            playerRotation.enabled = true;
+        }
+
+        // Enable cone shooter
+        if (playerConeShooter != null)
+        {
+            playerConeShooter.enabled = true;
+        }
+
+        // Reset rigidbody to dynamic
+        if (rb != null)
+        {
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.linearVelocity = Vector2.zero;
+        }
+
+        Debug.Log("Player state reset for retry (auto-aim NOT enabled)");
+    }
+
 
     /// <summary>
     /// Main menu button - load main menu scene

@@ -153,7 +153,6 @@ public class MapData
 public class DungeonMapGenerator : MonoBehaviour
 {
     [SerializeField] private MapParameters parameters;
-    [SerializeField] private bool generateOnStart = true;
     [SerializeField] public bool showGizmos = true;
     [SerializeField] public bool showRoomIds = true;
 
@@ -179,6 +178,11 @@ public class DungeonMapGenerator : MonoBehaviour
     [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
 
 
+    // Add this field at the top of your dungeon generator class
+    [Header("Game Mode Integration")]
+    [Tooltip("If false, will wait for external call instead of generating on Start")]
+    public bool generateOnStart = false;
+
     // Room ID counters for each category
     private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
     private int leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
@@ -187,6 +191,7 @@ public class DungeonMapGenerator : MonoBehaviour
 
     void Start()
     {
+        // Only generate if not being controlled by CasualGameModeManager
         if (generateOnStart)
         {
             GenerateNewMap();
@@ -195,6 +200,13 @@ public class DungeonMapGenerator : MonoBehaviour
 
     [ContextMenu("Generate New Map")]
     public void GenerateNewMap()
+    {
+        // Use the existing parameters if called manually
+        GenerateNewMap(parameters);
+    }
+
+    // NEW METHOD: This will be called by CasualGameModeManager
+    public void GenerateNewMap(MapParameters generationParams)
     {
         rng = new System.Random();
 
@@ -206,13 +218,13 @@ public class DungeonMapGenerator : MonoBehaviour
 
         ResetKeySpawnStatus();
 
-        currentMapData = GenerateDungeon(parameters);
+        // Use the provided parameters
+        currentMapData = GenerateDungeon(generationParams);
         Debug.Log($"Generated dungeon with {currentMapData.rooms.Count} rooms");
         Debug.Log($"Start Room ID: {currentMapData.startRoomId}, End Room ID: {currentMapData.endRoomId}");
         Debug.Log($"Last Main Room ID: {currentMapData.lastMainRoomId} (Teleporter spawn location)");
         Debug.Log($"Floor tiles: {currentMapData.floorTiles.Count}, Wall tiles: {currentMapData.wallTiles.Count}");
 
-        // Print all room information
         PrintRoomDebugInfo();
         SpawnAllEnemySpawners();
         PaintTiles(currentMapData);

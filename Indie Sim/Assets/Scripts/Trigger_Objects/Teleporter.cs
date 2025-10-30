@@ -19,11 +19,10 @@ public class Teleporter : MonoBehaviour
 
     [Header("Cleanup Settings")]
     [SerializeField] private string[] enemyTags = { "Enemy", "EnemySpawner" };
-   
-
 
     // Core dependencies
     private DungeonMapGenerator mapGenerator;
+    private CasualGameModeManager gameModeManager; // NEW
     private GameObject player;
     private SpriteRenderer spriteRenderer;
     private Animator animator;
@@ -62,6 +61,13 @@ public class Teleporter : MonoBehaviour
         if (mapGenerator == null)
         {
             Debug.LogError($"Teleporter '{gameObject.name}': DungeonMapGenerator not found!");
+        }
+
+        // NEW: Find game mode manager
+        gameModeManager = FindFirstObjectByType<CasualGameModeManager>();
+        if (gameModeManager == null)
+        {
+            Debug.LogWarning($"Teleporter '{gameObject.name}': CasualGameModeManager not found - using standalone mode");
         }
 
         // Setup collider for trigger detection
@@ -113,9 +119,9 @@ public class Teleporter : MonoBehaviour
     #region Teleportation Logic
     public void ActivateTeleporter()
     {
-        if (isTeleporting || mapGenerator == null)
+        if (isTeleporting)
         {
-            Debug.LogWarning("Cannot activate teleporter: already teleporting or map generator missing");
+            Debug.LogWarning("Cannot activate teleporter: already teleporting");
             return;
         }
 
@@ -135,8 +141,24 @@ public class Teleporter : MonoBehaviour
         // Wait for teleport delay
         yield return new WaitForSeconds(teleportDelay);
 
-        // Execute level transition
-        TransitionToNewLevel();
+        // NEW: Check if we're using CasualGameModeManager
+        if (gameModeManager != null)
+        {
+            // Using game mode system - let it handle level completion
+            Debug.Log("<color=lime>Level completed! Triggering game mode progression...</color>");
+
+            // Clear enemies before transition
+            ClearEnemiesAndSpawners();
+
+            // Tell game mode manager the level is complete
+            gameModeManager.CompleteCurrentLevel();
+        }
+        else
+        {
+            // Standalone mode - old behavior for testing
+            Debug.LogWarning("No CasualGameModeManager - using standalone map regeneration");
+            TransitionToNewLevel();
+        }
 
         // Complete teleportation
         OnTeleportCompleted?.Invoke();
@@ -205,7 +227,7 @@ public class Teleporter : MonoBehaviour
     }
     #endregion
 
-    #region Level Management
+    #region Level Management (Standalone Mode)
     private void TransitionToNewLevel()
     {
         if (mapGenerator == null) return;
@@ -216,7 +238,7 @@ public class Teleporter : MonoBehaviour
         // Clear existing level objects
         ClearCurrentLevelObjects();
 
-        // NEW: Clear all enemies and spawners
+        // Clear all enemies and spawners
         ClearEnemiesAndSpawners();
 
         // Generate new map
@@ -230,7 +252,6 @@ public class Teleporter : MonoBehaviour
 
         OnNewLevelGenerated?.Invoke();
     }
-
 
     private void ClearCurrentLevelObjects()
     {
@@ -249,8 +270,6 @@ public class Teleporter : MonoBehaviour
     {
         // Clear all enemies
         ClearGameObjectsByTags(enemyTags);
-
-        
 
         Debug.Log("Cleared all enemies, spawners, and projectiles from current level");
     }
@@ -276,7 +295,6 @@ public class Teleporter : MonoBehaviour
 
         Debug.Log($"Destroyed {objectsToDestroy.Length} objects with tag: {tag}");
     }
-
 
     private void RepositionPlayer()
     {
@@ -339,13 +357,13 @@ public class Teleporter : MonoBehaviour
             player = other.gameObject;
             playerInRange = true;
 
-            // NEW: Check if player has key before teleporting
+            // Check if player has key before teleporting
             PlayerKeyManagement keyManager = other.GetComponent<PlayerKeyManagement>();
             if (keyManager != null && keyManager.HasKey)
             {
                 // Player has key - teleport
                 ActivateTeleporter();
-                Debug.Log("Player has key - Teleporting to next level!");
+                Debug.Log("Player has key - Teleporting!");
             }
             else
             {
@@ -354,7 +372,6 @@ public class Teleporter : MonoBehaviour
             }
         }
     }
-
 
     private void OnTriggerExit2D(Collider2D other)
     {
@@ -370,6 +387,11 @@ public class Teleporter : MonoBehaviour
     public void SetMapGenerator(DungeonMapGenerator generator)
     {
         mapGenerator = generator;
+    }
+
+    public void SetGameModeManager(CasualGameModeManager manager)
+    {
+        gameModeManager = manager;
     }
 
     public void SetCurrentLevel(int level)

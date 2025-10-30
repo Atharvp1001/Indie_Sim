@@ -18,8 +18,14 @@ EditorBuildSettings:
     path: Assets/Scenes/Test Scenes/ShootTest.unity
     guid: f5f51c171ceebd3459b07b2fd39ffd97
   - enabled: 1
-    path: Assets/Scenes/MainMenu.unity
+    path: Assets/Scenes/Main menu.unity
+    guid: 432064d2246b9134da5944b6680c3926
+  - enabled: 1
+    path: Assets/Scenes/CasualModeMenu.unity
     guid: b1fffd4dd89a25d47b6d114e653eb5af
+  - enabled: 1
+    path: Assets/Scenes/Store Scene.unity
+    guid: 7623ace175c981a42ac42d28e63341d1
   - enabled: 1
     path: Assets/Scenes/CasualMode.unity
     guid: 46981ef6568efe1459ccd516e1a0316f
