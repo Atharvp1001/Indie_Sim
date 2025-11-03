@@ -951,11 +951,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 441987172}
   m_CullTransparentMesh: 1
---- !u!198 &499284831 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 4820169304688611113, guid: edbd5360888064b468af922cde708f5e, type: 3}
-  m_PrefabInstance: {fileID: 1318780017}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &659263764
 GameObject:
   m_ObjectHideFlags: 0
@@ -1138,11 +1133,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 856237888}
   m_CullTransparentMesh: 1
---- !u!198 &933209142 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 3818639557781657095, guid: edbd5360888064b468af922cde708f5e, type: 3}
-  m_PrefabInstance: {fileID: 1318780017}
-  m_PrefabAsset: {fileID: 0}
 --- !u!224 &950451313 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 4669041933925150134, guid: c7c7561f00316e848b74de9261037559, type: 3}
@@ -1302,37 +1292,17 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1296698271535386969}
     - target: {fileID: 5970754329784749663, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: aliveSprite
-      value: 
-      objectReference: {fileID: 21300000, guid: 997196f5322f2e24abf27227d75fb65d, type: 3}
-    - target: {fileID: 5970754329784749663, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: deathUIPanel
       value: 
       objectReference: {fileID: 1857510262}
-    - target: {fileID: 6531144439329103242, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: hasKey
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: weaponButton
       value: 
       objectReference: {fileID: 2017799174}
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: smokeParticles
-      value: 
-      objectReference: {fileID: 499284831}
-    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: shootingJoystick
       value: 
       objectReference: {fileID: 236109540}
-    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: muzzleFlashParticles
-      value: 
-      objectReference: {fileID: 933209142}
-    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
-      propertyPath: shellEjectionParticles
-      value: 
-      objectReference: {fileID: 1741542315}
     - target: {fileID: 7934195939729618366, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: movementJoystick
       value: 
@@ -1523,11 +1493,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 757cfc8f262adcb41b582a3314be2607, type: 3}
---- !u!198 &1741542315 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 6589811386408084634, guid: edbd5360888064b468af922cde708f5e, type: 3}
-  m_PrefabInstance: {fileID: 1318780017}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1857510262 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 3679930128972637567, guid: c7c7561f00316e848b74de9261037559, type: 3}

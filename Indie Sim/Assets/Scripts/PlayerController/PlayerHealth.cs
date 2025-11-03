@@ -6,6 +6,7 @@ public class PlayerHealth : MonoBehaviour
 {
     [Header("Health Settings")]
     public int maxHealth = 100;
+    public int baseMaxHealth = 100; // Base health without upgrades
     private int currentHealth;
 
     [Header("Damage Cooldown Settings")]
@@ -41,6 +42,8 @@ public class PlayerHealth : MonoBehaviour
 
     void Start()
     {
+        // Calculate initial max health with any upgrades
+        UpdateMaxHealth();
         currentHealth = maxHealth;
 
         // Get SpriteRenderer from child object (the player sprite)
@@ -77,6 +80,39 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        // Keep max health updated with upgrades
+        UpdateMaxHealth();
+        Debug.Log("Current Health = " + currentHealth);
+    }
+
+    void UpdateMaxHealth()
+    {
+        // Base health + bonus from UpgradeManager
+        if (UpgradeManager.Instance != null)
+        {
+            maxHealth = baseMaxHealth + UpgradeManager.Instance.healthBonus;
+        }
+        else
+        {
+            maxHealth = baseMaxHealth;
+        }
+    }
+
+    // Called by UpgradeManager to add health immediately
+    public void AddHealth(int amount)
+    {
+        currentHealth += amount;
+
+        // Make sure we don't exceed max health
+        if (currentHealth > maxHealth)
+        {
+            currentHealth = maxHealth;
+        }
+
+        Debug.Log($"Health added: +{amount}. Current Health: {currentHealth}/{maxHealth}");
+    }
 
     /// <summary>
     /// Player takes damage from an enemy
@@ -94,6 +130,8 @@ public class PlayerHealth : MonoBehaviour
 
         // Reduce health
         currentHealth -= damage;
+
+        // Clamp health between 0 and maxHealth (which includes upgrades)
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
         Debug.Log($"Player took {damage} damage. Health: {currentHealth}/{maxHealth}");
@@ -118,6 +156,7 @@ public class PlayerHealth : MonoBehaviour
             }
         }
     }
+
 
     /// <summary>
     /// Apply knockback force pushing player away from enemy
@@ -181,9 +220,6 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log("Flashing effect ended");
     }
 
-    /// <summary>
-    /// Handle player death
-    /// </summary>
     private void Die()
     {
         if (isDead) return;
@@ -194,13 +230,27 @@ public class PlayerHealth : MonoBehaviour
         // Stop any ongoing flash effect
         StopAllCoroutines();
 
-        //stop player movement
-        playerController.enabled = false;
-        playerRotation.enabled = false;
+        // Stop player movement
+        if (playerController != null)
+        {
+            playerController.enabled = false;
+        }
 
-        //stop shooting 
-        playerAutoAimShooter.enabled = false;
-        playerConeShooter.enabled = false;
+        if (playerRotation != null)
+        {
+            playerRotation.enabled = false;
+        }
+
+        // Stop shooting 
+        if (playerAutoAimShooter != null)
+        {
+            playerAutoAimShooter.enabled = false;
+        }
+
+        if (playerConeShooter != null)
+        {
+            playerConeShooter.enabled = false;
+        }
 
         // Restore normal color
         if (spriteRenderer != null)
@@ -218,7 +268,7 @@ public class PlayerHealth : MonoBehaviour
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
-            rb.bodyType = RigidbodyType2D.Kinematic; // Disable physics (using bodyType instead of isKinematic)
+            rb.bodyType = RigidbodyType2D.Kinematic; // Disable physics
         }
 
         // Disable player collider ONLY on death
@@ -226,9 +276,6 @@ public class PlayerHealth : MonoBehaviour
         {
             playerCollider.enabled = false;
         }
-
-        // Disable player controls (you may need to adjust this based on your movement script)
-        // Example: GetComponent<PlayerMovement>().enabled = false;
 
         // Wait then show death UI
         StartCoroutine(ShowDeathUI());
