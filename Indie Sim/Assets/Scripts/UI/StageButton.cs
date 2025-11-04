@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
-
+/*
 [RequireComponent(typeof(Button))]
 public class StageButton : MonoBehaviour
 {
@@ -231,3 +231,4 @@ public class StageButton : MonoBehaviour
         UpdateButtonVisuals();
     }
 }
+*/

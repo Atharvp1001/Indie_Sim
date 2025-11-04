@@ -12,7 +12,8 @@ public class WeaponData : ScriptableObject
     public float coneAngle = 45f;
     public float coneRange = 8f;
     public float fireRate = 10f;
-    public int damagePerShot = 25;
+    public int baseDamagePerShot = 10;
+
 
     [Header("Trapezium Shape Settings")]
     [Range(0.1f, 1f)]
@@ -56,6 +57,18 @@ public class WeaponData : ScriptableObject
     }
 
     #region Helper Methods
+    
+    public int damagePerShot
+    { 
+        get
+        {
+
+            return baseDamagePerShot;
+           
+        }
+       
+    }
+     
 
     public float GetAngleAtDistance(float distance)
     {

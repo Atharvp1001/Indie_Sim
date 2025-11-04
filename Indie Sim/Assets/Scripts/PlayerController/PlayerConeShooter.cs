@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -485,50 +485,7 @@ public class PlayerConeShooter : MonoBehaviour
     public int GetTargetsInCone() { return damageableTargets.Count; }
 
     // Debug visualization
-    private void OnDrawGizmosSelected()
-    {
-        if (!showConeInEditor || firePoint == null || currentWeapon == null) return;
-
-        Vector2 shootDirection = GetShootingDirection();
-        if (shootDirection == Vector2.zero)
-        {
-            shootDirection = Vector2.right;
-        }
-
-        // Draw range circle
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(firePoint.position, currentWeapon.coneRange);
-
-        // Get trapezium points
-        Vector2[] points = currentWeapon.GetTrapeziumPoints(firePoint.position, shootDirection);
-
-        // Draw trapezium outline
-        Gizmos.color = Color.yellow;
-        for (int i = 0; i < 4; i++)
-        {
-            Vector2 current = points[i];
-            Vector2 next = points[(i + 1) % 4];
-            Gizmos.DrawLine(current, next);
-        }
-
-        // Draw expansion lines at different distances to show the curve
-        Gizmos.color = Color.cyan;
-        int steps = 5;
-        for (int i = 1; i < steps; i++)
-        {
-            float t = (float)i / steps;
-            float distance = Mathf.Lerp(currentWeapon.GetBaseDistance(), currentWeapon.coneRange, t);
-            float angle = currentWeapon.GetAngleAtDistance(distance) * Mathf.Deg2Rad;
-
-            Vector2 center = (Vector2)firePoint.position + shootDirection * distance;
-            Vector2 perpendicular = new Vector2(-shootDirection.y, shootDirection.x);
-            float width = distance * Mathf.Tan(angle);
-
-            Vector2 left = center - perpendicular * width;
-            Vector2 right = center + perpendicular * width;
-            Gizmos.DrawLine(left, right);
-        }
-    }
+   
 
 
 }

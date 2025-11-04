@@ -22,7 +22,7 @@ public class Teleporter : MonoBehaviour
 
     // Core dependencies
     private DungeonMapGenerator mapGenerator;
-    private CasualGameModeManager gameModeManager; // NEW
+    private RoguelikeManager roguelikeManager;  // NEW: Reference to RoguelikeManager
     private GameObject player;
     private SpriteRenderer spriteRenderer;
     private Animator animator;
@@ -30,7 +30,6 @@ public class Teleporter : MonoBehaviour
     // State tracking
     private bool playerInRange = false;
     private bool isTeleporting = false;
-    private int currentLevel = 1;
 
     // Events for external systems
     public System.Action OnTeleportStarted;
@@ -63,11 +62,11 @@ public class Teleporter : MonoBehaviour
             Debug.LogError($"Teleporter '{gameObject.name}': DungeonMapGenerator not found!");
         }
 
-        // NEW: Find game mode manager
-        gameModeManager = FindFirstObjectByType<CasualGameModeManager>();
-        if (gameModeManager == null)
+        // NEW: Find RoguelikeManager
+        roguelikeManager = FindFirstObjectByType<RoguelikeManager>();
+        if (roguelikeManager == null)
         {
-            Debug.LogWarning($"Teleporter '{gameObject.name}': CasualGameModeManager not found - using standalone mode");
+            Debug.LogError($"Teleporter '{gameObject.name}': RoguelikeManager not found!");
         }
 
         // Setup collider for trigger detection
@@ -141,23 +140,21 @@ public class Teleporter : MonoBehaviour
         // Wait for teleport delay
         yield return new WaitForSeconds(teleportDelay);
 
-        // NEW: Check if we're using CasualGameModeManager
-        if (gameModeManager != null)
+        // NEW: Call RoguelikeManager to complete the dungeon
+        if (roguelikeManager != null)
         {
-            // Using game mode system - let it handle level completion
-            Debug.Log("<color=lime>Level completed! Triggering game mode progression...</color>");
+            Debug.Log("<color=lime>Dungeon completed! Completing roguelike run...</color>");
 
             // Clear enemies before transition
             ClearEnemiesAndSpawners();
 
-            // Tell game mode manager the level is complete
-            gameModeManager.CompleteCurrentLevel();
+            // Tell RoguelikeManager the dungeon is complete
+            // This will handle: difficulty scaling, player reset, dungeon cleanup, and new dungeon generation
+            roguelikeManager.CompleteDungeon();
         }
         else
         {
-            // Standalone mode - old behavior for testing
-            Debug.LogWarning("No CasualGameModeManager - using standalone map regeneration");
-            TransitionToNewLevel();
+            Debug.LogError("RoguelikeManager not found - cannot complete dungeon!");
         }
 
         // Complete teleportation
@@ -227,45 +224,7 @@ public class Teleporter : MonoBehaviour
     }
     #endregion
 
-    #region Level Management (Standalone Mode)
-    private void TransitionToNewLevel()
-    {
-        if (mapGenerator == null) return;
-
-        // Increment level counter
-        currentLevel++;
-
-        // Clear existing level objects
-        ClearCurrentLevelObjects();
-
-        // Clear all enemies and spawners
-        ClearEnemiesAndSpawners();
-
-        // Generate new map
-        mapGenerator.GenerateNewMap();
-
-        // Move player to new starting position
-        RepositionPlayer();
-
-        // Remove this teleporter (new level will spawn its own)
-        StartCoroutine(DestroyTeleporter());
-
-        OnNewLevelGenerated?.Invoke();
-    }
-
-    private void ClearCurrentLevelObjects()
-    {
-        // Clear other teleporters (keep this one until after transition)
-        Teleporter[] otherTeleporters = FindObjectsByType<Teleporter>(FindObjectsSortMode.None);
-        foreach (var teleporter in otherTeleporters)
-        {
-            if (teleporter != this)
-            {
-                Destroy(teleporter.gameObject);
-            }
-        }
-    }
-
+    #region Enemy Cleanup
     private void ClearEnemiesAndSpawners()
     {
         // Clear all enemies
@@ -294,58 +253,6 @@ public class Teleporter : MonoBehaviour
         }
 
         Debug.Log($"Destroyed {objectsToDestroy.Length} objects with tag: {tag}");
-    }
-
-    private void RepositionPlayer()
-    {
-        if (player == null || mapGenerator == null) return;
-
-        var mapData = mapGenerator.GetCurrentMapData();
-        if (mapData?.GetStartRoom() != null)
-        {
-            var startRoom = mapData.GetStartRoom();
-            Vector3 newPosition = new Vector3(
-                startRoom.worldPosition.x,
-                startRoom.worldPosition.y,
-                player.transform.position.z
-            );
-
-            player.transform.position = newPosition;
-
-            // Reset player velocity
-            Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
-            if (playerRb != null)
-            {
-                playerRb.linearVelocity = Vector2.zero;
-            }
-
-            Debug.Log($"Player repositioned to: {newPosition} - Level {currentLevel}");
-        }
-    }
-
-    private IEnumerator DestroyTeleporter()
-    {
-        // Fade out effect
-        float fadeTime = 0.5f;
-        float elapsed = 0f;
-        Color startColor = spriteRenderer != null ? spriteRenderer.color : teleporterColor;
-
-        while (elapsed < fadeTime)
-        {
-            elapsed += Time.deltaTime;
-            float alpha = 1f - (elapsed / fadeTime);
-
-            if (spriteRenderer != null)
-            {
-                Color fadeColor = startColor;
-                fadeColor.a = alpha;
-                spriteRenderer.color = fadeColor;
-            }
-
-            yield return null;
-        }
-
-        Destroy(gameObject);
     }
     #endregion
 
@@ -389,26 +296,19 @@ public class Teleporter : MonoBehaviour
         mapGenerator = generator;
     }
 
-    public void SetGameModeManager(CasualGameModeManager manager)
+    // NEW: Set RoguelikeManager reference
+    public void SetRoguelikeManager(RoguelikeManager manager)
     {
-        gameModeManager = manager;
+        roguelikeManager = manager;
     }
 
-    public void SetCurrentLevel(int level)
-    {
-        currentLevel = level;
-    }
-
-    public int GetCurrentLevel() => currentLevel;
     public bool IsPlayerInRange() => playerInRange;
     public bool IsTeleporting() => isTeleporting;
 
     // Called by map generator when spawning teleporter
-    public void SpawnInRoom(Room room, int level = 1)
+    public void SpawnInRoom(Room room)
     {
         if (room == null) return;
-
-        currentLevel = level;
 
         Vector3 spawnPosition = new Vector3(
             Mathf.Round(room.worldPosition.x),
@@ -418,7 +318,7 @@ public class Teleporter : MonoBehaviour
 
         transform.position = spawnPosition;
 
-        Debug.Log($"Teleporter spawned in room {room.uniqueId} at {spawnPosition} - Level {currentLevel}");
+        Debug.Log($"Teleporter spawned in room {room.uniqueId} at {spawnPosition}");
     }
     #endregion
 

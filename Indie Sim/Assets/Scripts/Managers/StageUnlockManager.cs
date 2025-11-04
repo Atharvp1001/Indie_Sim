@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-
+/*
 public class StageUnlockManager : MonoBehaviour
 {
     public static StageUnlockManager Instance { get; private set; }
@@ -214,3 +214,4 @@ public class StageUnlockManager : MonoBehaviour
         Debug.Log("<color=cyan>====================================</color>");
     }
 }
+*/

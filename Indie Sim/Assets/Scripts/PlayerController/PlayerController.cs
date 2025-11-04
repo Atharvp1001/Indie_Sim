@@ -18,24 +18,12 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Calculate current speed with upgrades
-        UpdateMoveSpeed();
+       
 
-        // Apply movement
-        rb.linearVelocity = new Vector2(joystick.Horizontal * currentMoveSpeed, joystick.Vertical * currentMoveSpeed);
+        
+        rb.linearVelocity = new Vector2(joystick.Horizontal * baseMoveSpeed, joystick.Vertical * baseMoveSpeed);
         //Debug.Log("Current speed = "+ currentMoveSpeed);
     }
 
-    void UpdateMoveSpeed()
-    {
-        // Base speed + bonus from UpgradeManager
-        if (UpgradeManager.Instance != null)
-        {
-            currentMoveSpeed = baseMoveSpeed + UpgradeManager.Instance.speedBonus;
-        }
-        else
-        {
-            currentMoveSpeed = baseMoveSpeed;
-        }
-    }
+   
 }

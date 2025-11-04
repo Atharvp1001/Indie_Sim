@@ -1,5 +1,5 @@
 using UnityEngine;
-
+/*
 [CreateAssetMenu(fileName = "Stage_", menuName = "Game/Stage Configuration", order = 1)]
 public class StageConfigSO : ScriptableObject
 {
@@ -81,3 +81,4 @@ public class StageConfigSO : ScriptableObject
         return mapParams;
     }
 }
+*/

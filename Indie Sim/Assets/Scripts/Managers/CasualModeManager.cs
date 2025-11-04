@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-
+/*
 public class CasualGameModeManager : MonoBehaviour
 {
     [Header("Stage Configurations")]
@@ -89,6 +89,8 @@ public class CasualGameModeManager : MonoBehaviour
             }
         }
 
+        ResetUpgradeFlags();
+        
         // Validate dungeon generator
         if (dungeonGenerator == null)
         {
@@ -185,6 +187,47 @@ public class CasualGameModeManager : MonoBehaviour
         }
     }
 
+    public void DebugSkipLevel() 
+    { 
+    
+    
+    }
+
+    /// <summary>
+    /// Reset upgrade purchase flags for the new level
+    /// </summary>
+    void ResetUpgradeFlags()
+    {
+        Debug.Log("<color=yellow>Resetting upgrade purchase flags for level...</color>");
+
+        // Get current level
+        int currentLevel = totalLevelsCompleted;
+
+        // Reset all upgrade flags
+        string[] upgradeTypes = { "PlayerHealth", "PlayerSpeed", "WeaponDamage" };
+        string[] weapons = { "Pistol", "MachineGun", "Shotgun" };
+
+        foreach (string upgradeType in upgradeTypes)
+        {
+            if (upgradeType == "WeaponDamage")
+            {
+                foreach (string weapon in weapons)
+                {
+                    string key = $"Upgrade_{upgradeType}_{weapon}_Level_{currentLevel}";
+                    PlayerPrefs.DeleteKey(key);
+                }
+            }
+            else
+            {
+                string key = $"Upgrade_{upgradeType}_Level_{currentLevel}";
+                PlayerPrefs.DeleteKey(key);
+            }
+        }
+
+        PlayerPrefs.Save();
+    }
+
+
     /// <summary>
     /// Call this when a level is completed
     /// </summary>
@@ -258,18 +301,27 @@ public class CasualGameModeManager : MonoBehaviour
 
         OnStageCompleted?.Invoke(CurrentStageNumber);
 
+        // Get the ACTUAL stage number from the config (not the array index!)
+        int actualStageNumber = stageConfigs[0].stageNumber;
+        int stageIndexForUnlock = actualStageNumber - 1; // Convert to 0-based index
+
+        Debug.Log($"<color=yellow>Completing stage with index {stageIndexForUnlock} (Stage {actualStageNumber})</color>");
+
         // Notify StageUnlockManager to unlock next stage
         if (StageUnlockManager.Instance != null)
         {
-            StageUnlockManager.Instance.CompleteStage(currentStageIndex);
+            StageUnlockManager.Instance.CompleteStage(stageIndexForUnlock);
+        }
+        else
+        {
+            Debug.LogError("StageUnlockManager.Instance is null!");
         }
 
         // Save that this stage was completed
-        int completedStageNumber = stageConfigs[0].stageNumber;
-        PlayerPrefs.SetInt("HighestCompletedStage", completedStageNumber);
+        PlayerPrefs.SetInt("HighestCompletedStage", actualStageNumber);
         PlayerPrefs.Save();
 
-        Debug.Log($"<color=yellow>Stage {completedStageNumber} marked as complete!</color>");
+        Debug.Log($"<color=yellow>Stage {actualStageNumber} marked as complete!</color>");
 
         // Check if there's a next stage available
         if (HasNextStage())
@@ -289,6 +341,7 @@ public class CasualGameModeManager : MonoBehaviour
             LoadCasualModeMenu();
         }
     }
+
 
     /// <summary>
     /// Check if there's a next stage after the current one
@@ -502,3 +555,4 @@ public class CasualGameModeManager : MonoBehaviour
         GenerateCurrentDungeon();
     }
 }
+*/

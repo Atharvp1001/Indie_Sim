@@ -91,8 +91,8 @@ public class MapParameters
 {
     [Header("Main Artery Control")]
 
-    public int minMainArteryRooms = 3;
-    public int maxMainArteryRooms = 7;
+    public int nodeCount = 5;
+
     public float mainRoomSpacing = 8f;
     [Range(0f, 1f)] public float chanceForLTurn = 0.3f;
     public float mainArteryPositionJitter = 2f;
@@ -201,12 +201,12 @@ public class DungeonMapGenerator : MonoBehaviour
     [ContextMenu("Generate New Map")]
     public void GenerateNewMap()
     {
-        // Use the existing parameters if called manually
-        GenerateNewMap(parameters);
+        // Use the nodeCount from existing parameters
+        GenerateNewMap(parameters.nodeCount);
     }
 
-    // NEW METHOD: This will be called by CasualGameModeManager
-    public void GenerateNewMap(MapParameters generationParams)
+    // Called by RoguelikeManager with single int
+    public void GenerateNewMap(int dungeonSize)
     {
         rng = new System.Random();
 
@@ -218,8 +218,11 @@ public class DungeonMapGenerator : MonoBehaviour
 
         ResetKeySpawnStatus();
 
-        // Use the provided parameters
-        currentMapData = GenerateDungeon(generationParams);
+        // Set the nodeCount in parameters based on the single int value
+        parameters.nodeCount = dungeonSize;
+
+        // Now use the parameters to generate
+        currentMapData = GenerateDungeon(parameters);
         Debug.Log($"Generated dungeon with {currentMapData.rooms.Count} rooms");
         Debug.Log($"Start Room ID: {currentMapData.startRoomId}, End Room ID: {currentMapData.endRoomId}");
         Debug.Log($"Last Main Room ID: {currentMapData.lastMainRoomId} (Teleporter spawn location)");
@@ -586,12 +589,12 @@ public class DungeonMapGenerator : MonoBehaviour
 
         // Spawn enemy spawner in first room
         //SpawnEnemySpawnerInRoom(firstRoom);
-        int numMainArteryRooms = UnityEngine.Random.Range(param.minMainArteryRooms, param.maxMainArteryRooms + 1);
+        int roomCount = parameters.nodeCount;
 
-        for (int i = 1; i < numMainArteryRooms; i++)
+        for (int i = 1; i < roomCount; i++)
         {
             bool isLTurn = RandomValue() < param.chanceForLTurn;
-            if (isLTurn && i < numMainArteryRooms - 1)
+            if (isLTurn && i < roomCount - 1)
             {
                 currentPos += currentDirection * param.mainRoomSpacing;
                 currentPos += RandomJitterVector(param.mainArteryPositionJitter);

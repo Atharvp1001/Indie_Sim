@@ -38,7 +38,7 @@ public class PlayerHealth : MonoBehaviour
     private SimplePlayerRotation playerRotation; // Reference to player rotation script
     private PlayerAutoAimShooter playerAutoAimShooter; // Reference to auto-aim shooter script
     private PlayerConeShooter playerConeShooter; // Reference to cone shooter script
-    private CasualGameModeManager casualGameModeManager;
+    //private CasualGameModeManager casualGameModeManager;
 
     void Start()
     {
@@ -72,23 +72,25 @@ public class PlayerHealth : MonoBehaviour
         }
 
         Debug.Log($"Player initialized with {maxHealth} health");
-
+        /*
         casualGameModeManager = FindObjectOfType<CasualGameModeManager>();
         if (casualGameModeManager == null)
         {
             Debug.LogWarning("CasualGameModeManager not found in scene");
         }
+        */
     }
 
     void Update()
     {
         // Keep max health updated with upgrades
         UpdateMaxHealth();
-        Debug.Log("Current Health = " + currentHealth);
+       // Debug.Log("Current Health = " + currentHealth);
     }
 
     void UpdateMaxHealth()
     {
+        /*
         // Base health + bonus from UpgradeManager
         if (UpgradeManager.Instance != null)
         {
@@ -98,6 +100,7 @@ public class PlayerHealth : MonoBehaviour
         {
             maxHealth = baseMaxHealth;
         }
+        */
     }
 
     // Called by UpgradeManager to add health immediately
@@ -317,12 +320,14 @@ public class PlayerHealth : MonoBehaviour
         // 4. Unpause the game temporarily (tutorial will pause it again)
         Time.timeScale = 1f;
 
+        /*
         // 5. Regenerate the current dungeon level
         if (casualGameModeManager != null)
         {
             Debug.Log("Regenerating current dungeon level");
             casualGameModeManager.GenerateCurrentDungeon();
         }
+        */
 
         // 6. Restart the tutorial
         TutorialManager tutorialManager = FindObjectOfType<TutorialManager>();

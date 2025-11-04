@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+
 [System.Serializable]
 public class GameSessionData
 {
@@ -22,9 +23,17 @@ public class GameSessionData
     public float moveSpeedMultiplier;
     public float maxHealthBonus;
 
+    // UPGRADE TRACKING
+    public int speedUpgradeLevel;
+    public int healthUpgradeLevel;
+    public int pistolDamageBonus;
+    public int MachineGunDamageBonus;
+    public int shotgunDamageBonus;
+
     // Stage Transition Flag
     public bool isStageTransition;
 
+    
     public GameSessionData()
     {
         // Progression defaults
@@ -46,6 +55,13 @@ public class GameSessionData
         moveSpeedMultiplier = 1f;
         maxHealthBonus = 0f;
 
+        // Upgrade tracking defaults
+        speedUpgradeLevel = 0;
+        healthUpgradeLevel = 0;
+        pistolDamageBonus = 0;
+        MachineGunDamageBonus = 0;
+        shotgunDamageBonus = 0;
+
         // Flags
         isStageTransition = false;
     }
@@ -55,7 +71,7 @@ public class GameSessionData
     /// </summary>
     public int GetCurrentLevelNumber()
     {
-        return currentLevelIndex + 1; // Convert to 1-based
+        return currentLevelIndex + 1;
     }
 
     /// <summary>
@@ -63,7 +79,7 @@ public class GameSessionData
     /// </summary>
     public int GetCurrentStageNumber()
     {
-        return currentStageIndex + 1; // Convert to 1-based
+        return currentStageIndex + 1;
     }
 
     /// <summary>
@@ -76,7 +92,6 @@ public class GameSessionData
         isStageTransition = false;
 
         // Keep coins and upgrades
-        // Reset other temporary data
         Debug.Log("<color=green>Session reset for new run</color>");
     }
 }

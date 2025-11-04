@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class CasualModeMenuManager : MonoBehaviour
 {
-    [Header("Stage Buttons")]
-    public StageButton[] stageButtons;
+   /* [Header("Stage Buttons")]
+    //public StageButton[] stageButtons;
 
     void Start()
     {
@@ -36,4 +36,6 @@ public class CasualModeMenuManager : MonoBehaviour
 
         Debug.Log("<color=green>All stage buttons refreshed!</color>");
     }
+   */
 }
+
