@@ -1,9 +1,10 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
-using System.Linq;
-using UnityEngine.Tilemaps;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+using static Unity.Cinemachine.CinemachineSplineRoll;
 
 public enum RoomType
 {
@@ -176,6 +177,17 @@ public class DungeonMapGenerator : MonoBehaviour
     [Header("Key Spawning")]
     [SerializeField] private GameObject keyPrefab;
     [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
+    [SerializeField] private bool shouldKeyBeSpawned = true;
+
+    [Header("Relic Spawning")]
+    [Tooltip("Array of relic prefabs (Relic_1, Relic_2, etc.)")]
+    public GameObject[] relicPrefabs; // Assign your relic prefab variants here
+
+    [Tooltip("How many rooms before moving to the next relic type")]
+    public int roomsPerRelicType = 3; // First 3 rooms = relic_1, next 3 = relic_2, etc.
+
+    [Tooltip("Height offset for relic spawn position (above floor)")]
+    public float relicSpawnHeight = 1f;
 
 
     // Add this field at the top of your dungeon generator class
@@ -188,7 +200,7 @@ public class DungeonMapGenerator : MonoBehaviour
     private int leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
     private int distributiveRoomIdCounter = RoomIDCategories.DISTRIBUTIVE_ROOM_START;
     private int cornerRoomIdCounter = RoomIDCategories.CORNER_ROOM_START;
-
+    private int keyRoomId = -1;
     void Start()
     {
         // Only generate if not being controlled by CasualGameModeManager
@@ -255,7 +267,7 @@ public class DungeonMapGenerator : MonoBehaviour
         }
         Debug.Log("=== END ROOM DEBUG INFO ===");
     }
-
+    
     private int GetNextRoomId(RoomType roomType)
     {
         return roomType switch
@@ -372,11 +384,13 @@ public class DungeonMapGenerator : MonoBehaviour
         rooms[newRoom.uniqueId] = newRoom;
 
 
-
-        // NEW: Spawn key in LeafNodeRoom (only once)
-        if (type == RoomType.LEAF_NODE_ROOM)
+        if (shouldKeyBeSpawned)
         {
-            SpawnKeyInRoom(newRoom);
+            // NEW: Spawn key in LeafNodeRoom (only once)
+            if (type == RoomType.LEAF_NODE_ROOM)
+            {
+                SpawnKeyInRoom(newRoom);
+            }
         }
 
         return newRoom;
@@ -451,8 +465,12 @@ public class DungeonMapGenerator : MonoBehaviour
         // Mark that key has been spawned
         hasKeyBeenSpawned = true;
 
+        // ADDED: Store which room the key spawned in
+        keyRoomId = room.uniqueId;
+
         Debug.Log($"Key spawned in room {room.uniqueId} at position {keySpawnPosition}");
     }
+
 
 
     public void ResetKeySpawnStatus()
@@ -868,7 +886,97 @@ public class DungeonMapGenerator : MonoBehaviour
 
         // Spawn teleporter in the last main room
         SpawnTeleporter();
+
+        SpawnRelics();
     }
+
+    private void SpawnRelics()
+    {
+        // Make sure we have relics to spawn
+        if (relicPrefabs == null || relicPrefabs.Length == 0)
+        {
+            Debug.LogWarning("No relic prefabs assigned!");
+            return;
+        }
+
+        // Make sure we have map data
+        if (currentMapData == null || currentMapData.rooms == null)
+        {
+            Debug.LogWarning("No room data available for relic spawning!");
+            return;
+        }
+
+        // Counter for which relic type to spawn (increments for each valid room)
+        int relicCounter = 0;
+
+        // Loop through each room in the dictionary
+        foreach (var roomEntry in currentMapData.rooms)
+        {
+            Room room = roomEntry.Value; // Get the Room from the dictionary
+
+            // Only spawn in side rooms - CHANGE THIS to match your actual room type
+            if (room.type == RoomType.LEAF_NODE_ROOM) 
+            {
+                // Try to spawn a relic in this room
+                bool spawned = TrySpawnRelicInRoom(room, relicCounter);
+
+                // Only increment counter if relic actually spawned
+                if (spawned)
+                {
+                    relicCounter++;
+                }
+            }
+        }
+    }
+
+    private bool TrySpawnRelicInRoom(Room room, int relicCounter)
+    {
+        // Make sure room is valid
+        if (room == null)
+        {
+            return false;
+        }
+
+        // Don't spawn relics in the room where the key spawned
+        if (room.uniqueId == keyRoomId)
+        {
+            Debug.Log($"Skipping relic spawn in room {room.uniqueId} (key room)");
+            return false;
+        }
+
+        // 50% chance to spawn a relic
+        if (UnityEngine.Random.value > 0.25f) return false;
+
+        // Determine which relic should spawn based on the counter
+        // First 3 valid rooms = relic 0, next 3 = relic 1, etc.
+        int relicIndex = relicCounter / roomsPerRelicType;
+
+        // Make sure we don't go beyond available relics
+        if (relicIndex >= relicPrefabs.Length)
+        {
+            // If we run out of relic types, loop back to the first one
+            relicIndex = relicIndex % relicPrefabs.Length;
+        }
+
+        // Calculate spawn position within the room bounds (random position)
+        Vector3 relicSpawnPosition = new Vector3(
+            room.worldPosition.x + UnityEngine.Random.Range(-room.size.x * 0.3f, room.size.x * 0.3f),
+            room.worldPosition.y + UnityEngine.Random.Range(-room.size.y * 0.3f, room.size.y * 0.3f),
+            0f // 2D game
+        );
+
+        // Instantiate the relic
+        GameObject spawnedRelic = Instantiate(relicPrefabs[relicIndex], relicSpawnPosition, Quaternion.identity);
+
+        // Optional: Set parent for organization
+        spawnedRelic.transform.SetParent(transform);
+        spawnedRelic.name = $"{relicPrefabs[relicIndex].name}_Room_{room.uniqueId}";
+
+        Debug.Log($"{relicPrefabs[relicIndex].name} spawned in room {room.uniqueId} at position {relicSpawnPosition}");
+
+        return true;
+    }
+
 
     // Helper method to check if a room ID is the last main room (for teleporter spawning)
     public bool IsLastMainRoom(int roomId)

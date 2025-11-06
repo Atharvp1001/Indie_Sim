@@ -18,7 +18,12 @@ public class Teleporter : MonoBehaviour
     [SerializeField] private Color teleporterColor = Color.cyan;
 
     [Header("Cleanup Settings")]
-    [SerializeField] private string[] enemyTags = { "Enemy", "EnemySpawner" };
+    [SerializeField] private string[] enemyTags = { "Enemy", "EnemySpawner", "Coin", "Relic" };
+
+    [Header("Teleporter Settings")]
+    [Tooltip("Does the player need a key to use this teleporter?")]
+    public bool requiresKey = true; // Check/uncheck this in the Inspector
+
 
     // Core dependencies
     private DungeonMapGenerator mapGenerator;
@@ -264,21 +269,32 @@ public class Teleporter : MonoBehaviour
             player = other.gameObject;
             playerInRange = true;
 
-            // Check if player has key before teleporting
-            PlayerKeyManagement keyManager = other.GetComponent<PlayerKeyManagement>();
-            if (keyManager != null && keyManager.HasKey)
+            // Check if key is required
+            if (requiresKey)
             {
-                // Player has key - teleport
-                ActivateTeleporter();
-                Debug.Log("Player has key - Teleporting!");
+                // Key is required - check if player has key
+                PlayerKeyManagement keyManager = other.GetComponent<PlayerKeyManagement>();
+                if (keyManager != null && keyManager.HasKey)
+                {
+                    // Player has key - teleport
+                    ActivateTeleporter();
+                    Debug.Log("Player has key - Teleporting!");
+                }
+                else
+                {
+                    // Player doesn't have key - do nothing
+                    Debug.Log("Player needs a key to use this teleporter!");
+                }
             }
             else
             {
-                // Player doesn't have key - do nothing
-                Debug.Log("Player needs a key to use this teleporter!");
+                // No key required - teleport immediately
+                ActivateTeleporter();
+                Debug.Log("No key required - Teleporting!");
             }
         }
     }
+
 
     private void OnTriggerExit2D(Collider2D other)
     {

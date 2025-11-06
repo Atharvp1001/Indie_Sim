@@ -14,14 +14,28 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        currentMoveSpeed = baseMoveSpeed; // Initialize current speed
     }
+
+    /// <summary>
+    /// Set player movement speed
+    /// </summary>
+    public void SetSpeed(float newSpeed)
+    {
+        // If you have a speed variable, update it here
+        // Example: if your speed variable is called 'moveSpeed'
+        currentMoveSpeed = newSpeed;
+
+        Debug.Log($"[PlayerMovement] Speed updated to: {newSpeed}");
+    }
+
 
     void FixedUpdate()
     {
        
 
         
-        rb.linearVelocity = new Vector2(joystick.Horizontal * baseMoveSpeed, joystick.Vertical * baseMoveSpeed);
+        rb.linearVelocity = new Vector2(joystick.Horizontal * currentMoveSpeed, joystick.Vertical * currentMoveSpeed);
         //Debug.Log("Current speed = "+ currentMoveSpeed);
     }
 

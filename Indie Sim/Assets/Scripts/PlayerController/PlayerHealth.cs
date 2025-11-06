@@ -43,7 +43,7 @@ public class PlayerHealth : MonoBehaviour
     void Start()
     {
         // Calculate initial max health with any upgrades
-        UpdateMaxHealth();
+        
         currentHealth = maxHealth;
 
         // Get SpriteRenderer from child object (the player sprite)
@@ -84,36 +84,33 @@ public class PlayerHealth : MonoBehaviour
     void Update()
     {
         // Keep max health updated with upgrades
-        UpdateMaxHealth();
+       
        // Debug.Log("Current Health = " + currentHealth);
     }
 
-    void UpdateMaxHealth()
+    /// <summary>
+    /// Set maximum health value
+    /// </summary>
+    public void SetMaxHealth(int newMaxHealth)
     {
-        /*
-        // Base health + bonus from UpgradeManager
-        if (UpgradeManager.Instance != null)
-        {
-            maxHealth = baseMaxHealth + UpgradeManager.Instance.healthBonus;
-        }
-        else
-        {
-            maxHealth = baseMaxHealth;
-        }
-        */
+        // If your max health variable is called 'maxHealth'
+        maxHealth = newMaxHealth;
+
+        // Optionally heal the player to the new max
+        currentHealth = newMaxHealth;
+
+        Debug.Log($"[PlayerHealth] Max health updated to: {newMaxHealth}");
     }
 
-    // Called by UpgradeManager to add health immediately
     public void AddHealth(int amount)
     {
         currentHealth += amount;
 
-        // Make sure we don't exceed max health
+        // If current health exceeds max health, increase max health too
         if (currentHealth > maxHealth)
         {
-            currentHealth = maxHealth;
+            maxHealth = currentHealth;
         }
-
         Debug.Log($"Health added: +{amount}. Current Health: {currentHealth}/{maxHealth}");
     }
 

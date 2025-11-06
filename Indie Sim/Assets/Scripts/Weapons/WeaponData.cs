@@ -6,14 +6,13 @@ public class WeaponData : ScriptableObject
     [Header("Weapon Info")]
     public string weaponName;
     public Sprite weaponIcon; // For UI display
-    public WeaponType weaponType = WeaponType.Standard; // NEW: Add this line
+    public WeaponType weaponType = WeaponType.Standard;
 
     [Header("Shooting Parameters")]
     public float coneAngle = 45f;
     public float coneRange = 8f;
     public float fireRate = 10f;
     public int baseDamagePerShot = 10;
-
 
     [Header("Trapezium Shape Settings")]
     [Range(0.1f, 1f)]
@@ -40,14 +39,12 @@ public class WeaponData : ScriptableObject
     public int maxAmmo = -1;
     public float reloadTime = 2f;
 
-    // NEW: Add this enum at the bottom of the class, before the existing TrapeziumProfile enum
     public enum WeaponType
     {
         Standard,  // Pistol, AK - damages closest enemy only
         Shotgun    // Shotgun - damages all enemies in cone
     }
 
-    // Enum for different expansion profiles
     public enum TrapeziumProfile
     {
         Linear,
@@ -57,18 +54,30 @@ public class WeaponData : ScriptableObject
     }
 
     #region Helper Methods
-    
-    public int damagePerShot
-    { 
-        get
-        {
 
-            return baseDamagePerShot;
-           
-        }
-       
+    /// <summary>
+    /// Get current weapon damage
+    /// </summary>
+    public int GetDamage()
+    {
+        return baseDamagePerShot;
     }
-     
+
+    /// <summary>
+    /// Update weapon damage value
+    /// Used by UpgradeManager when applying damage upgrades
+    /// </summary>
+    public void SetDamage(int newDamage)
+    {
+        baseDamagePerShot = newDamage;
+        Debug.Log($"[WeaponData] {weaponName} damage updated to: {newDamage}");
+    }
+
+    // KEEP THIS - it returns the current damage (used by PlayerConeShooter)
+    public int damagePerShot
+    {
+        get { return baseDamagePerShot; }
+    }
 
     public float GetAngleAtDistance(float distance)
     {

@@ -8,7 +8,8 @@
 /// </summary>
 public class RoguelikeManager : MonoBehaviour
 {
-   
+    [Header("Store Reference")]
+    public StoreManager storeManager;
 
     [SerializeField] private DungeonMapGenerator dungeonGenerator;
     [SerializeField] private Transform playerTransform;
@@ -57,6 +58,55 @@ public class RoguelikeManager : MonoBehaviour
         dungeonsClearedCount++;
         Debug.Log($"[RoguelikeManager] Dungeon #{dungeonsClearedCount} completed!");
 
+        ClearCurrentDungeon();
+
+        // Open the store
+        if (storeManager != null)
+        {
+            storeManager.OpenStore();
+        }
+        else
+        {
+            Debug.LogError("StoreManager not assigned to RoguelikeManager!");
+        }
+
+    }
+
+    /// <summary>
+    /// Disables all enemies when dungeon is completed
+    /// </summary>
+    private void ClearCurrentDungeon()
+    {
+        Debug.Log("[RoguelikeManager] Disabling all enemies...");
+
+        // Disable all enemies by tag
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject enemy in enemies)
+        {
+            Destroy(enemy);
+        }
+        Debug.Log($"[RoguelikeManager] Disabled {enemies.Length} enemies");
+
+        // Disable all enemies by tag
+        GameObject[] enemySpawners = GameObject.FindGameObjectsWithTag("EnemySpawner");
+        foreach (GameObject enemyspawner in enemySpawners)
+        {
+            Destroy(enemyspawner);
+        }
+        Debug.Log($"[RoguelikeManager] Disabled {enemies.Length} enemies");
+
+    }
+
+    /// <summary>
+    /// Call this when player closes the store and continues
+    /// </summary>
+    public void ContinueDungeon()
+    {
+        // Unpause the game
+        Time.timeScale = 1f;
+
+        Debug.Log("Continuing dungeon...");
+
         // Roll 50/50 chance to increase difficulty
         float randomRoll = Random.value;
 
@@ -77,8 +127,9 @@ public class RoguelikeManager : MonoBehaviour
         // Clear enemies and generate next dungeon
         Debug.Log($"[RoguelikeManager] Old dungeon cleared (tilemaps overwritten)");
         GenerateNewDungeon();
-    }
 
+       
+    }
 
 
 
