@@ -7,7 +7,7 @@ public class PlayerHealth : MonoBehaviour
     [Header("Health Settings")]
     public int maxHealth = 100;
     public int baseMaxHealth = 100; // Base health without upgrades
-    private int currentHealth;
+    public int currentHealth;
 
     [Header("Damage Cooldown Settings")]
     public float damageCooldown = 1f; // Cooldown time before player can be damaged again
@@ -413,4 +413,7 @@ public class PlayerHealth : MonoBehaviour
     public int GetMaxHealth() { return maxHealth; }
     public bool IsDead() { return isDead; }
     public bool IsOnDamageCooldown() { return Time.time < nextDamageTime; } // New getter for cooldown status
+
+    
+
 }

@@ -58,6 +58,27 @@ public class CoinManager : MonoBehaviour
         return currentCoins;
     }
 
+    public bool SpendCoins(int amount)
+    {
+        if (currentCoins >= amount)
+        {
+            currentCoins -= amount;
+            Debug.Log("Coins spent: " + amount + ". Remaining: " + currentCoins);
+            return true;
+        }
+        return false;
+    }
+
+    public int GetCurrentCoins()
+    {
+        return currentCoins;
+    }
+
+    public bool HasEnoughCoins(int amount)
+    {
+        return currentCoins >= amount;
+    }
+
     /// <summary>
     /// Get ALL coins ever collected (across all runs)
     /// Default value is 0 if never saved before
@@ -97,7 +118,7 @@ public class CoinManager : MonoBehaviour
     public void DEBUG_PrintCoinStatus()
     {
         int totalCoins = GetTotalCoinsEverCollected();
-        Debug.Log($"========== COIN STATUS ==========");
+        Debug.Log($"========== COIN-STATUS ==========");
         Debug.Log($"Current Run Coins: {currentCoins}");
         Debug.Log($"Total Coins Ever Collected: {totalCoins}");
         Debug.Log($"================================");

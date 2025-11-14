@@ -53,7 +53,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c557c609d067344686bb2eb27a94972, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 30
+  maxHealth: 40
   knockbackStrength: 25
   deathEffect: {fileID: 0}
   damageNumberPrefab: {fileID: 0}

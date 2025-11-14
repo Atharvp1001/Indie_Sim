@@ -46,10 +46,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e63b8188e5e49e94e8fec3886b580bf8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyPrefab: {fileID: 1773204433277557146, guid: 2515409c008b7164e9a9a4f7e3e7758a, type: 3}
+  enemyLevel1Prefab: {fileID: 1773204433277557146, guid: 56da4d5d08d2d3046b2ab1d007b5174e, type: 3}
+  enemyLevel2Prefab: {fileID: 1773204433277557146, guid: 4ab6385bfb62248479107c25efb7f6d7, type: 3}
+  enemyLevel3Prefab: {fileID: 1773204433277557146, guid: 92ef062a7f4a47144a2169c2d4f4746c, type: 3}
   spawnRadius: 5
   spawnInterval: 3
   maxEnemies: 5
+  currentDungeonLevel: 1
   maxHealth: 100
   currentHealth: 0
   flashDuration: 0.15

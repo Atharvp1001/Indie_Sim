@@ -186,6 +186,8 @@ public class DungeonMapGenerator : MonoBehaviour
     [Tooltip("How many rooms before moving to the next relic type")]
     public int roomsPerRelicType = 3; // First 3 rooms = relic_1, next 3 = relic_2, etc.
 
+    public float relicSpawnChance = 0.25f;
+
     [Tooltip("Height offset for relic spawn position (above floor)")]
     public float relicSpawnHeight = 1f;
 
@@ -944,8 +946,8 @@ public class DungeonMapGenerator : MonoBehaviour
             return false;
         }
 
-        // 50% chance to spawn a relic
-        if (UnityEngine.Random.value > 0.25f) return false;
+       
+        if (UnityEngine.Random.value > relicSpawnChance) return false;
 
         // Determine which relic should spawn based on the counter
         // First 3 valid rooms = relic 0, next 3 = relic 1, etc.

@@ -222,6 +222,7 @@ public class UpgradeManager : MonoBehaviour
 
         playerShooter.UnlockShotgun();
         Debug.Log("[UpgradeManager] 🔓 Shotgun unlock request sent to PlayerConeShooter");
+        FindObjectOfType<StoreManager>()?.UnlockShotgunUpgrade();
     }
 
     /// <summary>
@@ -238,6 +239,7 @@ public class UpgradeManager : MonoBehaviour
 
         playerShooter.UnlockMachineGun();
         Debug.Log("[UpgradeManager] 🔓 Machine Gun unlock request sent to PlayerConeShooter");
+        FindObjectOfType<StoreManager>()?.UnlockMachineGunUpgrade();
     }
 
     // ===== HELPER METHODS =====
@@ -331,4 +333,14 @@ public class UpgradeManager : MonoBehaviour
             playerShooter.PrintWeaponLockStatus();
         }
     }
+
+
+
+    /// <summary>
+    /// Get the upgrade bonus values (used by preview system)
+    /// </summary>
+    public float GetSpeedUpgradeBonus() => speedUpgradeBonus;
+    public int GetHealthUpgradeBonus() => healthUpgradeBonus;
+    public int GetDamageUpgradeBonus() => damageUpgradeBonus;
+
 }
