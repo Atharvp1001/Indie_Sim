@@ -77,20 +77,20 @@ public class CameraZoomOnSpeed : MonoBehaviour
         // Debug output to see if values are changing
         if (Time.frameCount % 60 == 0) // Print once per second
         {
-            Debug.Log($"Speed: {speed:F2}, Target: {targetZoom:F2}, Current: {currentDistance:F2}, New: {newDistance:F2}, Firing: {isFiring}");
+           // Debug.Log($"Speed: {speed:F2}, Target: {targetZoom:F2}, Current: {currentDistance:F2}, New: {newDistance:F2}, Firing: {isFiring}");
         }
     }
 
     public void StartFiring()
     {
         isFiring = true;
-        Debug.Log("Started firing");
+      //  Debug.Log("Started firing");
     }
 
     public void StopFiring()
     {
         isFiring = false;
-        Debug.Log("Stopped firing");
+       // Debug.Log("Stopped firing");
     }
 
     float GetTargetZoom(float speed, bool firing)

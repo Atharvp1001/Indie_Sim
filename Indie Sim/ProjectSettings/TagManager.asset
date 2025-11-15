@@ -9,7 +9,7 @@ TagManager:
   - Key
   - Teleporter
   - Coin
-  - Walls
+  - Relic
   layers:
   - Default
   - TransparentFX

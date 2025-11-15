@@ -6,7 +6,8 @@ public class PlayerHealth : MonoBehaviour
 {
     [Header("Health Settings")]
     public int maxHealth = 100;
-    private int currentHealth;
+    public int baseMaxHealth = 100; // Base health without upgrades
+    public int currentHealth;
 
     [Header("Damage Cooldown Settings")]
     public float damageCooldown = 1f; // Cooldown time before player can be damaged again
@@ -24,6 +25,7 @@ public class PlayerHealth : MonoBehaviour
     public Sprite deathSprite; // Sprite to show when player dies
     public float deathDelay = 3f; // How long to wait before showing death UI
     public GameObject deathUIPanel; // UI panel with retry/main menu buttons
+    public Sprite aliveSprite; // Sprite to show when player is alive
 
     [Header("References")]
     private SpriteRenderer spriteRenderer;
@@ -36,9 +38,12 @@ public class PlayerHealth : MonoBehaviour
     private SimplePlayerRotation playerRotation; // Reference to player rotation script
     private PlayerAutoAimShooter playerAutoAimShooter; // Reference to auto-aim shooter script
     private PlayerConeShooter playerConeShooter; // Reference to cone shooter script
+    //private CasualGameModeManager casualGameModeManager;
 
     void Start()
     {
+        // Calculate initial max health with any upgrades
+        
         currentHealth = maxHealth;
 
         // Get SpriteRenderer from child object (the player sprite)
@@ -67,8 +72,47 @@ public class PlayerHealth : MonoBehaviour
         }
 
         Debug.Log($"Player initialized with {maxHealth} health");
+        /*
+        casualGameModeManager = FindObjectOfType<CasualGameModeManager>();
+        if (casualGameModeManager == null)
+        {
+            Debug.LogWarning("CasualGameModeManager not found in scene");
+        }
+        */
     }
 
+    void Update()
+    {
+        // Keep max health updated with upgrades
+       
+       // Debug.Log("Current Health = " + currentHealth);
+    }
+
+    /// <summary>
+    /// Set maximum health value
+    /// </summary>
+    public void SetMaxHealth(int newMaxHealth)
+    {
+        // If your max health variable is called 'maxHealth'
+        maxHealth = newMaxHealth;
+
+        // Optionally heal the player to the new max
+        currentHealth = newMaxHealth;
+
+        Debug.Log($"[PlayerHealth] Max health updated to: {newMaxHealth}");
+    }
+
+    public void AddHealth(int amount)
+    {
+        currentHealth += amount;
+
+        // If current health exceeds max health, increase max health too
+        if (currentHealth > maxHealth)
+        {
+            maxHealth = currentHealth;
+        }
+        Debug.Log($"Health added: +{amount}. Current Health: {currentHealth}/{maxHealth}");
+    }
 
     /// <summary>
     /// Player takes damage from an enemy
@@ -86,6 +130,8 @@ public class PlayerHealth : MonoBehaviour
 
         // Reduce health
         currentHealth -= damage;
+
+        // Clamp health between 0 and maxHealth (which includes upgrades)
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
         Debug.Log($"Player took {damage} damage. Health: {currentHealth}/{maxHealth}");
@@ -110,6 +156,7 @@ public class PlayerHealth : MonoBehaviour
             }
         }
     }
+
 
     /// <summary>
     /// Apply knockback force pushing player away from enemy
@@ -173,9 +220,6 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log("Flashing effect ended");
     }
 
-    /// <summary>
-    /// Handle player death
-    /// </summary>
     private void Die()
     {
         if (isDead) return;
@@ -186,13 +230,27 @@ public class PlayerHealth : MonoBehaviour
         // Stop any ongoing flash effect
         StopAllCoroutines();
 
-        //stop player movement
-        playerController.enabled = false;
-        playerRotation.enabled = false;
+        // Stop player movement
+        if (playerController != null)
+        {
+            playerController.enabled = false;
+        }
 
-        //stop shooting 
-        playerAutoAimShooter.enabled = false;
-        playerConeShooter.enabled = false;
+        if (playerRotation != null)
+        {
+            playerRotation.enabled = false;
+        }
+
+        // Stop shooting 
+        if (playerAutoAimShooter != null)
+        {
+            playerAutoAimShooter.enabled = false;
+        }
+
+        if (playerConeShooter != null)
+        {
+            playerConeShooter.enabled = false;
+        }
 
         // Restore normal color
         if (spriteRenderer != null)
@@ -210,7 +268,7 @@ public class PlayerHealth : MonoBehaviour
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
-            rb.bodyType = RigidbodyType2D.Kinematic; // Disable physics (using bodyType instead of isKinematic)
+            rb.bodyType = RigidbodyType2D.Kinematic; // Disable physics
         }
 
         // Disable player collider ONLY on death
@@ -218,9 +276,6 @@ public class PlayerHealth : MonoBehaviour
         {
             playerCollider.enabled = false;
         }
-
-        // Disable player controls (you may need to adjust this based on your movement script)
-        // Example: GetComponent<PlayerMovement>().enabled = false;
 
         // Wait then show death UI
         StartCoroutine(ShowDeathUI());
@@ -242,14 +297,106 @@ public class PlayerHealth : MonoBehaviour
     }
 
     /// <summary>
-    /// Retry button - reload current scene
+    /// Retry button - reload current level with specific requirements
     /// </summary>
     public void Retry()
     {
-        Time.timeScale = 1f; // Unpause
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        Debug.Log("Restarting level");
+        // 1. Close the death UI panel
+        if (deathUIPanel != null)
+        {
+            deathUIPanel.SetActive(false);
+        }
+
+        // 2. Reposition player to (0, 0, 0)
+        transform.position = Vector3.zero;
+        Debug.Log("Player repositioned to (0, 0, 0)");
+
+        // 3. Reset player state (health, visuals, components)
+        ResetPlayerStateForRetry();
+
+        // 4. Unpause the game temporarily (tutorial will pause it again)
+        Time.timeScale = 1f;
+
+        /*
+        // 5. Regenerate the current dungeon level
+        if (casualGameModeManager != null)
+        {
+            Debug.Log("Regenerating current dungeon level");
+            casualGameModeManager.GenerateCurrentDungeon();
+        }
+        */
+
+        // 6. Restart the tutorial
+        TutorialManager tutorialManager = FindObjectOfType<TutorialManager>();
+        if (tutorialManager != null)
+        {
+            Debug.Log("Restarting tutorial");
+            tutorialManager.StartTutorial();
+        }
+        else
+        {
+            Debug.LogWarning("TutorialManager not found in scene!");
+        }
+
+        // 7. Make sure auto aim shooter stays DISABLED (tutorial will handle enabling it if needed)
+        if (playerAutoAimShooter != null)
+        {
+            playerAutoAimShooter.enabled = false;
+            Debug.Log("Auto-aim shooter kept disabled for tutorial");
+        }
     }
+
+    /// <summary>
+    /// Reset player state for retry - does NOT enable auto-aim shooter
+    /// </summary>
+    private void ResetPlayerStateForRetry()
+    {
+        // Reset health
+        currentHealth = maxHealth;
+        isDead = false;
+
+        // Reset visuals
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+            // If you have an alive sprite, restore it here
+            spriteRenderer.sprite = aliveSprite;
+        }
+
+        // Enable collider
+        if (playerCollider != null)
+        {
+            playerCollider.enabled = true;
+        }
+
+        // Enable player controller (movement)
+        if (playerController != null)
+        {
+            playerController.enabled = true;
+        }
+
+        // Enable rotation
+        if (playerRotation != null)
+        {
+            playerRotation.enabled = true;
+        }
+
+        // Enable cone shooter
+        if (playerConeShooter != null)
+        {
+            playerConeShooter.enabled = true;
+        }
+
+        // Reset rigidbody to dynamic
+        if (rb != null)
+        {
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.linearVelocity = Vector2.zero;
+        }
+
+        Debug.Log("Player state reset for retry (auto-aim NOT enabled)");
+    }
+
 
     /// <summary>
     /// Main menu button - load main menu scene
@@ -266,4 +413,7 @@ public class PlayerHealth : MonoBehaviour
     public int GetMaxHealth() { return maxHealth; }
     public bool IsDead() { return isDead; }
     public bool IsOnDamageCooldown() { return Time.time < nextDamageTime; } // New getter for cooldown status
+
+    
+
 }

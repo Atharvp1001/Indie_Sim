@@ -1,35 +1,43 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody2D),typeof(BoxCollider2D))]
-
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] private Rigidbody2D Rigidbody2D;
-    [SerializeField] private FixedJoystick joystick;
+    [Header("Movement Settings")]
+    public float baseMoveSpeed = 5f; // Your default speed without upgrades
 
-    [SerializeField] private float moveSpeed;
+    [Header("References")]
+    public FixedJoystick joystick; // Drag your joystick here in inspector
 
-    [Header("Trail Particle System")]
-    public ParticleSystem trailParticleSystem;
+    private Rigidbody2D rb;
+    private float currentMoveSpeed;
 
     void Start()
     {
-        // Enable multi-touch for Android
-        Input.multiTouchEnabled = true;
-
-        // particle system setup
-        // Just ensure it's set to world space simulation
-        if (trailParticleSystem != null)
-        {
-            var main = trailParticleSystem.main;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-        }
-
-        // Optional: Set maximum simultaneous touches
-        // Input.simulateMouseWithTouches = false; // Prevents mouse simulation interfering
+        rb = GetComponent<Rigidbody2D>();
+        currentMoveSpeed = baseMoveSpeed; // Initialize current speed
     }
-    private void FixedUpdate()
+
+    /// <summary>
+    /// Set player movement speed
+    /// </summary>
+    public void SetSpeed(float newSpeed)
     {
-        Rigidbody2D.linearVelocity = new Vector2 (joystick.Horizontal*moveSpeed , joystick.Vertical * moveSpeed);
+        // If you have a speed variable, update it here
+        // Example: if your speed variable is called 'moveSpeed'
+        currentMoveSpeed = newSpeed;
+
+        Debug.Log($"[PlayerMovement] Speed updated to: {newSpeed}");
     }
+
+
+    void FixedUpdate()
+    {
+       
+
+        
+        rb.linearVelocity = new Vector2(joystick.Horizontal * currentMoveSpeed, joystick.Vertical * currentMoveSpeed);
+        //Debug.Log("Current speed = "+ currentMoveSpeed);
+    }
+
+   
 }

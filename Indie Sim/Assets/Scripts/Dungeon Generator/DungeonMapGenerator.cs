@@ -1,9 +1,10 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
-using System.Linq;
-using UnityEngine.Tilemaps;
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.Tilemaps;
+using static Unity.Cinemachine.CinemachineSplineRoll;
 
 public enum RoomType
 {
@@ -91,8 +92,8 @@ public class MapParameters
 {
     [Header("Main Artery Control")]
 
-    public int minMainArteryRooms = 3;
-    public int maxMainArteryRooms = 7;
+    public int nodeCount = 5;
+
     public float mainRoomSpacing = 8f;
     [Range(0f, 1f)] public float chanceForLTurn = 0.3f;
     public float mainArteryPositionJitter = 2f;
@@ -153,7 +154,6 @@ public class MapData
 public class DungeonMapGenerator : MonoBehaviour
 {
     [SerializeField] private MapParameters parameters;
-    [SerializeField] private bool generateOnStart = true;
     [SerializeField] public bool showGizmos = true;
     [SerializeField] public bool showRoomIds = true;
 
@@ -177,27 +177,35 @@ public class DungeonMapGenerator : MonoBehaviour
     [Header("Key Spawning")]
     [SerializeField] private GameObject keyPrefab;
     [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
+    [SerializeField] private bool shouldKeyBeSpawned = true;
 
-    [Header("Boss Spawning")]
-    [SerializeField] private GameObject bossPrefab;
-    [SerializeField] private bool enableBossSpawning = true;
+    [Header("Relic Spawning")]
+    [Tooltip("Array of relic prefabs (Relic_1, Relic_2, etc.)")]
+    public GameObject[] relicPrefabs; // Assign your relic prefab variants here
 
-    [Header("Spawner Respawn Settings")]
-    [SerializeField] private float spawnerRespawnDelay = 10f; // Time before respawning
-    [SerializeField] private float minRespawnDistanceFromPlayer = 20f; // Min distance from player
+    [Tooltip("How many rooms before moving to the next relic type")]
+    public int roomsPerRelicType = 3; // First 3 rooms = relic_1, next 3 = relic_2, etc.
+
+    public float relicSpawnChance = 0.25f;
+
+    [Tooltip("Height offset for relic spawn position (above floor)")]
+    public float relicSpawnHeight = 1f;
+
+
+    // Add this field at the top of your dungeon generator class
+    [Header("Game Mode Integration")]
+    [Tooltip("If false, will wait for external call instead of generating on Start")]
+    public bool generateOnStart = false;
 
     // Room ID counters for each category
     private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
     private int leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
     private int distributiveRoomIdCounter = RoomIDCategories.DISTRIBUTIVE_ROOM_START;
     private int cornerRoomIdCounter = RoomIDCategories.CORNER_ROOM_START;
-    private GameObject currentBossInstance;
-    private int teleporterUsageCount = 0;
-    private float gameStartTime;
+    private int keyRoomId = -1;
     void Start()
     {
-        gameStartTime = Time.time;
-
+        // Only generate if not being controlled by CasualGameModeManager
         if (generateOnStart)
         {
             GenerateNewMap();
@@ -206,6 +214,13 @@ public class DungeonMapGenerator : MonoBehaviour
 
     [ContextMenu("Generate New Map")]
     public void GenerateNewMap()
+    {
+        // Use the nodeCount from existing parameters
+        GenerateNewMap(parameters.nodeCount);
+    }
+
+    // Called by RoguelikeManager with single int
+    public void GenerateNewMap(int dungeonSize)
     {
         rng = new System.Random();
 
@@ -217,13 +232,16 @@ public class DungeonMapGenerator : MonoBehaviour
 
         ResetKeySpawnStatus();
 
+        // Set the nodeCount in parameters based on the single int value
+        parameters.nodeCount = dungeonSize;
+
+        // Now use the parameters to generate
         currentMapData = GenerateDungeon(parameters);
         Debug.Log($"Generated dungeon with {currentMapData.rooms.Count} rooms");
         Debug.Log($"Start Room ID: {currentMapData.startRoomId}, End Room ID: {currentMapData.endRoomId}");
         Debug.Log($"Last Main Room ID: {currentMapData.lastMainRoomId} (Teleporter spawn location)");
         Debug.Log($"Floor tiles: {currentMapData.floorTiles.Count}, Wall tiles: {currentMapData.wallTiles.Count}");
 
-        // Print all room information
         PrintRoomDebugInfo();
         SpawnAllEnemySpawners();
         PaintTiles(currentMapData);
@@ -251,7 +269,7 @@ public class DungeonMapGenerator : MonoBehaviour
         }
         Debug.Log("=== END ROOM DEBUG INFO ===");
     }
-
+    
     private int GetNextRoomId(RoomType roomType)
     {
         return roomType switch
@@ -328,12 +346,6 @@ public class DungeonMapGenerator : MonoBehaviour
         {
             wallTilemap.SetTile((Vector3Int)wallPos, wallTile);
         }
-        
-        if (wallTilemap.gameObject.tag != "Walls")
-        {
-            wallTilemap.gameObject.tag = "Walls";
-            Debug.Log("Wall tilemap tagged as 'Walls'");
-        }
 
         Debug.Log("Tile painting complete");
     }
@@ -374,11 +386,13 @@ public class DungeonMapGenerator : MonoBehaviour
         rooms[newRoom.uniqueId] = newRoom;
 
 
-
-        // NEW: Spawn key in LeafNodeRoom (only once)
-        if (type == RoomType.LEAF_NODE_ROOM)
+        if (shouldKeyBeSpawned)
         {
-            SpawnKeyInRoom(newRoom);
+            // NEW: Spawn key in LeafNodeRoom (only once)
+            if (type == RoomType.LEAF_NODE_ROOM)
+            {
+                SpawnKeyInRoom(newRoom);
+            }
         }
 
         return newRoom;
@@ -453,8 +467,12 @@ public class DungeonMapGenerator : MonoBehaviour
         // Mark that key has been spawned
         hasKeyBeenSpawned = true;
 
+        // ADDED: Store which room the key spawned in
+        keyRoomId = room.uniqueId;
+
         Debug.Log($"Key spawned in room {room.uniqueId} at position {keySpawnPosition}");
     }
+
 
 
     public void ResetKeySpawnStatus()
@@ -523,7 +541,7 @@ public class DungeonMapGenerator : MonoBehaviour
     private void ConfigureSpawnerForRoom(EnemySpawner spawner, Room room)
     {
         // Example configurations - adjust based on your game design
-        spawner.mapGenerator = this;
+
         // Adjust spawn radius based on room size
         float roomSizeMultiplier = Mathf.Max(room.size.x, room.size.y) / 10f; // Adjust divisor as needed
         spawner.spawnRadius = Mathf.Clamp(roomSizeMultiplier * 3f, 2f, 8f); // Min 2, Max 8
@@ -591,12 +609,12 @@ public class DungeonMapGenerator : MonoBehaviour
 
         // Spawn enemy spawner in first room
         //SpawnEnemySpawnerInRoom(firstRoom);
-        int numMainArteryRooms = UnityEngine.Random.Range(param.minMainArteryRooms, param.maxMainArteryRooms + 1);
+        int roomCount = parameters.nodeCount;
 
-        for (int i = 1; i < numMainArteryRooms; i++)
+        for (int i = 1; i < roomCount; i++)
         {
             bool isLTurn = RandomValue() < param.chanceForLTurn;
-            if (isLTurn && i < numMainArteryRooms - 1)
+            if (isLTurn && i < roomCount - 1)
             {
                 currentPos += currentDirection * param.mainRoomSpacing;
                 currentPos += RandomJitterVector(param.mainArteryPositionJitter);
@@ -864,21 +882,103 @@ public class DungeonMapGenerator : MonoBehaviour
         }
     }
 
-    public void OnTeleporterUsed()
-    {
-        teleporterUsageCount++;
-        Debug.Log($"Teleporter used! Total uses: {teleporterUsageCount}");
-        
-        CheckBossSpawnConditions();
-    }
-
     private void SpawnLevelObjects()
     {
         if (currentMapData == null) return;
 
         // Spawn teleporter in the last main room
         SpawnTeleporter();
+
+        SpawnRelics();
     }
+
+    private void SpawnRelics()
+    {
+        // Make sure we have relics to spawn
+        if (relicPrefabs == null || relicPrefabs.Length == 0)
+        {
+            Debug.LogWarning("No relic prefabs assigned!");
+            return;
+        }
+
+        // Make sure we have map data
+        if (currentMapData == null || currentMapData.rooms == null)
+        {
+            Debug.LogWarning("No room data available for relic spawning!");
+            return;
+        }
+
+        // Counter for which relic type to spawn (increments for each valid room)
+        int relicCounter = 0;
+
+        // Loop through each room in the dictionary
+        foreach (var roomEntry in currentMapData.rooms)
+        {
+            Room room = roomEntry.Value; // Get the Room from the dictionary
+
+            // Only spawn in side rooms - CHANGE THIS to match your actual room type
+            if (room.type == RoomType.LEAF_NODE_ROOM) 
+            {
+                // Try to spawn a relic in this room
+                bool spawned = TrySpawnRelicInRoom(room, relicCounter);
+
+                // Only increment counter if relic actually spawned
+                if (spawned)
+                {
+                    relicCounter++;
+                }
+            }
+        }
+    }
+
+    private bool TrySpawnRelicInRoom(Room room, int relicCounter)
+    {
+        // Make sure room is valid
+        if (room == null)
+        {
+            return false;
+        }
+
+        // Don't spawn relics in the room where the key spawned
+        if (room.uniqueId == keyRoomId)
+        {
+            Debug.Log($"Skipping relic spawn in room {room.uniqueId} (key room)");
+            return false;
+        }
+
+       
+        if (UnityEngine.Random.value > relicSpawnChance) return false;
+
+        // Determine which relic should spawn based on the counter
+        // First 3 valid rooms = relic 0, next 3 = relic 1, etc.
+        int relicIndex = relicCounter / roomsPerRelicType;
+
+        // Make sure we don't go beyond available relics
+        if (relicIndex >= relicPrefabs.Length)
+        {
+            // If we run out of relic types, loop back to the first one
+            relicIndex = relicIndex % relicPrefabs.Length;
+        }
+
+        // Calculate spawn position within the room bounds (random position)
+        Vector3 relicSpawnPosition = new Vector3(
+            room.worldPosition.x + UnityEngine.Random.Range(-room.size.x * 0.3f, room.size.x * 0.3f),
+            room.worldPosition.y + UnityEngine.Random.Range(-room.size.y * 0.3f, room.size.y * 0.3f),
+            0f // 2D game
+        );
+
+        // Instantiate the relic
+        GameObject spawnedRelic = Instantiate(relicPrefabs[relicIndex], relicSpawnPosition, Quaternion.identity);
+
+        // Optional: Set parent for organization
+        spawnedRelic.transform.SetParent(transform);
+        spawnedRelic.name = $"{relicPrefabs[relicIndex].name}_Room_{room.uniqueId}";
+
+        Debug.Log($"{relicPrefabs[relicIndex].name} spawned in room {room.uniqueId} at position {relicSpawnPosition}");
+
+        return true;
+    }
+
 
     // Helper method to check if a room ID is the last main room (for teleporter spawning)
     public bool IsLastMainRoom(int roomId)
@@ -979,150 +1079,6 @@ public class DungeonMapGenerator : MonoBehaviour
         }
     }
 
-        public void OnSpawnerDestroyed(Vector3 destroyedPosition)
-    {
-        StartCoroutine(RespawnSpawnerDelayed(destroyedPosition));
-    }
-
-    private IEnumerator RespawnSpawnerDelayed(Vector3 destroyedPosition)
-    {
-        yield return new WaitForSeconds(spawnerRespawnDelay);
-        
-        // Find player
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null)
-        {
-            Debug.LogWarning("Player not found for spawner respawn!");
-            yield break;
-        }
-
-        // Find valid room far from player
-        Room targetRoom = FindFarRoomFromPlayer(player.transform.position);
-        
-        if (targetRoom != null && enemySpawnerPrefab != null)
-        {
-            SpawnEnemySpawnerInRoom(targetRoom);
-            Debug.Log($"Spawner respawned in room {targetRoom.uniqueId}");
-        }
-    }
-
-    private Room FindFarRoomFromPlayer(Vector3 playerPosition)
-    {
-        // Get all main artery rooms except start and end
-        var validRooms = currentMapData.rooms.Values
-            .Where(r => r.type == RoomType.MAIN_ARTERY_ROOM &&
-                        r.uniqueId != currentMapData.startRoomId &&
-                        r.uniqueId != currentMapData.endRoomId)
-            .ToList();
-
-        // Filter rooms far from player
-        var farRooms = validRooms
-            .Where(r => Vector2.Distance(playerPosition, r.worldPosition) >= minRespawnDistanceFromPlayer)
-            .ToList();
-
-        if (farRooms.Count == 0)
-        {
-            Debug.LogWarning("No rooms far enough from player, using any valid room");
-            farRooms = validRooms;
-        }
-
-        // Return random far room
-        return farRooms.Count > 0 ? farRooms[UnityEngine.Random.Range(0, farRooms.Count)] : null;
-    }
-    
-
-    private void CheckBossSpawnConditions()
-    {
-        if (!enableBossSpawning || bossPrefab == null) return;
-        if (currentBossInstance != null) return; // Boss already active
-
-        if (currentMapData == null || currentMapData.rooms.Count == 0) return;
-
-        BossEnemy bossStats = bossPrefab.GetComponent<BossEnemy>();
-        if (bossStats == null)
-        {
-            Debug.LogError("Boss prefab must have BossEnemy component!");
-            return;
-        }
-
-        float timePlayed = Time.time - gameStartTime;
-        int minUses = bossStats.GetMinTeleporterUses();
-        int maxUses = bossStats.GetMaxTeleporterUses();
-        float maxTime = bossStats.GetMaxSpawnTime();
-
-        // Check if conditions met
-        bool teleporterCondition = teleporterUsageCount >= minUses && teleporterUsageCount <= maxUses;
-        bool timeCondition = timePlayed >= maxTime;
-
-        if (teleporterCondition || timeCondition)
-        {
-            SpawnBoss();
-        }
-    }
-
-    private void SpawnBoss()
-    {
-        if (currentMapData == null) return;
-
-        // Find player
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null)
-        {
-            Debug.LogWarning("Cannot spawn boss: Player not found!");
-            return;
-        }
-
-        // Find a room far from player
-        Room spawnRoom = FindFarthestRoomFromPlayer(player.transform.position);
-        
-        if (spawnRoom == null)
-        {
-            Debug.LogWarning("No suitable room found for boss spawn!");
-            return;
-        }
-
-        // Spawn boss
-        currentBossInstance = Instantiate(bossPrefab, spawnRoom.worldPosition, Quaternion.identity);
-        
-        // Subscribe to death event
-        BossEnemy boss = currentBossInstance.GetComponent<BossEnemy>();
-        if (boss != null)
-        {
-            boss.OnDeath += OnBossDefeated;
-        }
-
-        Debug.Log($"Boss spawned in room {spawnRoom.uniqueId} at {spawnRoom.worldPosition}");
-    }
-
-    private void OnBossDefeated()
-    {
-        Debug.Log("Boss defeated! Resetting spawn conditions...");
-        currentBossInstance = null;
-        teleporterUsageCount = 0;
-        gameStartTime = Time.time; // Reset timer
-    }
-
-    private Room FindFarthestRoomFromPlayer(Vector3 playerPosition)
-    {
-        Room farthestRoom = null;
-        float maxDistance = 0f;
-
-        foreach (var room in currentMapData.rooms.Values)
-        {
-            // Skip start and end rooms
-            if (room.uniqueId == currentMapData.startRoomId || 
-                room.uniqueId == currentMapData.endRoomId) continue;
-
-            float distance = Vector2.Distance(playerPosition, room.worldPosition);
-            if (distance > maxDistance)
-            {
-                maxDistance = distance;
-                farthestRoom = room;
-            }
-        }
-
-        return farthestRoom;
-    }
     public MapData GetCurrentMapData() => currentMapData;
     public MapParameters GetParameters() => parameters;
 }
