@@ -27,6 +27,9 @@ public class PlayerHealth : MonoBehaviour
     public GameObject deathUIPanel; // UI panel with retry/main menu buttons
     public Sprite aliveSprite; // Sprite to show when player is alive
 
+    [Header("UI Reference")]
+    public HealthHeartBar healthHeartBar;
+
     [Header("References")]
     private SpriteRenderer spriteRenderer;
     private Collider2D playerCollider;
@@ -93,11 +96,14 @@ public class PlayerHealth : MonoBehaviour
     /// </summary>
     public void SetMaxHealth(int newMaxHealth)
     {
-        // If your max health variable is called 'maxHealth'
         maxHealth = newMaxHealth;
-
-        // Optionally heal the player to the new max
         currentHealth = newMaxHealth;
+
+        // Notify heart UI to update
+        if (healthHeartBar != null)
+        {
+            healthHeartBar.RefreshHearts();
+        }
 
         Debug.Log($"[PlayerHealth] Max health updated to: {newMaxHealth}");
     }
@@ -106,11 +112,17 @@ public class PlayerHealth : MonoBehaviour
     {
         currentHealth += amount;
 
-        // If current health exceeds max health, increase max health too
         if (currentHealth > maxHealth)
         {
             maxHealth = currentHealth;
+
+            // Notify heart UI that max health increased
+            if (healthHeartBar != null)
+            {
+                healthHeartBar.RefreshHearts();
+            }
         }
+
         Debug.Log($"Health added: +{amount}. Current Health: {currentHealth}/{maxHealth}");
     }
 
