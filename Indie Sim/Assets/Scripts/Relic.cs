@@ -12,7 +12,7 @@ public class Relic : MonoBehaviour
     [Header("Optional Visual Effects")]
     public GameObject collectEffect; // Optional particle effect when collected
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter2D(Collider2D other)
     {
         // Check if the object that touched this relic is the player
         if (other.CompareTag(playerTag))

@@ -846,7 +846,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3917729971696597871, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4362836421615569602, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
       propertyPath: m_Pivot.x
@@ -926,6 +926,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4362836421615569602, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4522345542910752493, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5715508341889909259, guid: 28b5846c5d7b1704e842f4f20a37a13c, type: 3}
@@ -3653,6 +3657,8 @@ GameObject:
   - component: {fileID: 893384347}
   - component: {fileID: 893384346}
   - component: {fileID: 893384348}
+  - component: {fileID: 893384349}
+  - component: {fileID: 893384350}
   m_Layer: 0
   m_Name: Roguelike Manager
   m_TagString: Untagged
@@ -3714,6 +3720,33 @@ MonoBehaviour:
   baseShotgunDamage: 40
   baseMachineGunDamage: 75
   damageUpgradeBonus: 10
+--- !u!114 &893384349
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 893384345}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 397a80d2bfdb504468d35d2f0fc9859e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyKillTracker
+  totalEnemiesKilled: 0
+  showDebugLogs: 1
+--- !u!114 &893384350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 893384345}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0168afab2dff02e4d86d9b7929135f15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AchievementManager
+  showDebugLogs: 1
 --- !u!1 &904795312
 GameObject:
   m_ObjectHideFlags: 0
@@ -5402,7 +5435,7 @@ MonoBehaviour:
   spawnerOffsetFromCenter: 0
   keyPrefab: {fileID: 361551793940226289, guid: 8d9ee73584baa5f48b5e3b99db0c4a0a, type: 3}
   hasKeyBeenSpawned: 0
-  shouldKeyBeSpawned: 1
+  shouldKeyBeSpawned: 0
   relicPrefabs:
   - {fileID: 2605754572129542686, guid: 00337d7f7fe00a24b9317f93a3b1b44a, type: 3}
   - {fileID: 2605754572129542686, guid: 98b54125a26394549b8b22e3361a6f4e, type: 3}
@@ -7293,10 +7326,22 @@ PrefabInstance:
       propertyPath: coinText
       value: 
       objectReference: {fileID: 110399270}
+    - target: {fileID: 4326419580110792452, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4326419580110792452, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_IsTrigger
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5970754329784749663, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: deathUIPanel
       value: 
       objectReference: {fileID: 110399269}
+    - target: {fileID: 6221989387875595873, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6531144439329103242, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: hasKey
       value: 1
@@ -7385,8 +7430,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e520eac8593751a449338360c61f06f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RelicManager
-  totalRelics: 8
-  duplicateRelicCoins: 50
+  showDebugInfo: 1
 --- !u!114 &4787297372853803451 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4168114898144869375, guid: edbd5360888064b468af922cde708f5e, type: 3}
