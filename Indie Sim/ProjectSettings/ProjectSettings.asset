@@ -12,7 +12,7 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: Sarbo
+  companyName: ElderMonkInteractive
   productName: MonoKill(Beta)
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
@@ -142,7 +142,7 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: 0.2.0
+  bundleVersion: 0.2.1
   preloadedAssets:
   - {fileID: 0}
   - {fileID: -944628639613478452, guid: ca395cef374c4f14a833c456d8d6fd81, type: 3}
@@ -179,7 +179,7 @@ PlayerSettings:
     iPhone: 0
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
-  AndroidBundleVersionCode: 1
+  AndroidBundleVersionCode: 2
   AndroidMinSdkVersion: 29
   AndroidTargetSdkVersion: 0
   AndroidPreferredInstallLocation: 1

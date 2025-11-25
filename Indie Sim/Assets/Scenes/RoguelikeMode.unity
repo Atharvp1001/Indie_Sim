@@ -7663,6 +7663,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Steve
       objectReference: {fileID: 0}
+    - target: {fileID: 1773204433277557146, guid: 2515409c008b7164e9a9a4f7e3e7758a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2988419187499292438, guid: 2515409c008b7164e9a9a4f7e3e7758a, type: 3}
       propertyPath: m_Enabled
       value: 0

@@ -1,23 +1,23 @@
 # ninja log v5
-174	396	7836972724771809	C:/Game Dev/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/302o5816/obj/armeabi-v7a/libswappywrapper.so	d6ed502855af8c8c
-58	173	7836972722626194	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	2ff8c2d169f156dd
-5	1218	7836972732969916	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	6bbf9273d5300617
-20	824	7836972729079644	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	ba6d087d2eda2d3b
-32	848	7836972729262165	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	f0d64d99a142e724
-25	856	7836972729372966	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	6c39cbb31822dd59
-51	958	7836972730425410	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	6a9bfe24290fe83f
-44	916	7836972729998848	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	747b5e68da1b8fa7
-11	918	7836972730019025	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	833c463d8b00f7c2
-37	1204	7836972732871351	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	dff19b9e31cfd5e0
-1218	1306	7836972734004587	C:/Game Dev/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/302o5816/obj/armeabi-v7a/libgame.so	7d938d6e496175d6
-129	813	7848287645914024	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	2ff8c2d169f156dd
-814	1703	7848287653348634	C:/Game Dev/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/302o5816/obj/armeabi-v7a/libswappywrapper.so	d6ed502855af8c8c
-37	3056	7848287667788642	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	6c39cbb31822dd59
-48	3066	7848287668313293	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	ba6d087d2eda2d3b
-64	3340	7848287671039937	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	747b5e68da1b8fa7
-94	3437	7848287672188458	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	f0d64d99a142e724
-112	3512	7848287672819737	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	6a9bfe24290fe83f
-26	3794	7848287675694024	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	833c463d8b00f7c2
-11	4151	7848287679300200	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	6bbf9273d5300617
-80	4294	7848287680872488	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	dff19b9e31cfd5e0
-4294	4421	7848287682187073	C:/Game Dev/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/302o5816/obj/armeabi-v7a/libgame.so	7d938d6e496175d6
+229	458	7850607255135303	C:/Game Dev/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/302o5816/obj/armeabi-v7a/libswappywrapper.so	d6ed502855af8c8c
+61	229	7850607252905063	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	2ff8c2d169f156dd
+17	1344	7850607264025245	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	6bbf9273d5300617
+4	1021	7850607260785001	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	ba6d087d2eda2d3b
+30	1042	7850607260939877	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	f0d64d99a142e724
+24	1029	7850607260902297	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	6c39cbb31822dd59
+53	1178	7850607262365828	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	6a9bfe24290fe83f
+45	1027	7850607260820374	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	747b5e68da1b8fa7
+11	1092	7850607261529529	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	833c463d8b00f7c2
+37	1300	7850607263595448	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	dff19b9e31cfd5e0
+1344	1437	7850607265071192	C:/Game Dev/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/302o5816/obj/armeabi-v7a/libgame.so	7d938d6e496175d6
+603	2451	7850614437810793	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	2ff8c2d169f156dd
+2452	3775	7850614449353062	C:/Game Dev/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/302o5816/obj/armeabi-v7a/libswappywrapper.so	d6ed502855af8c8c
+45	11653	7850614529787111	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	ba6d087d2eda2d3b
+358	12368	7850614537124450	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	f0d64d99a142e724
+31	12710	7850614541022641	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	833c463d8b00f7c2
+395	12794	7850614541690395	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	747b5e68da1b8fa7
+15	13219	7850614545285377	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	6c39cbb31822dd59
+588	13643	7850614551226250	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	6a9bfe24290fe83f
+75	14895	7850614561978050	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	dff19b9e31cfd5e0
+60	15715	7850614570915802	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	6bbf9273d5300617
+15716	16368	7850614577496767	C:/Game Dev/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/302o5816/obj/armeabi-v7a/libgame.so	7d938d6e496175d6
