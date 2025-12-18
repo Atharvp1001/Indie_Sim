@@ -3,23 +3,28 @@ using TMPro;
 
 public class CoinManager : MonoBehaviour
 {
+    // Singleton instance
     public static CoinManager Instance;
 
     [Header("UI Reference")]
     public TextMeshProUGUI coinText;
 
-    // Current run coins
-    private int currentCoins = 0;
+    [Header("Coin Tracking")]
+    private int currentCoins = 0; // Coins for current run only
 
     // PlayerPrefs key for storing total coins
     private const string TOTAL_COINS_KEY = "TotalCoinsEverCollected";
 
+    [Header("Debug")]
+    [SerializeField] private bool showDebugLogs = true;
+
     private void Awake()
     {
-        // Simple singleton
+        // Singleton pattern
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject); // Persists across scene changes
         }
         else
         {
@@ -47,7 +52,22 @@ public class CoinManager : MonoBehaviour
         PlayerPrefs.Save(); // Save to disk
 
         UpdateUI();
-        Debug.Log($"Current Run Coins: {currentCoins} | Total Coins Ever: {totalCoins}");
+
+        if (showDebugLogs)
+        {
+            Debug.Log($"Coins added: {amount} | Current Run: {currentCoins} | Total Ever: {totalCoins}");
+        }
+
+        // ** ACHIEVEMENT INTEGRATION **
+        // Notify achievement manager to check if any coin achievements were unlocked
+        if (AchievementManager.Instance != null)
+        {
+            AchievementManager.Instance.CheckCoinAchievements();
+        }
+        else
+        {
+            Debug.LogWarning("[CoinManager] AchievementManager not found. Achievement checks skipped.");
+        }
     }
 
     /// <summary>
@@ -58,22 +78,43 @@ public class CoinManager : MonoBehaviour
         return currentCoins;
     }
 
+    /// <summary>
+    /// Spend coins from current run
+    /// </summary>
     public bool SpendCoins(int amount)
     {
         if (currentCoins >= amount)
         {
             currentCoins -= amount;
-            Debug.Log("Coins spent: " + amount + ". Remaining: " + currentCoins);
+            UpdateUI();
+
+            if (showDebugLogs)
+            {
+                Debug.Log($"Coins spent: {amount}. Remaining: {currentCoins}");
+            }
+
             return true;
         }
+
+        if (showDebugLogs)
+        {
+            Debug.LogWarning($"Not enough coins! Need: {amount}, Have: {currentCoins}");
+        }
+
         return false;
     }
 
+    /// <summary>
+    /// Get current run coins
+    /// </summary>
     public int GetCurrentCoins()
     {
         return currentCoins;
     }
 
+    /// <summary>
+    /// Check if player has enough coins in current run
+    /// </summary>
     public bool HasEnoughCoins(int amount)
     {
         return currentCoins >= amount;
@@ -96,7 +137,11 @@ public class CoinManager : MonoBehaviour
     {
         currentCoins = 0;
         UpdateUI();
-        Debug.Log("[CoinManager] Current run coins reset. Total coins still saved.");
+
+        if (showDebugLogs)
+        {
+            Debug.Log("[CoinManager] Current run coins reset. Total coins still saved.");
+        }
     }
 
     /// <summary>
@@ -109,7 +154,11 @@ public class CoinManager : MonoBehaviour
         PlayerPrefs.DeleteKey(TOTAL_COINS_KEY);
         PlayerPrefs.Save();
         UpdateUI();
-        Debug.Log("[CoinManager] ALL coins reset (current and total)!");
+
+        if (showDebugLogs)
+        {
+            Debug.Log("[CoinManager] ALL coins reset (current and total)!");
+        }
     }
 
     /// <summary>
@@ -118,18 +167,36 @@ public class CoinManager : MonoBehaviour
     public void DEBUG_PrintCoinStatus()
     {
         int totalCoins = GetTotalCoinsEverCollected();
-        Debug.Log($"========== COIN-STATUS ==========");
+        Debug.Log($"========== COIN STATUS ==========");
         Debug.Log($"Current Run Coins: {currentCoins}");
         Debug.Log($"Total Coins Ever Collected: {totalCoins}");
-        Debug.Log($"================================");
+        Debug.Log($"=================================");
     }
 
+    /// <summary>
+    /// Update the UI text display
+    /// </summary>
     private void UpdateUI()
     {
         if (coinText != null)
         {
             // Show current run coins in UI
             coinText.text = "Coins: " + currentCoins;
+        }
+    }
+
+    // Auto-save when application quits
+    private void OnApplicationQuit()
+    {
+        PlayerPrefs.Save();
+    }
+
+    // Auto-save when application loses focus (for mobile/alt-tab)
+    private void OnApplicationPause(bool pauseStatus)
+    {
+        if (pauseStatus)
+        {
+            PlayerPrefs.Save();
         }
     }
 }

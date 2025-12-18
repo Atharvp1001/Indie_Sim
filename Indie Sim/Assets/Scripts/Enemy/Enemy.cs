@@ -173,11 +173,9 @@ public class Enemy : MonoBehaviour, IDamageable
         // Calculate knockback direction (away from player)
         Vector2 knockbackDirection = (transform.position - playerTransform.position).normalized;
         // Multiply direction by knockback strength to create the force
-        
+
         Vector2 knockbackForce = knockbackDirection * knockbackStrength;
         enemyMovement.ApplyKnockback(knockbackForce);
-
-
 
         Debug.Log($"Enemy '{gameObject.name}' took {damage} damage. Health: {currentHealth}/{maxHealth}");
 
@@ -228,6 +226,18 @@ public class Enemy : MonoBehaviour, IDamageable
         if (isDead) return;
 
         isDead = true;
+
+        // ** KILL TRACKING INTEGRATION **
+        // Register this enemy death with the kill tracker
+        if (EnemyKillTracker.Instance != null)
+        {
+            EnemyKillTracker.Instance.RegisterEnemyKill();
+        }
+        else
+        {
+            Debug.LogWarning($"Enemy '{gameObject.name}': EnemyKillTracker not found. Kill not recorded.");
+        }
+        // ** END KILL TRACKING **
 
         // PLAY BLOOD SPLATTER EFFECT ON DEATH
         SpawnBloodSplatterOnDeath();

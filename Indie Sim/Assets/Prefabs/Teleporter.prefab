@@ -61,7 +61,7 @@ MonoBehaviour:
   - EnemySpawner
   - Coin
   - Relic
-  requiresKey: 1
+  requiresKey: 0
 --- !u!212 &6780643147178771248
 SpriteRenderer:
   m_ObjectHideFlags: 0
