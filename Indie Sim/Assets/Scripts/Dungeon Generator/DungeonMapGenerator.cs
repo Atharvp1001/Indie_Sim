@@ -339,7 +339,9 @@ public class DungeonMapGenerator : MonoBehaviour
         // Clear both tilemaps
         floorTilemap.ClearAllTiles();
         wallTilemap.ClearAllTiles();
-        if (foliageTilemap == null) foliageTilemap.ClearAllTiles();
+        foliageTilemap.ClearAllTiles();
+
+     
 
         Debug.Log($"Painting {mapData.floorTiles.Count} floor tiles and {mapData.wallTiles.Count} wall tiles");
 
