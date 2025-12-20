@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using TMPro;
 
 public class AchievementManager : MonoBehaviour
 {
@@ -8,6 +9,11 @@ public class AchievementManager : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
+
+    [Header("UI - Set Dynamically By Scene")]
+    private TextMeshProUGUI killAchievementTitleCount;
+    private TextMeshProUGUI CoinAchievementTitleCount;
+
 
     // PlayerPrefs keys for persistent data
     private const string TOTAL_COINS_KEY = "TotalCoinsEverCollected";
@@ -37,11 +43,29 @@ public class AchievementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Define all achievements in the game
+    /// Define all achievements in the game (ONLY 3 ACHIEVEMENTS)
     /// </summary>
     private void InitializeAchievements()
     {
         allAchievements.Clear();
+
+        // KILL ACHIEVEMENT - Kill 1000 enemies total
+        allAchievements.Add(new AchievementData(
+            id: "kill_1000",
+            name: "Legendary Executioner",
+            description: "Kill 1000 enemies",
+            type: AchievementType.TotalKills,
+            requiredAmount: 1000
+        ));
+
+        // COIN ACHIEVEMENT - Collect 1000 coins total
+        allAchievements.Add(new AchievementData(
+            id: "coin_1000",
+            name: "Golden Hoarder",
+            description: "Collect 1000 coins",
+            type: AchievementType.TotalCoins,
+            requiredAmount: 1000
+        ));
 
         // RELIC ACHIEVEMENT - Collect all 8 relics in a single run
         // Reward: Shotgun (to be implemented)
@@ -51,20 +75,8 @@ public class AchievementManager : MonoBehaviour
             description: "Collect all 8 relics in a single run",
             type: AchievementType.RelicRun,
             requiredAmount: 8,
-            rewardDescription: "Unlocks: Shotgun" // Reward info for UI
+            rewardDescription: "Unlocks: Shotgun"
         ));
-
-        // KILL ACHIEVEMENTS - Increments of 250
-        allAchievements.Add(new AchievementData("kill_250", "Novice Slayer", "Kill 250 enemies", AchievementType.TotalKills, 250));
-        allAchievements.Add(new AchievementData("kill_500", "Skilled Hunter", "Kill 500 enemies", AchievementType.TotalKills, 500));
-        allAchievements.Add(new AchievementData("kill_750", "Veteran Warrior", "Kill 750 enemies", AchievementType.TotalKills, 750));
-        allAchievements.Add(new AchievementData("kill_1000", "Legendary Executioner", "Kill 1000 enemies", AchievementType.TotalKills, 1000));
-
-        // COIN ACHIEVEMENTS - Increments of 1000
-        allAchievements.Add(new AchievementData("coin_1000", "Penny Pincher", "Collect 1000 coins", AchievementType.TotalCoins, 1000));
-        allAchievements.Add(new AchievementData("coin_2000", "Coin Collector", "Collect 2000 coins", AchievementType.TotalCoins, 2000));
-        allAchievements.Add(new AchievementData("coin_3000", "Treasure Hunter", "Collect 3000 coins", AchievementType.TotalCoins, 3000));
-        allAchievements.Add(new AchievementData("coin_4000", "Golden Hoarder", "Collect 4000 coins", AchievementType.TotalCoins, 4000));
 
         if (showDebugLogs)
         {
@@ -105,41 +117,110 @@ public class AchievementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Called when player kills an enemy - checks kill achievements
+    /// Updates the UI text in the main menu to show current progress
+    /// Call this when the Achievement Menu Panel is opened
+    /// </summary>
+    public void UpdateAchievementUI()
+    {
+        // Update Kill Achievement UI
+        if (killAchievementTitleCount != null)
+        {
+            int currentKills = PlayerPrefs.GetInt(TOTAL_KILLS_KEY, 0);
+            AchievementData killAchievement = allAchievements.Find(a => a.type == AchievementType.TotalKills);
+
+            if (killAchievement != null)
+            {
+                if (killAchievement.isUnlocked)
+                {
+                    killAchievementTitleCount.text = $"{killAchievement.requiredAmount}/{killAchievement.requiredAmount}";
+                }
+                else
+                {
+                    killAchievementTitleCount.text = $"{currentKills}/{killAchievement.requiredAmount}";
+                }
+            }
+
+            if (showDebugLogs)
+            {
+                Debug.Log($"[AchievementManager] Updated Kill UI: {currentKills}");
+            }
+        }
+
+        // Update Coin Achievement UI
+        if (CoinAchievementTitleCount != null)
+        {
+            int currentCoins = PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
+            AchievementData coinAchievement = allAchievements.Find(a => a.type == AchievementType.TotalCoins);
+
+            if (coinAchievement != null)
+            {
+                if (coinAchievement.isUnlocked)
+                {
+                    CoinAchievementTitleCount.text = $"{coinAchievement.requiredAmount}/{coinAchievement.requiredAmount}";
+                }
+                else
+                {
+                    CoinAchievementTitleCount.text = $"{currentCoins}/{coinAchievement.requiredAmount}";
+                }
+            }
+
+            if (showDebugLogs)
+            {
+                Debug.Log($"[AchievementManager] Updated Coin UI: {currentCoins}");
+            }
+        }
+
+       
+    }
+
+    /// <summary>
+    /// Set UI references from the current scene
+    /// Call this when loading the main menu scene
+    /// </summary>
+    public void SetUIReferences(TextMeshProUGUI killUI, TextMeshProUGUI coinUI)
+    {
+        killAchievementTitleCount = killUI;
+        CoinAchievementTitleCount = coinUI;
+
+        if (showDebugLogs)
+        {
+            Debug.Log("[AchievementManager] UI references updated for current scene");
+        }
+    }
+
+
+    /// <summary>
+    /// Called when player kills an enemy - checks kill achievement
     /// Call this from EnemyKillTracker after incrementing kill count
     /// </summary>
     public void CheckKillAchievements()
     {
         int totalKills = PlayerPrefs.GetInt(TOTAL_KILLS_KEY, 0);
 
-        foreach (AchievementData achievement in allAchievements)
+        AchievementData killAchievement = allAchievements.Find(a => a.type == AchievementType.TotalKills);
+        if (killAchievement != null && !killAchievement.isUnlocked)
         {
-            if (achievement.type == AchievementType.TotalKills && !achievement.isUnlocked)
+            if (totalKills >= killAchievement.requiredAmount)
             {
-                if (totalKills >= achievement.requiredAmount)
-                {
-                    UnlockAchievement(achievement);
-                }
+                UnlockAchievement(killAchievement);
             }
         }
     }
 
     /// <summary>
-    /// Called when player collects a coin - checks coin achievements
+    /// Called when player collects a coin - checks coin achievement
     /// Call this from CoinManager after adding coins
     /// </summary>
     public void CheckCoinAchievements()
     {
         int totalCoins = PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
 
-        foreach (AchievementData achievement in allAchievements)
+        AchievementData coinAchievement = allAchievements.Find(a => a.type == AchievementType.TotalCoins);
+        if (coinAchievement != null && !coinAchievement.isUnlocked)
         {
-            if (achievement.type == AchievementType.TotalCoins && !achievement.isUnlocked)
+            if (totalCoins >= coinAchievement.requiredAmount)
             {
-                if (totalCoins >= achievement.requiredAmount)
-                {
-                    UnlockAchievement(achievement);
-                }
+                UnlockAchievement(coinAchievement);
             }
         }
     }
@@ -154,10 +235,20 @@ public class AchievementManager : MonoBehaviour
             Debug.Log($"[AchievementManager] Relic collected. Total in run: {totalRelicsInRun}/8");
         }
 
+        // Check if achievement is already unlocked
+        AchievementData relicAchievement = allAchievements.Find(a => a.id == "relic_all_complete");
+        if (relicAchievement != null && relicAchievement.isUnlocked)
+        {
+            if (showDebugLogs)
+            {
+                Debug.Log($"[AchievementManager] Relic achievement already unlocked. Skipping.");
+            }
+            return; // Don't unlock again
+        }
+
         // Check if all 8 relics collected
         if (totalRelicsInRun >= 8)
         {
-            AchievementData relicAchievement = allAchievements.Find(a => a.id == "relic_all_complete");
             if (relicAchievement != null && !relicAchievement.isUnlocked)
             {
                 UnlockAchievement(relicAchievement);
@@ -219,6 +310,14 @@ public class AchievementManager : MonoBehaviour
                 break;
 
             // You can add more reward cases here in the future
+            // case "kill_1000":
+            //     // TODO: Grant reward for killing 1000 enemies
+            //     break;
+
+            // case "coin_1000":
+            //     // TODO: Grant reward for collecting 1000 coins
+            //     break;
+
             default:
                 break;
         }
@@ -263,7 +362,7 @@ public class AchievementManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Get current progress value (e.g., 150/250 kills)
+    /// Get current progress value (e.g., 150/1000 kills)
     /// </summary>
     public int GetCurrentProgressValue(AchievementData achievement)
     {
@@ -279,6 +378,9 @@ public class AchievementManager : MonoBehaviour
                 return 0;
         }
     }
+
+
+   
 
     /// <summary>
     /// Check if a specific achievement is unlocked

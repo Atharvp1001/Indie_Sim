@@ -6,9 +6,6 @@ public class CoinManager : MonoBehaviour
     // Singleton instance
     public static CoinManager Instance;
 
-    [Header("UI Reference")]
-    public TextMeshProUGUI coinText;
-
     [Header("Coin Tracking")]
     private int currentCoins = 0; // Coins for current run only
 
@@ -17,6 +14,9 @@ public class CoinManager : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
+
+    // Event for UI updates (other scripts can subscribe to this)
+    public System.Action<int> OnCoinsChanged;
 
     private void Awake()
     {
@@ -30,11 +30,6 @@ public class CoinManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
-    }
-
-    private void Start()
-    {
-        UpdateUI();
     }
 
     /// <summary>
@@ -51,7 +46,8 @@ public class CoinManager : MonoBehaviour
         PlayerPrefs.SetInt(TOTAL_COINS_KEY, totalCoins);
         PlayerPrefs.Save(); // Save to disk
 
-        UpdateUI();
+        // Notify subscribers (like UI) that coins changed
+        OnCoinsChanged?.Invoke(currentCoins);
 
         if (showDebugLogs)
         {
@@ -59,14 +55,9 @@ public class CoinManager : MonoBehaviour
         }
 
         // ** ACHIEVEMENT INTEGRATION **
-        // Notify achievement manager to check if any coin achievements were unlocked
         if (AchievementManager.Instance != null)
         {
             AchievementManager.Instance.CheckCoinAchievements();
-        }
-        else
-        {
-            Debug.LogWarning("[CoinManager] AchievementManager not found. Achievement checks skipped.");
         }
     }
 
@@ -86,7 +77,9 @@ public class CoinManager : MonoBehaviour
         if (currentCoins >= amount)
         {
             currentCoins -= amount;
-            UpdateUI();
+
+            // Notify subscribers
+            OnCoinsChanged?.Invoke(currentCoins);
 
             if (showDebugLogs)
             {
@@ -122,7 +115,6 @@ public class CoinManager : MonoBehaviour
 
     /// <summary>
     /// Get ALL coins ever collected (across all runs)
-    /// Default value is 0 if never saved before
     /// </summary>
     public int GetTotalCoinsEverCollected()
     {
@@ -131,12 +123,11 @@ public class CoinManager : MonoBehaviour
 
     /// <summary>
     /// Reset current run coins (called when dungeon completes or game resets)
-    /// Total coins are NOT reset - they persist forever
     /// </summary>
     public void ResetCurrentRunCoins()
     {
         currentCoins = 0;
-        UpdateUI();
+        OnCoinsChanged?.Invoke(currentCoins);
 
         if (showDebugLogs)
         {
@@ -145,19 +136,18 @@ public class CoinManager : MonoBehaviour
     }
 
     /// <summary>
-    /// DEBUG: Reset all coins (total and current)
-    /// Use this for testing or if you want to start fresh
+    /// DEBUG: Reset all coins
     /// </summary>
     public void DEBUG_ResetAllCoins()
     {
         currentCoins = 0;
         PlayerPrefs.DeleteKey(TOTAL_COINS_KEY);
         PlayerPrefs.Save();
-        UpdateUI();
+        OnCoinsChanged?.Invoke(currentCoins);
 
         if (showDebugLogs)
         {
-            Debug.Log("[CoinManager] ALL coins reset (current and total)!");
+            Debug.Log("[CoinManager] ALL coins reset!");
         }
     }
 
@@ -173,25 +163,13 @@ public class CoinManager : MonoBehaviour
         Debug.Log($"=================================");
     }
 
-    /// <summary>
-    /// Update the UI text display
-    /// </summary>
-    private void UpdateUI()
-    {
-        if (coinText != null)
-        {
-            // Show current run coins in UI
-            coinText.text = "Coins: " + currentCoins;
-        }
-    }
-
     // Auto-save when application quits
     private void OnApplicationQuit()
     {
         PlayerPrefs.Save();
     }
 
-    // Auto-save when application loses focus (for mobile/alt-tab)
+    // Auto-save when application pauses
     private void OnApplicationPause(bool pauseStatus)
     {
         if (pauseStatus)
