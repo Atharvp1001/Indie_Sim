@@ -2053,6 +2053,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7072590991702815494, guid: 41501a982adc60044ae795f99a7e5eae, type: 3}
+      propertyPath: bossPrefab
+      value: 
+      objectReference: {fileID: 8679669620423460435, guid: 96eac134c86b70a4b8dcc4a8c51bc724, type: 3}
+    - target: {fileID: 7072590991702815494, guid: 41501a982adc60044ae795f99a7e5eae, type: 3}
       propertyPath: wallTilemap
       value: 
       objectReference: {fileID: 333646817}

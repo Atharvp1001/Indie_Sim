@@ -163,8 +163,15 @@ public class DungeonMapGenerator : MonoBehaviour
     [Header("Tilemap Settings")]
     [SerializeField] private Tilemap floorTilemap;
     [SerializeField] private Tilemap wallTilemap;
+    [SerializeField] private Tilemap foliageTilemap;
     [SerializeField] private TileBase[] floorTiles;
     [SerializeField] private TileBase wallTile;
+    [SerializeField] private TileBase[] foliageTiles;
+
+    [Header("Foliage Settings")]
+    [SerializeField][Range(0f,1f)] private float foliageSpawnChance = 0.2f;
+    [SerializeField] private bool spawnFoliageInRooms = true;
+    [SerializeField] private bool spawnFoliageInCorridors = true;
 
     [Header("Teleporter Settings")]
     [SerializeField] private GameObject teleporterPrefab;
@@ -332,6 +339,7 @@ public class DungeonMapGenerator : MonoBehaviour
         // Clear both tilemaps
         floorTilemap.ClearAllTiles();
         wallTilemap.ClearAllTiles();
+        if (foliageTilemap == null) foliageTilemap.ClearAllTiles();
 
         Debug.Log($"Painting {mapData.floorTiles.Count} floor tiles and {mapData.wallTiles.Count} wall tiles");
 
@@ -339,6 +347,11 @@ public class DungeonMapGenerator : MonoBehaviour
         foreach (var floorPos in mapData.floorTiles)
         {
             floorTilemap.SetTile((Vector3Int)floorPos, GetRandomFloorTile());
+
+            if (foliageTilemap != null && ShouldSpawnFoliage(floorPos,mapData))
+            {
+                foliageTilemap.SetTile((Vector3Int)floorPos, GetRandomFoliageTile());
+            }
         }
 
         // Paint wall tiles
@@ -348,6 +361,49 @@ public class DungeonMapGenerator : MonoBehaviour
         }
 
         Debug.Log("Tile painting complete");
+    }
+
+    private bool ShouldSpawnFoliage(Vector2Int position, MapData mapData)
+    {
+        // Check if this position is in a room or corridor
+        bool isInRoom = false;
+        foreach (var room in mapData.rooms.Values)
+        {
+            if (IsPositionInRoom(position, room))
+            {
+                isInRoom = true;
+                break;
+            }
+        }
+
+        // Apply different spawn rules for rooms vs corridors
+        if (isInRoom && !spawnFoliageInRooms) return false;
+        if (!isInRoom && !spawnFoliageInCorridors) return false;
+
+        // Random chance
+        return UnityEngine.Random.value < foliageSpawnChance;
+    }
+
+    private bool IsPositionInRoom(Vector2Int position, Room room)
+    {
+        int minX = Mathf.RoundToInt(room.worldPosition.x - room.size.x / 2f);
+        int maxX = Mathf.RoundToInt(room.worldPosition.x + room.size.x / 2f);
+        int minY = Mathf.RoundToInt(room.worldPosition.y - room.size.y / 2f);
+        int maxY = Mathf.RoundToInt(room.worldPosition.y + room.size.y / 2f);
+
+        return position.x >= minX && position.x < maxX && 
+            position.y >= minY && position.y < maxY;
+    }
+
+    private TileBase GetRandomFoliageTile()
+    {
+        if (foliageTiles == null || foliageTiles.Length == 0)
+            return null;
+
+        var validTiles = foliageTiles.Where(t => t != null).ToArray();
+        if (validTiles.Length == 0) return null;
+
+        return validTiles[UnityEngine.Random.Range(0, validTiles.Length)];
     }
 
     private Vector2Int GetRoomSizeForType(RoomType roomType, MapParameters param)
