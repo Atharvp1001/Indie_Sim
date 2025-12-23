@@ -25,14 +25,21 @@ public class AchievementMenuController : MonoBehaviour
 
     public void enableAchievemnetPanel()
     {
-        // Enable achievement panel
-        AchievementMenuPanel.SetActive(true);
 
         // Update UI when opening the panel (in case data changed)
         if (AchievementManager.Instance != null)
         {
             AchievementManager.Instance.UpdateAchievementUI();
         }
+
+        // Enable achievement panel
+        if (!AchievementMenuPanel.activeSelf)
+        AchievementMenuPanel.SetActive(true);
+        else AchievementMenuPanel.SetActive(false);
+
+
+
+
     }
 
     public void disableAchievemnetPanel()

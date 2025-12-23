@@ -19,6 +19,9 @@ public class RelicManager : MonoBehaviour
     // Tracks if the relic achievement has been completed (loaded from AchievementManager)
     private bool isRelicAchievementCompleted = false;
 
+    [Header("UI")]
+    [SerializeField] private TMPro.TextMeshProUGUI relicsCollectedText;
+
     private void Start()
     {
         // Check if relic achievement is already completed
@@ -49,6 +52,8 @@ public class RelicManager : MonoBehaviour
     /// </summary>
     public void CollectRelic(int relicIndex)
     {
+       
+
         // Validate relic index
         if (relicIndex < 0 || relicIndex >= relicsCollectedThisRun.Length)
         {
@@ -84,6 +89,19 @@ public class RelicManager : MonoBehaviour
         if (uniqueRelicsCollectedThisRun >= 8)
         {
             OnAllUniqueRelicsCollected();
+        }
+
+        // Update UI
+        UpdateRelicUI();
+
+    }
+
+    private void UpdateRelicUI()
+    {
+        // Update UI text if assigned
+        if (relicsCollectedText != null)
+        {
+            relicsCollectedText.text = $"Relics: {uniqueRelicsCollectedThisRun}/8";
         }
     }
 
