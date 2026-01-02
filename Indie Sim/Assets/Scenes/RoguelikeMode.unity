@@ -1206,6 +1206,7 @@ Transform:
   - {fileID: 876903853}
   - {fileID: 1911117960}
   - {fileID: 71556129}
+  - {fileID: 1191198788}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &129230019
@@ -5276,6 +5277,78 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1163782283}
   m_CullTransparentMesh: 1
+--- !u!1 &1191198787
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1191198788}
+  - component: {fileID: 1191198789}
+  m_Layer: 0
+  m_Name: Music Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1191198788
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191198787}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 128304990}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1191198789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191198787}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65af97fc655f9e54b89d1c7b94769171, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MusicManager
+  player: {fileID: 4787297372853803443}
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  detectionRadius: 20
+  ambientTracks:
+  - {fileID: 8300000, guid: b45b4c1ef31391040af03b02980c0e30, type: 3}
+  ambientMinVolume: 0.01
+  ambientMaxVolume: 0.714
+  powerTracks:
+  - {fileID: 8300000, guid: f73cc87e1e9fc5c46961a38499df8584, type: 3}
+  powerMinVolume: 0.01
+  powerMaxVolume: 0.768
+  powerTrackLoopStartTime: 6
+  teleporterTransform: {fileID: 1762672708}
+  teleporterDetectionRadius: 10
+  teleporterAmbientSound: {fileID: 0}
+  teleporterAmbientVolume: 1
+  teleporterActivateSound: {fileID: 0}
+  teleporterActivateVolume: 1
+  deathSound: {fileID: 0}
+  deathSoundVolume: 1
+  fadeSpeed: 0.5
+  musicFadeOutSpeed: 0.5
+  showDebug: 1
 --- !u!1 &1329941259
 GameObject:
   m_ObjectHideFlags: 0
@@ -6347,6 +6420,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52469f97bfa899546ba7c2d08ff4fbb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!4 &1762672708 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7036468808429684625, guid: af192055a030fbe45b3cf6c3ea6426fa, type: 3}
+  m_PrefabInstance: {fileID: 92653778}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1773564833
 GameObject:
   m_ObjectHideFlags: 0
