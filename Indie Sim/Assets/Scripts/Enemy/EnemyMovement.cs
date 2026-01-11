@@ -64,12 +64,35 @@ public class EnemyMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        // NEW: Only move if activated
+        // Only move if activated and not in hit-stun
         if (!isActivated || isKnockedBack) return;
 
-        rb.linearVelocity = movement; // Move towards player
-    }
+        // MARBLE FIX: Gradually move towards player instead of snapping velocity
+        // This allows external forces (like the player pushing) to work
+        Vector2 targetVelocity = movement; 
+        rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, targetVelocity, Time.fixedDeltaTime * 5f);
 
+        // CROWD FIX: Push away from other enemies so they don't clump
+        HandleCrowdSeparation();
+    }
+    private static Collider2D[] neighborResults = new Collider2D[3]; // Small array for performance
+
+    void HandleCrowdSeparation()
+    {
+        // Optimization: Only check for neighbors every 2nd frame
+        if (Time.frameCount % 2 != 0) return;
+
+        // Use a small radius (0.5 - 0.7) to detect nearby "friend" enemies
+        int count = Physics2D.OverlapCircleNonAlloc(transform.position, 0.6f, neighborResults);
+        for (int i = 0; i < count; i++)
+        {
+            if (neighborResults[i].gameObject == gameObject) continue;
+
+            // Apply a small shove away from other enemies
+            Vector2 shoveDir = (transform.position - neighborResults[i].transform.position).normalized;
+            rb.AddForce(shoveDir * 5f); // 5f is a good starting strength
+        }
+    }
     public void ApplyKnockback(Vector2 force)
     {
         rb.linearVelocity = Vector2.zero; // Reset velocity

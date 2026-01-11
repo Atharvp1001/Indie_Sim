@@ -1206,7 +1206,6 @@ Transform:
   - {fileID: 876903853}
   - {fileID: 1911117960}
   - {fileID: 71556129}
-  - {fileID: 1191198788}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &129230019
@@ -2373,7 +2372,7 @@ TilemapRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: 3376745178c2a45b7b67cd3a93406ffa, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -5302,12 +5301,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1191198787}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 397.4776, y: 406.92053, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 128304990}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1191198789
 MonoBehaviour:
@@ -5844,9 +5843,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 375523325}
   - {fileID: 1362343709}
   - {fileID: 333646819}
+  - {fileID: 375523325}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!156049354 &1471270074
@@ -5896,14 +5895,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonMapGenerator
   parameters:
-    nodeCount: 5
-    mainRoomSpacing: 8
-    chanceForLTurn: 0.3
-    mainArteryPositionJitter: 2
-    distributiveNodeChancePerSegment: 1
+    nodeCount: 8
+    mainRoomSpacing: 4
+    chanceForLTurn: 0.551
+    mainArteryPositionJitter: 2.41
+    distributiveNodeChancePerSegment: 0.584
     minLeafNodesPerDistributive: 1
-    maxLeafNodesPerDistributive: 3
-    leafBranchLength: 6
+    maxLeafNodesPerDistributive: 2
+    leafBranchLength: 4
     leafNodePositionJitter: 1.5
     baseStartRoomSize: {x: 8, y: 8}
     baseEndRoomSize: {x: 8, y: 8}
@@ -5911,7 +5910,7 @@ MonoBehaviour:
     baseDistributiveRoomSize: {x: 4, y: 4}
     baseLeafRoomSize: {x: 5, y: 5}
     baseCornerRoomSize: {x: 3, y: 3}
-    roomSizeVariationPercentage: 0.2
+    roomSizeVariationPercentage: 0.519
     minRoomDistance: 2
     maxRepositionAttempts: 10
     repositionSearchRadius: 3
@@ -5933,8 +5932,10 @@ MonoBehaviour:
   spawnFoliageInCorridors: 1
   teleporterPrefab: {fileID: 4745575045145191664, guid: af192055a030fbe45b3cf6c3ea6426fa, type: 3}
   enemySpawnerPrefab: {fileID: 3680310007741697520, guid: 785bc85b44a6f8546b846805547bee60, type: 3}
-  spawnEnemySpawnersInMainRooms: 1
+  spawnEnemySpawnersInMainRooms: 0
   spawnerOffsetFromCenter: 0
+  minDistanceBetweenSpawners: 5
+  enableSpawnerRespawn: 1
   keyPrefab: {fileID: 361551793940226289, guid: 8d9ee73584baa5f48b5e3b99db0c4a0a, type: 3}
   hasKeyBeenSpawned: 0
   shouldKeyBeSpawned: 0
@@ -7858,6 +7859,18 @@ PrefabInstance:
       propertyPath: joystick
       value: 
       objectReference: {fileID: 865991090}
+    - target: {fileID: 256087201219941255, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: pushRadius
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 256087201219941255, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: pushStrength
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 256087201219941255, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: enemyLayer.m_Bits
+      value: 128
+      objectReference: {fileID: 0}
     - target: {fileID: 2693588683566327872, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -8095,6 +8108,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7072590991702815494, guid: 41501a982adc60044ae795f99a7e5eae, type: 3}
+      propertyPath: foliageSpawnChance
+      value: 0.216
+      objectReference: {fileID: 0}
+    - target: {fileID: 7072590991702815494, guid: 41501a982adc60044ae795f99a7e5eae, type: 3}
       propertyPath: SpawnKeyInLeafRooms
       value: 0
       objectReference: {fileID: 0}
@@ -8195,4 +8212,5 @@ SceneRoots:
   - {fileID: 580384872}
   - {fileID: 480311995}
   - {fileID: 1550044708}
+  - {fileID: 1191198788}
   - {fileID: 128304990}

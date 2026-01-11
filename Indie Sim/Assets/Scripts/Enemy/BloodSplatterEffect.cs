@@ -5,6 +5,8 @@ public class BloodSplatterEffect : MonoBehaviour
     [Header("Blood Splatter Prefab")]
     public ParticleSystem bloodSplatterPrefab; // Assign your blood particle system prefab
 
+    [Header("Juice Settings")]
+    [Range(0f, 90f)] public float maxRandomSpread = 30f; // How many degrees to wobble left/right
     /// <summary>
     /// Spawns blood splatter at enemy position, spraying away from player
     /// </summary>
@@ -27,9 +29,12 @@ public class BloodSplatterEffect : MonoBehaviour
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
 
         Debug.Log($"Blood spray direction: {direction}, angle: {angle}");
+        //allows the blood to splatter a little randmoly.(quality of life visual feature)
+        float randomOffset = Random.Range(-maxRandomSpread, maxRandomSpread);
+        float finalAngle = angle + randomOffset;
 
         // Create rotation for the blood splatter cone
-        Quaternion rotation = Quaternion.Euler(0f, 0f, angle);
+        Quaternion rotation = Quaternion.Euler(0f, 0f, finalAngle);
 
         // Instantiate blood effect at enemy position with calculated rotation
         ParticleSystem blood = Instantiate(bloodSplatterPrefab, enemyPosition, rotation);
