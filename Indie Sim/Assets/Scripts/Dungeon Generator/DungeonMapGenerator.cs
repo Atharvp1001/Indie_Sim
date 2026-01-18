@@ -135,7 +135,7 @@ public class MapParameters
     public int maxRepositionAttempts = 10;
     public float repositionSearchRadius = 3f;
 // NEW: Minimum distance between spawners
-        [Header("Corridor Settings")]
+    [Header("Corridor Settings")]
     public int corridorWidth = 2;
 }
 
@@ -218,6 +218,26 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
     [Tooltip("Height offset for relic spawn position (above floor)")]
     public float relicSpawnHeight = 1f;
 
+    [Header("Boss Spawning")]
+    [Tooltip("Array of boss prefabs - will cycle through them on boss levels")]
+    [SerializeField] private GameObject[] bossPrefabs = new GameObject[0];
+
+    [Tooltip("Spawn boss every X dungeons (2 = every other dungeon: level 2, 4, 6...)")]
+    [SerializeField] private int bossSpawnInterval = 2;
+
+    [Tooltip("Which room type should bosses spawn in?")]
+    [SerializeField] private BossSpawnLocation bossSpawnLocation = BossSpawnLocation.LastDistributiveRoom;
+
+    private int currentBossIndex = 0;
+    private int dungeonCount = 0; // Tracks total dungeons generated
+
+    public enum BossSpawnLocation
+    {
+        LastDistributiveRoom,
+        RandomDistributiveRoom,
+        LastMainRoom,
+        RandomLeafRoom
+    }
 
     // Add this field at the top of your dungeon generator class
     [Header("Game Mode Integration")]
@@ -232,6 +252,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
     private int keyRoomId = -1;
     void Start()
     {
+        dungeonCount = 0;
         // Only generate if not being controlled by CasualGameModeManager
         if (generateOnStart)
         {
@@ -273,6 +294,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         SpawnAllEnemySpawners();
         PaintTiles(currentMapData);
         SpawnLevelObjects();
+        CheckAndSpawnBoss();
     }
 
     private void PrintRoomDebugInfo()
@@ -361,7 +383,6 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         wallTilemap.ClearAllTiles();
         foliageTilemap.ClearAllTiles();
 
-     
 
         Debug.Log($"Painting {mapData.floorTiles.Count} floor tiles and {mapData.wallTiles.Count} wall tiles");
 
@@ -1268,7 +1289,6 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
             return false;
         }
 
-       
         if (UnityEngine.Random.value > relicSpawnChance) return false;
 
         // Determine which relic should spawn based on the counter
@@ -1301,6 +1321,106 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         return true;
     }
 
+    /// <summary>
+    /// Called by Teleporter when used - increments dungeon count
+    /// </summary>
+    public void OnTeleporterUsed()
+    {
+        dungeonCount++;
+        Debug.Log($"<color=yellow>━━━ Dungeon #{dungeonCount} Completed ━━━</color>");
+        
+        // Check if next dungeon will be a boss level
+        if ((dungeonCount + 1) % bossSpawnInterval == 0)
+        {
+            Debug.Log($"<color=red>⚠ NEXT LEVEL: BOSS INCOMING! ⚠</color>");
+        }
+    }
+
+    /// <summary>
+    /// Checks if current dungeon should have a boss and spawns it
+    /// Call this at the END of GenerateNewMap()
+    /// </summary>
+    private void CheckAndSpawnBoss()
+    {
+        // Only spawn boss on alternate levels (2, 4, 6, 8...)
+        if (dungeonCount % bossSpawnInterval != 0)
+        {
+            Debug.Log($"<color=cyan>Regular level (no boss)</color>");
+            return;
+        }
+
+        // Make sure we have boss prefabs assigned
+        if (bossPrefabs == null || bossPrefabs.Length == 0)
+        {
+            Debug.LogWarning("⚠ Boss level but no boss prefabs assigned in inspector!");
+            return;
+        }
+
+        // Get the boss prefab to spawn (cycles through array)
+        GameObject bossPrefab = bossPrefabs[currentBossIndex % bossPrefabs.Length];
+        currentBossIndex++;
+
+        // Get spawn room based on settings
+        Room bossRoom = GetBossSpawnRoom();
+        if (bossRoom == null)
+        {
+            Debug.LogError("❌ Could not find valid room for boss spawn!");
+            return;
+        }
+
+        // Calculate spawn position (center of room with slight random offset)
+        Vector3 bossSpawnPosition = new Vector3(
+            bossRoom.worldPosition.x + UnityEngine.Random.Range(-1f, 1f),
+            bossRoom.worldPosition.y + UnityEngine.Random.Range(-1f, 1f),
+            0f
+        );
+
+        // Spawn the boss
+        GameObject bossInstance = Instantiate(bossPrefab, bossSpawnPosition, Quaternion.identity);
+        
+        // Organize in hierarchy
+        GameObject bossContainer = GameObject.Find("Bosses");
+        if (bossContainer == null)
+        {
+            bossContainer = new GameObject("Bosses");
+        }
+        bossInstance.transform.SetParent(bossContainer.transform);
+        bossInstance.name = $"Boss_{bossPrefab.name}_Level{dungeonCount}";
+
+        Debug.Log($"<color=red>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>");
+        Debug.Log($"<color=red>★★★ BOSS SPAWNED: {bossPrefab.name} ★★★</color>");
+        Debug.Log($"<color=red>Room: {bossRoom.uniqueId} | Position: {bossSpawnPosition}</color>");
+        Debug.Log($"<color=red>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</color>");
+    }
+
+    /// <summary>
+    /// Gets the room where boss should spawn based on settings
+    /// </summary>
+    private Room GetBossSpawnRoom()
+    {
+        if (currentMapData == null) return null;
+
+        switch (bossSpawnLocation)
+        {
+            case BossSpawnLocation.LastDistributiveRoom:
+                var distributiveRooms = currentMapData.GetDistributiveRooms();
+                return distributiveRooms.Count > 0 ? distributiveRooms[distributiveRooms.Count - 1] : null;
+
+            case BossSpawnLocation.RandomDistributiveRoom:
+                var allDistributive = currentMapData.GetDistributiveRooms();
+                return allDistributive.Count > 0 ? allDistributive[UnityEngine.Random.Range(0, allDistributive.Count)] : null;
+
+            case BossSpawnLocation.LastMainRoom:
+                return currentMapData.GetLastMainRoom();
+
+            case BossSpawnLocation.RandomLeafRoom:
+                var leafRooms = currentMapData.GetLeafRooms();
+                return leafRooms.Count > 0 ? leafRooms[UnityEngine.Random.Range(0, leafRooms.Count)] : null;
+
+            default:
+                return currentMapData.GetLastMainRoom();
+        }
+    }
 
     // Helper method to check if a room ID is the last main room (for teleporter spawning)
     public bool IsLastMainRoom(int roomId)
@@ -1413,7 +1533,20 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         }
     }
     
+/// <summary>
+/// Returns current dungeon number (1, 2, 3...)
+/// </summary>
+    public int GetDungeonCount() => dungeonCount;
 
+/// <summary>
+/// Returns true if current dungeon is a boss level
+/// </summary>
+    public bool IsBossLevel() => dungeonCount % bossSpawnInterval == 0;
+
+/// <summary>
+/// Returns true if NEXT dungeon will be a boss level
+/// </summary>
+    public bool IsNextLevelBoss() => (dungeonCount + 1) % bossSpawnInterval == 0;
     public MapData GetCurrentMapData() => currentMapData;
     public MapParameters GetParameters() => parameters;
 }

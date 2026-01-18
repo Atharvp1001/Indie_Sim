@@ -19,6 +19,9 @@ public class BossEnemy : MonoBehaviour, IDamageable
     [SerializeField] private float wallBounceMultiplier = 1.2f;
     [SerializeField] private float directionChangeInterval = 2f; // Recalculate path to player
 
+    [Header("Layer Settings")]
+    [SerializeField] private LayerMask wallsLayer; // Assign your Walls layer in inspector
+
     [Header("Visual Feedback")]
     [SerializeField] private float flashDuration = 0.1f;
     [SerializeField] private Color damageColor = Color.red;
@@ -123,8 +126,8 @@ public class BossEnemy : MonoBehaviour, IDamageable
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        // Bounce off walls
-        if (collision.gameObject.CompareTag("Walls") || collision.gameObject.layer == LayerMask.NameToLayer("Walls"))
+        // Bounce off walls using layer check
+        if (IsOnLayer(collision.gameObject, wallsLayer))
         {
             BounceOffWall(collision);
         }
@@ -143,6 +146,14 @@ public class BossEnemy : MonoBehaviour, IDamageable
         {
             AttemptAttackPlayer(collision.gameObject);
         }
+    }
+
+    /// <summary>
+    /// Checks if a GameObject is on any of the layers in the LayerMask
+    /// </summary>
+    private bool IsOnLayer(GameObject obj, LayerMask layerMask)
+    {
+        return ((1 << obj.layer) & layerMask) != 0;
     }
 
     private void BounceOffWall(Collision2D collision)
