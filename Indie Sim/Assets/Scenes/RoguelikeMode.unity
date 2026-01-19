@@ -5328,11 +5328,11 @@ MonoBehaviour:
   wallLayer:
     serializedVersion: 2
     m_Bits: 256
-  detectionRadius: 20
+  detectionRadius: 10
   ambientTracks:
   - {fileID: 8300000, guid: b45b4c1ef31391040af03b02980c0e30, type: 3}
   ambientMinVolume: 0.01
-  ambientMaxVolume: 0.714
+  ambientMaxVolume: 0.5
   powerTracks:
   - {fileID: 8300000, guid: f73cc87e1e9fc5c46961a38499df8584, type: 3}
   powerMinVolume: 0.01
@@ -5346,8 +5346,8 @@ MonoBehaviour:
   teleporterActivateVolume: 1
   deathSound: {fileID: 0}
   deathSoundVolume: 1
-  fadeSpeed: 0.5
-  musicFadeOutSpeed: 0.5
+  fadeSpeed: 1
+  musicFadeOutSpeed: 1
   showDebug: 1
 --- !u!1 &1329941259
 GameObject:
@@ -7858,6 +7858,26 @@ PrefabInstance:
       propertyPath: joystick
       value: 
       objectReference: {fileID: 865991090}
+    - target: {fileID: 2168372277178147741, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2168372277178147741, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Parameters.colorGradient.atime0
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2168372277178147741, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Parameters.colorGradient.ctime0
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2168372277178147741, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Parameters.colorGradient.key0.a
+      value: 0.101960786
+      objectReference: {fileID: 0}
+    - target: {fileID: 2168372277178147741, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Parameters.colorGradient.key1.a
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2693588683566327872, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -7947,9 +7967,21 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1505850690}
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: bulletTrailSpeed
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: shootingJoystick
       value: 
       objectReference: {fileID: 839790499}
+    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: bulletTrailPrefab
+      value: 
+      objectReference: {fileID: 2475267044848316794, guid: 022ec939485f8a54c826ae042c1026f0, type: 3}
+    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: bulletTrailDuration
+      value: 0.1
+      objectReference: {fileID: 0}
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: muzzleFlashParticles
       value: 

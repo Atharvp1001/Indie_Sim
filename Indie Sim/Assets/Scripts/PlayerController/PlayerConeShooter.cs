@@ -15,13 +15,15 @@ public class PlayerConeShooter : MonoBehaviour
     [SerializeField] private KeyCode weaponSwitchKey = KeyCode.Tab;
 
     [Header("Weapon Lock/Unlock System")]
-    [SerializeField] private bool[] weaponUnlockStatus; // Tracks which weapons are unlocked
+    [SerializeField] private bool[] weaponUnlockStatus;
 
     [Header("General Settings")]
     [SerializeField] private LayerMask enemyLayers = -1;
-    [SerializeField] private bool showConeInEditor = true;
+    // CHANGED: Removed coneVisualizer LineRenderer
+    // CHANGED: Added Gizmo settings
+    [SerializeField] private bool showConeGizmo = true; // Toggle cone gizmo in editor
+    [SerializeField] private Color coneGizmoColor = new Color(1f, 0f, 0f, 0.3f); // Red with transparency
     [SerializeField] private float joystickDeadZone = 0.1f;
-    [SerializeField] private LineRenderer coneVisualizer;
 
     [Header("Audio Source")]
     [SerializeField] private AudioSource audioSource;
@@ -41,6 +43,16 @@ public class PlayerConeShooter : MonoBehaviour
     public Transform muzzlePoint;
     public Transform shellEjectionPoint;
 
+    [Header("Bullet Trail Settings")]
+    [SerializeField] private GameObject bulletTrailPrefab;
+    [SerializeField] private float bulletTrailSpeed = 50f;
+    [SerializeField] private float bulletTrailDuration = 0.2f;
+    [SerializeField] private float damageDelay = 0.05f;
+    [SerializeField] private int trailPoolSize = 20;
+
+    private List<LineRenderer> trailPool = new List<LineRenderer>();
+    private List<LineRenderer> activeTrails = new List<LineRenderer>();
+
     private bool particlesPlaying = false;
     private WeaponData currentWeapon;
 
@@ -48,14 +60,16 @@ public class PlayerConeShooter : MonoBehaviour
     private bool wasShooting = false;
     private List<IDamageable> damageableTargets = new List<IDamageable>();
 
+    // CHANGED: Store current shooting direction for Gizmo visualization
+    private Vector2 currentShootingDirection = Vector2.zero;
+
     private void Start()
     {
-        // Initialize weapon lock system
         InitializeWeaponLockSystem();
+        InitializeBulletTrailPool();
 
         if (availableWeapons.Length > 0)
         {
-            // Find the first unlocked weapon
             int firstUnlockedWeapon = -1;
             for (int i = 0; i < weaponUnlockStatus.Length; i++)
             {
@@ -81,19 +95,77 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
+    private void InitializeBulletTrailPool()
+    {
+        if (bulletTrailPrefab == null)
+        {
+            Debug.LogWarning("[PlayerConeShooter] No bullet trail prefab assigned! Bullet trails will not appear.");
+            return;
+        }
+
+        for (int i = 0; i < trailPoolSize; i++)
+        {
+            GameObject trailObj = Instantiate(bulletTrailPrefab, transform);
+            LineRenderer trail = trailObj.GetComponent<LineRenderer>();
+
+            if (trail == null)
+            {
+                Debug.LogError("[PlayerConeShooter] Bullet trail prefab doesn't have a LineRenderer component!");
+                Destroy(trailObj);
+                continue;
+            }
+
+            trail.positionCount = 2;
+            trailObj.SetActive(false);
+            trailPool.Add(trail);
+        }
+
+        Debug.Log($"[PlayerConeShooter] Bullet trail pool initialized with {trailPool.Count} trails");
+    }
+
+    private LineRenderer GetTrailFromPool()
+    {
+        foreach (LineRenderer trail in trailPool)
+        {
+            if (!trail.gameObject.activeInHierarchy)
+            {
+                trail.gameObject.SetActive(true);
+                activeTrails.Add(trail);
+                return trail;
+            }
+        }
+
+        if (activeTrails.Count > 0)
+        {
+            LineRenderer oldestTrail = activeTrails[0];
+            activeTrails.RemoveAt(0);
+            activeTrails.Add(oldestTrail);
+            return oldestTrail;
+        }
+
+        return null;
+    }
+
+    private void ReturnTrailToPool(LineRenderer trail)
+    {
+        if (trail != null)
+        {
+            trail.gameObject.SetActive(false);
+            activeTrails.Remove(trail);
+        }
+    }
+
     private void InitializeWeaponLockSystem()
     {
         if (weaponUnlockStatus == null || weaponUnlockStatus.Length != availableWeapons.Length)
         {
             weaponUnlockStatus = new bool[availableWeapons.Length];
 
-            // All weapons start LOCKED
             for (int i = 0; i < weaponUnlockStatus.Length; i++)
             {
                 weaponUnlockStatus[i] = false;
             }
 
-            // Pistol (index 0) starts UNLOCKED
             if (weaponUnlockStatus.Length > 0)
             {
                 weaponUnlockStatus[0] = true;
@@ -120,10 +192,8 @@ public class PlayerConeShooter : MonoBehaviour
         {
             shootDirection = shootDirection.normalized;
 
-            if (coneVisualizer != null)
-            {
-                UpdateConeVisual(shootDirection);
-            }
+            // CHANGED: Store direction for Gizmo instead of updating LineRenderer
+            currentShootingDirection = shootDirection;
 
             if (Time.time >= nextFireTime)
             {
@@ -134,16 +204,62 @@ public class PlayerConeShooter : MonoBehaviour
         }
         else
         {
-            if (coneVisualizer != null)
-            {
-                coneVisualizer.enabled = false;
-            }
+            // CHANGED: Clear shooting direction when not shooting
+            currentShootingDirection = Vector2.zero;
 
             if (wasShooting)
             {
                 OnStopShooting();
             }
             wasShooting = false;
+        }
+    }
+
+    // CHANGED: New Gizmo drawing method - only visible in Unity Editor
+    private void OnDrawGizmos()
+    {
+        if (!showConeGizmo || currentWeapon == null || firePoint == null) return;
+
+        // Only draw if we have a valid shooting direction
+        if (currentShootingDirection.magnitude < joystickDeadZone) return;
+
+        // Get trapezium points from weapon
+        Vector2[] trapeziumPoints = currentWeapon.GetTrapeziumPoints(firePoint.position, currentShootingDirection);
+
+        // Draw filled trapezium
+        Gizmos.color = coneGizmoColor;
+
+        // Draw the cone as a filled polygon
+        // Unity Gizmos don't have direct polygon fill, so we draw triangles
+        Vector3[] points3D = new Vector3[4];
+        for (int i = 0; i < 4; i++)
+        {
+            points3D[i] = new Vector3(trapeziumPoints[i].x, trapeziumPoints[i].y, 0);
+        }
+
+        // Draw two triangles to fill the trapezium
+        DrawGizmoTriangle(points3D[0], points3D[1], points3D[2]);
+        DrawGizmoTriangle(points3D[0], points3D[2], points3D[3]);
+
+        // Draw outline
+        Gizmos.color = new Color(coneGizmoColor.r, coneGizmoColor.g, coneGizmoColor.b, 1f); // Full opacity for outline
+        Gizmos.DrawLine(points3D[0], points3D[1]);
+        Gizmos.DrawLine(points3D[1], points3D[2]);
+        Gizmos.DrawLine(points3D[2], points3D[3]);
+        Gizmos.DrawLine(points3D[3], points3D[0]);
+    }
+
+    // CHANGED: Helper method to draw filled triangle
+    private void DrawGizmoTriangle(Vector3 p1, Vector3 p2, Vector3 p3)
+    {
+        // Draw multiple lines to simulate fill
+        int steps = 10;
+        for (int i = 0; i <= steps; i++)
+        {
+            float t = i / (float)steps;
+            Vector3 start = Vector3.Lerp(p1, p2, t);
+            Vector3 end = Vector3.Lerp(p1, p3, t);
+            Gizmos.DrawLine(start, end);
         }
     }
 
@@ -163,15 +279,10 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Switch to a specific weapon by index
-    /// Only allowed if the weapon is unlocked
-    /// </summary>
     public void SwitchToWeapon(int weaponIndex)
     {
         if (weaponIndex >= 0 && weaponIndex < availableWeapons.Length)
         {
-            // Check if weapon is unlocked
             if (!weaponUnlockStatus[weaponIndex])
             {
                 Debug.LogWarning($"[PlayerConeShooter] Cannot switch to {availableWeapons[weaponIndex].weaponName} - weapon is LOCKED!");
@@ -191,10 +302,6 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Switch to next unlocked weapon
-    /// Skips locked weapons
-    /// </summary>
     public void SwitchToNextWeapon()
     {
         int startIndex = currentWeaponIndex;
@@ -214,19 +321,12 @@ public class PlayerConeShooter : MonoBehaviour
             Debug.LogWarning("[PlayerConeShooter] No unlocked weapons available!");
         }
     }
-    /// <summary>
-    /// Get all available weapons array
-    /// Used by UpgradeManager to access and modify weapons
-    /// </summary>
+
     public WeaponData[] GetAllWeapons()
     {
         return availableWeapons;
     }
 
-    /// <summary>
-    /// Switch to previous unlocked weapon
-    /// Skips locked weapons
-    /// </summary>
     public void SwitchToPreviousWeapon()
     {
         int startIndex = currentWeaponIndex;
@@ -260,12 +360,6 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
-    // ===== WEAPON UNLOCK SYSTEM =====
-
-    /// <summary>
-    /// Unlock the Shotgun weapon
-    /// Call this when player finds/earns a shotgun upgrade
-    /// </summary>
     public void UnlockShotgun()
     {
         for (int i = 0; i < availableWeapons.Length; i++)
@@ -289,10 +383,6 @@ public class PlayerConeShooter : MonoBehaviour
         Debug.LogError("[PlayerConeShooter] Shotgun not found in available weapons!");
     }
 
-    /// <summary>
-    /// Unlock the Machine Gun weapon
-    /// Call this when player finds/earns a machine gun upgrade
-    /// </summary>
     public void UnlockMachineGun()
     {
         for (int i = 0; i < availableWeapons.Length; i++)
@@ -317,9 +407,6 @@ public class PlayerConeShooter : MonoBehaviour
         Debug.LogError("[PlayerConeShooter] Machine Gun not found in available weapons!");
     }
 
-    /// <summary>
-    /// Check if a weapon is unlocked by index
-    /// </summary>
     public bool IsWeaponUnlocked(int weaponIndex)
     {
         if (weaponIndex >= 0 && weaponIndex < weaponUnlockStatus.Length)
@@ -329,9 +416,6 @@ public class PlayerConeShooter : MonoBehaviour
         return false;
     }
 
-    /// <summary>
-    /// Get all unlocked weapons count
-    /// </summary>
     public int GetUnlockedWeaponCount()
     {
         int count = 0;
@@ -342,9 +426,6 @@ public class PlayerConeShooter : MonoBehaviour
         return count;
     }
 
-    /// <summary>
-    /// DEBUG: Print current weapon lock status
-    /// </summary>
     public void PrintWeaponLockStatus()
     {
         Debug.Log("========== WEAPON LOCK STATUS ==========");
@@ -357,14 +438,196 @@ public class PlayerConeShooter : MonoBehaviour
         Debug.Log("=======================================");
     }
 
-    // ===== REST OF SHOOTING CODE (unchanged) =====
-
     private void FireCone(Vector2 direction)
     {
         damageableTargets.Clear();
         DetectDamageableTargetsInCone(direction);
-        DamageAllTargetsInCone(currentWeapon.damagePerShot);
+
+        // CHANGED: Always create bullet trails, even if no enemies
+        CreateBulletTrailsAndDamage(direction);
+
         PlayShootEffects();
+    }
+
+
+    private void CreateBulletTrailsAndDamage(Vector2 direction)
+    {
+        if (currentWeapon.weaponType == WeaponData.WeaponType.Standard)
+        {
+            // Single bullet - check if we hit an enemy
+            IDamageable closestTarget = GetClosestTarget(out Vector3 hitPosition);
+
+            if (closestTarget != null)
+            {
+                // Hit an enemy - trail goes to enemy and damages it
+                StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPosition, closestTarget, currentWeapon.damagePerShot));
+            }
+            else
+            {
+                // No enemy - trail goes to max range in shooting direction
+                Vector3 endPosition = (Vector3)firePoint.position + new Vector3(direction.x, direction.y, 0) * currentWeapon.coneRange;
+                StartCoroutine(BulletTrailCoroutine(firePoint.position, endPosition, null, 0));
+            }
+        }
+        else if (currentWeapon.weaponType == WeaponData.WeaponType.Shotgun)
+        {
+            // CHANGED: Shotgun fires multiple bullets based on cone angle
+            int pelletsPerShot = 5; // Number of shotgun pellets
+            float spreadAngle = currentWeapon.GetAngleAtDistance(currentWeapon.coneRange); // Max spread angle
+
+            // Track which enemies we've already hit
+            List<IDamageable> hitTargets = new List<IDamageable>();
+
+            for (int i = 0; i < pelletsPerShot; i++)
+            {
+                // Calculate spread for this pellet
+                float angleOffset = Mathf.Lerp(-spreadAngle, spreadAngle, i / (float)(pelletsPerShot - 1));
+                Vector2 pelletDirection = RotateVector(direction, angleOffset);
+
+                // Check if this pellet hits an enemy
+                IDamageable hitEnemy = GetTargetInDirection(pelletDirection, hitTargets);
+
+                if (hitEnemy != null)
+                {
+                    // Hit an enemy
+                    GameObject targetGO = hitEnemy.GetGameObject();
+                    StartCoroutine(BulletTrailCoroutine(firePoint.position, targetGO.transform.position, hitEnemy, currentWeapon.damagePerShot));
+                    hitTargets.Add(hitEnemy); // Mark as hit so other pellets can still hit it
+                }
+                else
+                {
+                    // No enemy - trail goes to max range
+                    Vector3 endPosition = (Vector3)firePoint.position + new Vector3(pelletDirection.x, pelletDirection.y, 0) * currentWeapon.coneRange;
+                    StartCoroutine(BulletTrailCoroutine(firePoint.position, endPosition, null, 0));
+                }
+            }
+        }
+    }
+
+    private IDamageable GetTargetInDirection(Vector2 direction, List<IDamageable> excludeTargets)
+    {
+        IDamageable closestTarget = null;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (IDamageable target in damageableTargets)
+        {
+            if (target == null || target.IsDead()) continue;
+
+            GameObject targetGO = target.GetGameObject();
+            Vector2 directionToTarget = (targetGO.transform.position - firePoint.position).normalized;
+            float distanceToTarget = Vector3.Distance(firePoint.position, targetGO.transform.position);
+
+            // Check if target is in this pellet's direction (within a small angle)
+            float angleToTarget = Vector2.Angle(direction, directionToTarget);
+            if (angleToTarget > 5f) continue; // 5 degree tolerance per pellet
+
+            // Check for obstacles
+            RaycastHit2D hit = Physics2D.Raycast(firePoint.position, directionToTarget, distanceToTarget, obstacleLayers);
+            if (hit.collider != null) continue;
+
+            if (distanceToTarget < closestDistance)
+            {
+                closestDistance = distanceToTarget;
+                closestTarget = target;
+            }
+        }
+
+        return closestTarget;
+    }
+
+    private Vector2 RotateVector(Vector2 vector, float angleDegrees)
+    {
+        float angleRadians = angleDegrees * Mathf.Deg2Rad;
+        float cos = Mathf.Cos(angleRadians);
+        float sin = Mathf.Sin(angleRadians);
+
+        return new Vector2(
+            vector.x * cos - vector.y * sin,
+            vector.x * sin + vector.y * cos
+        );
+    }
+
+    private IEnumerator BulletTrailCoroutine(Vector3 startPos, Vector3 endPos, IDamageable target, int damage)
+    {
+        LineRenderer trail = GetTrailFromPool();
+        if (trail == null) yield break;
+
+        trail.SetPosition(0, startPos);
+        trail.SetPosition(1, startPos);
+
+        float travelTime = Vector3.Distance(startPos, endPos) / bulletTrailSpeed;
+        float elapsedTime = 0f;
+
+        // Animate the trail traveling
+        while (elapsedTime < travelTime)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / travelTime;
+
+            Vector3 currentEnd = Vector3.Lerp(startPos, endPos, t);
+            trail.SetPosition(1, currentEnd);
+
+            yield return null;
+        }
+
+        // Trail reached end position
+        trail.SetPosition(1, endPos);
+
+        // CHANGED: Only damage if we actually hit an enemy (target is not null)
+        if (target != null)
+        {
+            yield return new WaitForSeconds(damageDelay);
+
+            if (!target.IsDead())
+            {
+                target.TakeDamage(damage);
+
+                if (currentWeapon.hitEffect != null)
+                {
+                    Instantiate(currentWeapon.hitEffect, endPos, Quaternion.identity);
+                }
+
+                Debug.Log($"Damaged {target.GetGameObject().name} for {damage} damage with {currentWeapon.weaponName}");
+            }
+        }
+
+        // Keep trail visible
+        yield return new WaitForSeconds(bulletTrailDuration - travelTime - (target != null ? damageDelay : 0));
+
+        // Return trail to pool
+        ReturnTrailToPool(trail);
+    }
+
+    private IDamageable GetClosestTarget(out Vector3 hitPosition)
+    {
+        hitPosition = Vector3.zero;
+
+        if (damageableTargets.Count == 0) return null;
+
+        IDamageable closestTarget = null;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (IDamageable target in damageableTargets)
+        {
+            if (target == null || target.IsDead()) continue;
+
+            GameObject targetGO = target.GetGameObject();
+            float distanceToTarget = Vector3.Distance(firePoint.position, targetGO.transform.position);
+
+            if (distanceToTarget < closestDistance)
+            {
+                Vector3 directionToTarget = (targetGO.transform.position - firePoint.position).normalized;
+                RaycastHit2D hit = Physics2D.Raycast(firePoint.position, directionToTarget, distanceToTarget, obstacleLayers);
+
+                if (hit.collider != null) continue;
+
+                closestDistance = distanceToTarget;
+                closestTarget = target;
+                hitPosition = targetGO.transform.position;
+            }
+        }
+
+        return closestTarget;
     }
 
     private void DetectDamageableTargetsInCone(Vector2 direction)
@@ -393,84 +656,6 @@ public class PlayerConeShooter : MonoBehaviour
         float allowedAngle = currentWeapon.GetAngleAtDistance(distance);
         float angleToTarget = Vector2.Angle(direction, directionToTarget);
         return angleToTarget <= allowedAngle;
-    }
-
-    private void DamageAllTargetsInCone(int damageAmount)
-    {
-        if (currentWeapon.weaponType == WeaponData.WeaponType.Standard)
-        {
-            DamageClosestTarget(damageAmount);
-        }
-        else if (currentWeapon.weaponType == WeaponData.WeaponType.Shotgun)
-        {
-            DamageAllTargets(damageAmount);
-        }
-    }
-
-    private void DamageClosestTarget(int damageAmount)
-    {
-        if (damageableTargets.Count == 0) return;
-
-        IDamageable closestTarget = null;
-        float closestDistance = Mathf.Infinity;
-        GameObject closestTargetGO = null;
-
-        foreach (IDamageable target in damageableTargets)
-        {
-            if (target == null || target.IsDead()) continue;
-
-            GameObject targetGO = target.GetGameObject();
-            float distanceToTarget = Vector3.Distance(firePoint.position, targetGO.transform.position);
-
-            if (distanceToTarget < closestDistance)
-            {
-                Vector3 directionToTarget = (targetGO.transform.position - firePoint.position).normalized;
-                RaycastHit2D hit = Physics2D.Raycast(firePoint.position, directionToTarget, distanceToTarget, obstacleLayers);
-
-                if (hit.collider != null) continue;
-
-                closestDistance = distanceToTarget;
-                closestTarget = target;
-                closestTargetGO = targetGO;
-            }
-        }
-
-        if (closestTarget != null && closestTargetGO != null)
-        {
-            closestTarget.TakeDamage(damageAmount);
-
-            if (currentWeapon.hitEffect != null)
-            {
-                Instantiate(currentWeapon.hitEffect, closestTargetGO.transform.position, Quaternion.identity);
-            }
-
-            Debug.Log($"Damaged {closestTargetGO.name} for {damageAmount} damage with {currentWeapon.weaponName}");
-        }
-    }
-
-    private void DamageAllTargets(int damageAmount)
-    {
-        foreach (IDamageable target in damageableTargets)
-        {
-            if (target != null && !target.IsDead())
-            {
-                GameObject targetGO = target.GetGameObject();
-                Vector3 directionToTarget = (targetGO.transform.position - firePoint.position).normalized;
-                float distanceToTarget = Vector3.Distance(firePoint.position, targetGO.transform.position);
-
-                RaycastHit2D hit = Physics2D.Raycast(firePoint.position, directionToTarget, distanceToTarget, obstacleLayers);
-                if (hit.collider != null) continue;
-
-                target.TakeDamage(damageAmount);
-
-                if (currentWeapon.hitEffect != null)
-                {
-                    Instantiate(currentWeapon.hitEffect, targetGO.transform.position, Quaternion.identity);
-                }
-
-                Debug.Log($"Damaged {targetGO.name} for {damageAmount} damage with {currentWeapon.weaponName}");
-            }
-        }
     }
 
     public void PlayShootEffects()
@@ -553,20 +738,7 @@ public class PlayerConeShooter : MonoBehaviour
         particlesPlaying = false;
     }
 
-    private void UpdateConeVisual(Vector2 direction)
-    {
-        if (coneVisualizer == null || currentWeapon == null) return;
-        coneVisualizer.enabled = true;
-
-        Vector2[] trapeziumPoints = currentWeapon.GetTrapeziumPoints(firePoint.position, direction);
-
-        coneVisualizer.positionCount = 5;
-        coneVisualizer.SetPosition(0, trapeziumPoints[0]);
-        coneVisualizer.SetPosition(1, trapeziumPoints[3]);
-        coneVisualizer.SetPosition(2, trapeziumPoints[2]);
-        coneVisualizer.SetPosition(3, trapeziumPoints[1]);
-        coneVisualizer.SetPosition(4, trapeziumPoints[0]);
-    }
+    // CHANGED: Removed UpdateConeVisual method - no longer needed
 
     private void OnStopShooting()
     {
