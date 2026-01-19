@@ -64,7 +64,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   canRespawn: 1
-  respawnDelay: 1
+  respawnDelay: 10
   respawnExclusionRadius: 8
 --- !u!212 &3399380655111319332
 SpriteRenderer:
