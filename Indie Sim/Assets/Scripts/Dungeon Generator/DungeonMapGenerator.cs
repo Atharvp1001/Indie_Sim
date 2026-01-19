@@ -136,7 +136,7 @@ public class MapParameters
     public float repositionSearchRadius = 3f;
 // NEW: Minimum distance between spawners
     [Header("Corridor Settings")]
-    public int corridorWidth = 2;
+    [Range(1,2)] public int corridorWidth;
 }
 
 public class MapData
@@ -1067,6 +1067,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
                 processedConnections.Add(connectionKey);
 
                 var connectedRoom = rooms[connection.connectedRoomId];
+                param.corridorWidth = RandomRangeInt(1,2);
                 AddCorridorTiles(room.worldPosition, connectedRoom.worldPosition, param.corridorWidth, floorTiles);
             }
         }

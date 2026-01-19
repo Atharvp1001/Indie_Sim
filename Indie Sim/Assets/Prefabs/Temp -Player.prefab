@@ -5274,10 +5274,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 604279fe2211a094cb4bb352c59449ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Rigidbody2D: {fileID: 5045363974331740693}
+  baseMoveSpeed: 5
   joystick: {fileID: 0}
-  moveSpeed: 7
-  trailParticleSystem: {fileID: 552857626009751671}
+  pushRadius: 2
+  pushStr: 5
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!61 &6221989387875595873
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -5369,8 +5372,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8dfe85ede84364e4bbd47cc0fd9fd25c, type: 2}
   - {fileID: 11400000, guid: 5827dbebab0bf6f4583880f757b6faaa, type: 2}
   - {fileID: 11400000, guid: 56c3f4ef79cead346984d21b7544d9d8, type: 2}
-  currentWeaponIndex: 0
+  currentWeaponIndex: 1
   weaponSwitchKey: 116
+  weaponUnlockStatus: 
   enemyLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -5720,7 +5724,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c81baec4c8af2974694594698998c817, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinManager
-  coinText: {fileID: 0}
+  showDebugLogs: 1
 --- !u!114 &5970754329784749663
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5734,6 +5738,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxHealth: 100
+  baseMaxHealth: 100
+  currentHealth: 0
   damageCooldown: 1
   flashSpeed: 0.1
   flashDuration: 1
@@ -5743,6 +5749,7 @@ MonoBehaviour:
   deathDelay: 3
   deathUIPanel: {fileID: 0}
   aliveSprite: {fileID: 21300000, guid: 997196f5322f2e24abf27227d75fb65d, type: 3}
+  healthHeartBar: {fileID: 0}
 --- !u!108 &2047155134849269702
 Light:
   m_ObjectHideFlags: 0

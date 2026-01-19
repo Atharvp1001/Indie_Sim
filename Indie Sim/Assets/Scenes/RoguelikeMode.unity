@@ -5896,15 +5896,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonMapGenerator
   parameters:
-    nodeCount: 5
-    mainRoomSpacing: 8
-    chanceForLTurn: 0.3
-    mainArteryPositionJitter: 2
-    distributiveNodeChancePerSegment: 1
-    minLeafNodesPerDistributive: 1
-    maxLeafNodesPerDistributive: 3
-    leafBranchLength: 6
-    leafNodePositionJitter: 1.5
+    nodeCount: 20
+    mainRoomSpacing: 10
+    chanceForLTurn: 0.622
+    mainArteryPositionJitter: 0.5
+    distributiveNodeChancePerSegment: 0.888
+    minLeafNodesPerDistributive: 2
+    maxLeafNodesPerDistributive: 4
+    leafBranchLength: 3.5
+    leafNodePositionJitter: 0.3
     baseStartRoomSize: {x: 8, y: 8}
     baseEndRoomSize: {x: 8, y: 8}
     baseMainArteryRoomSize: {x: 6, y: 6}
@@ -5912,7 +5912,7 @@ MonoBehaviour:
     baseLeafRoomSize: {x: 5, y: 5}
     baseCornerRoomSize: {x: 3, y: 3}
     roomSizeVariationPercentage: 0.2
-    minRoomDistance: 2
+    minRoomDistance: 0.1
     maxRepositionAttempts: 10
     repositionSearchRadius: 3
     corridorWidth: 2
@@ -5935,6 +5935,8 @@ MonoBehaviour:
   enemySpawnerPrefab: {fileID: 3680310007741697520, guid: 785bc85b44a6f8546b846805547bee60, type: 3}
   spawnEnemySpawnersInMainRooms: 1
   spawnerOffsetFromCenter: 0
+  minDistanceBetweenSpawners: 5
+  enableSpawnerRespawn: 1
   keyPrefab: {fileID: 361551793940226289, guid: 8d9ee73584baa5f48b5e3b99db0c4a0a, type: 3}
   hasKeyBeenSpawned: 0
   shouldKeyBeSpawned: 0
@@ -5948,11 +5950,11 @@ MonoBehaviour:
   - {fileID: 2605754572129542686, guid: 9ab0d463419303347ba42a073a7d67e5, type: 3}
   - {fileID: 2605754572129542686, guid: 3f9732aa7cba4534a88d9b5b3726f70b, type: 3}
   roomsPerRelicType: 1
-  bossEnemyPrefab: {fileID: 4378826246253291127, guid: a66fb379126a5dd4dab3dd3204c61469, type: 3}
-  autoBossSpawn: 1
-  bossSpawnLocation: 1
   relicSpawnChance: 0.25
   relicSpawnHeight: 0
+  bossPrefabs: []
+  bossSpawnInterval: 2
+  bossSpawnLocation: 1
   generateOnStart: 0
 --- !u!4 &1550044708
 Transform:

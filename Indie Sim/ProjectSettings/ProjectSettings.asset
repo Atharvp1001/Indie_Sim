@@ -147,6 +147,8 @@ PlayerSettings:
   - {fileID: 0}
   - {fileID: -944628639613478452, guid: ca395cef374c4f14a833c456d8d6fd81, type: 3}
   - {fileID: 11400000, guid: 5803f949dfc30ae45acaf8986592a9bb, type: 2}
+  - {fileID: 9058713464387305537, guid: 3257b4a80cb28494eae1fac225750df8, type: 2}
+  - {fileID: 11400000, guid: 83ce9056178cf2849b146fce0665d566, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -286,7 +288,7 @@ PlayerSettings:
   AndroidEnableTango: 0
   androidEnableBanner: 1
   androidUseLowAccuracyLocation: 0
-  androidUseCustomKeystore: 1
+  androidUseCustomKeystore: 0
   m_AndroidBanners:
   - width: 320
     height: 180
