@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class EnemySpawner : MonoBehaviour, IDamageable
@@ -35,6 +36,15 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     [SerializeField] private AudioClip damageSound;
     [SerializeField] private AudioClip deathSound;
 
+    [Header("Wall Detection")]
+    [SerializeField] private LayerMask wallLayer; // Assign your wall layer in inspector
+
+    [Header("Respawn Settings")]
+    [SerializeField] private bool canRespawn = true;
+    [SerializeField] private float respawnDelay = 10f; // Time before respawning
+    [SerializeField] private float respawnExclusionRadius = 8f; // Area where new spawner can't spawn after this one dies
+    
+    private DungeonMapGenerator dungeonGenerator;
     // Components
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
@@ -48,7 +58,10 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     private float spawnRate_Level1 = 80f;
     private float spawnRate_Level2 = 15f;
     private float spawnRate_Level3 = 5f;
-
+    
+    //For Respawn Settings.
+    public float GetRespawnExclusionRadius() => respawnExclusionRadius;
+    public bool CanRespawn() => canRespawn;
     // Events
     public System.Action<int, int> OnHealthChanged;
     public System.Action OnDeath;
@@ -63,6 +76,10 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         InvokeRepeating(nameof(SpawnEnemy), spawnInterval, spawnInterval);
     }
 
+    public void SetDungeonGenerator(DungeonMapGenerator generator)
+    {
+        dungeonGenerator = generator;
+    }
     private void InitializeSpawner()
     {
         // Initialize health
@@ -190,13 +207,117 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         return enemyLevel1Prefab;
     }
 
+    /// <summary>
+    /// Gets valid spawn directions by checking which sides don't have walls
+    /// Uses multiple raycasts per direction for better detection
+    /// </summary>
+    private List<Vector2> GetValidSpawnDirections()
+    {
+        List<Vector2> validDirections = new List<Vector2>();
+        
+        // All 4 cardinal directions
+        Vector2[] cardinalDirections = new Vector2[]
+        {
+            Vector2.up,
+            Vector2.down,
+            Vector2.left,
+            Vector2.right
+        };
+
+        // Check each direction for walls with MULTIPLE raycasts
+        foreach (var direction in cardinalDirections)
+        {
+            bool hasWall = false;
+            
+            // Cast multiple rays in slightly different positions to ensure we catch walls
+            for (int i = -1; i <= 1; i++)
+            {
+                Vector2 perpendicular = new Vector2(-direction.y, direction.x); // Get perpendicular direction
+                Vector2 offset = perpendicular * (i * 0.3f); // Offset by 0.3 units
+                Vector2 startPos = (Vector2)transform.position + offset;
+                
+                // Raycast to check if there's a wall in this direction
+                RaycastHit2D hit = Physics2D.Raycast(startPos, direction, spawnRadius + 1f, wallLayer);
+                
+                // Debug visualization (comment out after testing)
+                Debug.DrawRay(startPos, direction * (spawnRadius + 1f), hit.collider != null ? Color.red : Color.green, 0.5f);
+                
+                if (hit.collider != null)
+                {
+                    hasWall = true;
+                    break; // Found a wall in this direction, no need to check more
+                }
+            }
+            
+            // If no wall detected in any of the raycasts, this direction is valid
+            if (!hasWall)
+            {
+                validDirections.Add(direction);
+            }
+        }
+
+        // Fallback: if NO valid directions found, log warning and return all directions
+        if (validDirections.Count == 0)
+        {
+            Debug.LogWarning($"No valid spawn directions found at {transform.position}! This spawner might be in a bad position. Allowing all directions.");
+            return new List<Vector2>(cardinalDirections);
+        }
+
+        return validDirections;
+    }
+
     Vector2 GetRandomPosition()
     {
-        float angle = Random.Range(0f, 2f * Mathf.PI);
-        float distance = Random.Range(0f, spawnRadius);
-        float x = transform.position.x + Mathf.Cos(angle) * distance;
-        float y = transform.position.y + Mathf.Sin(angle) * distance;
-        return new Vector2(x, y);
+        List<Vector2> validDirections = GetValidSpawnDirections();
+        
+        if (validDirections.Count == 0)
+        {
+            Debug.LogWarning("No valid spawn directions found! Spawning at spawner position.");
+            return transform.position;
+        }
+
+        // Calculate the average direction away from walls (the "safest" direction)
+        Vector2 primaryDirection = Vector2.zero;
+        foreach (var dir in validDirections)
+        {
+            primaryDirection += dir;
+        }
+        primaryDirection = primaryDirection.normalized;
+
+        // Define cone angle based on how many valid directions we have
+        float coneAngle = validDirections.Count switch
+        {
+            1 => 60f,  // Narrow cone if only 1 valid direction
+            2 => 90f,  // Medium cone if 2 valid directions
+            3 => 120f, // Wide cone if 3 valid directions
+            _ => 140f  // Very wide cone if all 4 directions valid
+        };
+
+        // Get the angle of the primary direction
+        float primaryAngle = Mathf.Atan2(primaryDirection.y, primaryDirection.x) * Mathf.Rad2Deg;
+        
+        // Random angle within the cone
+        float randomAngleOffset = Random.Range(-coneAngle / 2f, coneAngle / 2f);
+        float finalAngle = (primaryAngle + randomAngleOffset) * Mathf.Deg2Rad;
+        
+        // Create final direction vector
+        Vector2 finalDirection = new Vector2(Mathf.Cos(finalAngle), Mathf.Sin(finalAngle));
+        
+        // Random distance within spawn radius
+        float distance = Random.Range(1f, spawnRadius);
+        
+        Vector2 spawnPos = (Vector2)transform.position + finalDirection * distance;
+        
+        // Safety check: make sure spawn position doesn't have a wall
+        RaycastHit2D wallCheck = Physics2D.Raycast(transform.position, finalDirection, distance, wallLayer);
+        if (wallCheck.collider != null)
+        {
+            // Hit a wall, spawn closer (just before the wall)
+            distance = Mathf.Max(1f, wallCheck.distance - 0.5f);
+            spawnPos = (Vector2)transform.position + finalDirection * distance;
+        }
+        
+        return spawnPos;
     }
 
     void EnemyDied()
@@ -269,6 +390,12 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         }
 
         OnDeath?.Invoke();
+
+        // Request respawn if enabled and generator is set
+        if (canRespawn && dungeonGenerator != null)
+        {
+            dungeonGenerator.RequestSpawnerRespawn(transform.position, respawnExclusionRadius, respawnDelay);
+        }
 
         StartCoroutine(DeathSequence());
     }
@@ -421,8 +548,73 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, spawnRadius);
 
+        // Show respawn exclusion radius
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, respawnExclusionRadius);
+        
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, spawnRadius * 1.5f);
+
+        // Visualize spawn cone (only in play mode)
+        if (Application.isPlaying)
+        {
+            List<Vector2> validDirs = GetValidSpawnDirections();
+            
+            if (validDirs.Count > 0)
+            {
+                // Calculate primary direction
+                Vector2 primaryDirection = Vector2.zero;
+                foreach (var dir in validDirs)
+                {
+                    primaryDirection += dir;
+                    
+                    // Draw individual valid directions
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawRay(transform.position, dir * spawnRadius);
+                }
+                primaryDirection = primaryDirection.normalized;
+                
+                // Determine cone angle
+                float coneAngle = validDirs.Count switch
+                {
+                    1 => 60f,
+                    2 => 90f,
+                    3 => 120f,
+                    _ => 140f
+                };
+                
+                // Draw the spawn cone
+                float primaryAngle = Mathf.Atan2(primaryDirection.y, primaryDirection.x) * Mathf.Rad2Deg;
+                
+                Gizmos.color = new Color(0f, 1f, 0f, 0.3f); // Semi-transparent green
+                
+                // Draw cone edges
+                float leftEdgeAngle = (primaryAngle - coneAngle / 2f) * Mathf.Deg2Rad;
+                float rightEdgeAngle = (primaryAngle + coneAngle / 2f) * Mathf.Deg2Rad;
+                
+                Vector3 leftEdge = new Vector3(Mathf.Cos(leftEdgeAngle), Mathf.Sin(leftEdgeAngle), 0) * spawnRadius;
+                Vector3 rightEdge = new Vector3(Mathf.Cos(rightEdgeAngle), Mathf.Sin(rightEdgeAngle), 0) * spawnRadius;
+                
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawRay(transform.position, leftEdge);
+                Gizmos.DrawRay(transform.position, rightEdge);
+                
+                // Draw center of cone
+                Gizmos.color = Color.white;
+                Gizmos.DrawRay(transform.position, primaryDirection * spawnRadius);
+            }
+            
+            // Visualize blocked directions
+            Vector2[] allDirs = new Vector2[] { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
+            foreach (var dir in allDirs)
+            {
+                if (!validDirs.Contains(dir))
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawRay(transform.position, dir * spawnRadius);
+                }
+            }
+        }
     }
 
     #endregion

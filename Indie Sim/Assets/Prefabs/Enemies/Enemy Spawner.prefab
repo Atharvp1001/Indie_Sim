@@ -51,7 +51,7 @@ MonoBehaviour:
   enemyLevel3Prefab: {fileID: 1773204433277557146, guid: 92ef062a7f4a47144a2169c2d4f4746c, type: 3}
   spawnRadius: 5
   spawnInterval: 3
-  maxEnemies: 5
+  maxEnemies: 0
   currentDungeonLevel: 1
   maxHealth: 100
   currentHealth: 0
@@ -60,6 +60,12 @@ MonoBehaviour:
   audioSource: {fileID: 0}
   damageSound: {fileID: 0}
   deathSound: {fileID: 0}
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  canRespawn: 1
+  respawnDelay: 1
+  respawnExclusionRadius: 8
 --- !u!212 &3399380655111319332
 SpriteRenderer:
   m_ObjectHideFlags: 0

@@ -87,6 +87,22 @@ public class Room
     }
 }
 
+// Tracks spawner respawn exclusion zones
+[System.Serializable]
+public class SpawnerExclusionZone
+{
+    public Vector3 position;
+    public float radius;
+    public float expirationTime;
+
+    public SpawnerExclusionZone(Vector3 pos, float rad, float expTime)
+    {
+        position = pos;
+        radius = rad;
+        expirationTime = expTime;
+    }
+}
+
 [System.Serializable]
 public class MapParameters
 {
@@ -118,8 +134,8 @@ public class MapParameters
     public float minRoomDistance = 2f;
     public int maxRepositionAttempts = 10;
     public float repositionSearchRadius = 3f;
-
-    [Header("Corridor Settings")]
+// NEW: Minimum distance between spawners
+        [Header("Corridor Settings")]
     public int corridorWidth = 2;
 }
 
@@ -178,9 +194,13 @@ public class DungeonMapGenerator : MonoBehaviour
 
     [Header("Enemy Spawning")]
     [SerializeField] private GameObject enemySpawnerPrefab; // Assign your EnemySpawner prefab in inspector
-    [SerializeField] private bool spawnEnemySpawnersInMainRooms = true;
+    [SerializeField] private bool spawnEnemySpawnersInMainRooms = false;
     [SerializeField] private float spawnerOffsetFromCenter = 0f; // Optional offset from exact center
+    [SerializeField] private float minDistanceBetweenSpawners = 5f;
 
+    [Header("Spawner Respawn")]
+    [SerializeField] private bool enableSpawnerRespawn = true;
+private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclusionZone>();
     [Header("Key Spawning")]
     [SerializeField] private GameObject keyPrefab;
     [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
@@ -545,12 +565,6 @@ public class DungeonMapGenerator : MonoBehaviour
     /// <param name="room">The room to spawn the enemy spawner in</param>
     private void SpawnEnemySpawnerInRoom(Room room)
     {
-        // Only spawn in main artery rooms (you can modify this condition)
-        if (!spawnEnemySpawnersInMainRooms || room.type != RoomType.MAIN_ARTERY_ROOM ||
-        room.uniqueId == currentMapData.startRoomId || room.uniqueId == currentMapData.endRoomId)
-            return;
-
-
         // Don't spawn if no prefab assigned
         if (enemySpawnerPrefab == null)
         {
@@ -558,30 +572,148 @@ public class DungeonMapGenerator : MonoBehaviour
             return;
         }
 
-        // Calculate center position of the room
-        Vector3 spawnerPosition = new Vector3(
-            room.worldPosition.x + spawnerOffsetFromCenter,
-            room.worldPosition.y + spawnerOffsetFromCenter,
-            0f // Z position - adjust as needed for your game
-        );
+        // Get all valid edge positions for this room (must have exactly 2 adjacent walls)
+        List<Vector3> validSpawnPositions = GetValidEdgeSpawnPositions(room);
 
-        // Instantiate the enemy spawner at room center
-        GameObject spawnedSpawner = Instantiate(enemySpawnerPrefab, spawnerPosition, Quaternion.identity);
-
-        // Optional: Set up the spawner with room-specific settings
-        EnemySpawner spawnerScript = spawnedSpawner.GetComponent<EnemySpawner>();
-        if (spawnerScript != null)
+        if (validSpawnPositions.Count == 0)
         {
-            // You can configure the spawner based on room properties
-            ConfigureSpawnerForRoom(spawnerScript, room);
+            Debug.LogWarning($"No valid edge spawn positions found in room {room.uniqueId}");
+            return;
         }
 
-        // Optional: Parent the spawner to a room container for organization
-        OrganizeSpawnerInHierarchy(spawnedSpawner, room);
+        // Spawn multiple spawners at different valid edge positions
+        int spawnersToCreate = Mathf.Min(UnityEngine.Random.Range(1, 4), validSpawnPositions.Count); // 1-3 spawners
+        
+        for (int i = 0; i < spawnersToCreate; i++)
+        {
+            // Find a valid position that's far enough from existing spawners
+            Vector3? spawnerPosition = FindValidSpawnerPosition(validSpawnPositions);
+            
+            if (!spawnerPosition.HasValue)
+            {
+                Debug.Log($"Could not find valid spawner position in room {room.uniqueId} (too close to other spawners)");
+                break; // No more valid positions
+            }
 
-        Debug.Log($"Enemy spawner created in room {room.uniqueId} at position {spawnerPosition}");
+            // Instantiate the enemy spawner at edge position
+            GameObject spawnedSpawner = Instantiate(enemySpawnerPrefab, spawnerPosition.Value, Quaternion.identity);
+
+            // Optional: Set up the spawner with room-specific settings
+            EnemySpawner spawnerScript = spawnedSpawner.GetComponent<EnemySpawner>();
+            if (spawnerScript != null)
+            {
+                ConfigureSpawnerForRoom(spawnerScript, room);
+            }
+
+            // Optional: Parent the spawner to a room container for organization
+            OrganizeSpawnerInHierarchy(spawnedSpawner, room);
+
+            Debug.Log($"Enemy spawner created in room {room.uniqueId} at edge position {spawnerPosition.Value}");
+        }
+    }
+    /// <summary>
+    /// Finds a valid spawner position from the list that respects minimum distance from other spawners
+    /// Removes the chosen position from the list
+    /// </summary>
+    private Vector3? FindValidSpawnerPosition(List<Vector3> candidatePositions)
+    {
+        // Find all existing spawners in the scene
+        EnemySpawner[] existingSpawners = FindObjectsOfType<EnemySpawner>();
+
+        // Try each candidate position
+        for (int i = candidatePositions.Count - 1; i >= 0; i--)
+        {
+            Vector3 candidatePos = candidatePositions[i];
+            bool tooClose = false;
+
+            // Check distance to all existing spawners
+            foreach (var spawner in existingSpawners)
+            {
+                float distance = Vector3.Distance(candidatePos, spawner.transform.position);
+                if (distance < minDistanceBetweenSpawners)
+                {
+                    tooClose = true;
+                    break;
+                }
+            }
+
+            // If this position is valid, use it and remove from list
+            if (!tooClose)
+            {
+                candidatePositions.RemoveAt(i);
+                return candidatePos;
+            }
+        }
+
+        return null; // No valid position found
     }
 
+    /// <summary>
+    /// Finds valid spawn positions along room edges that have EXACTLY 2 adjacent walls
+    /// </summary>
+    private List<Vector3> GetValidEdgeSpawnPositions(Room room)
+    {
+        List<Vector3> validPositions = new List<Vector3>();
+
+        int minX = Mathf.RoundToInt(room.worldPosition.x - room.size.x / 2f);
+        int maxX = Mathf.RoundToInt(room.worldPosition.x + room.size.x / 2f);
+        int minY = Mathf.RoundToInt(room.worldPosition.y - room.size.y / 2f);
+        int maxY = Mathf.RoundToInt(room.worldPosition.y + room.size.y / 2f);
+
+        // Check all positions along the room edges
+        for (int x = minX; x < maxX; x++)
+        {
+            for (int y = minY; y < maxY; y++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+
+                // Only consider edge tiles
+                bool isEdge = (x == minX || x == maxX - 1 || y == minY || y == maxY - 1);
+                if (!isEdge) continue;
+
+                // Count adjacent walls
+                int wallCount = CountAdjacentWalls(pos);
+
+                // Valid ONLY if has EXACTLY 2 adjacent walls
+                if (wallCount == 2)
+                {
+                    validPositions.Add(new Vector3(pos.x + 0.5f, pos.y + 0.5f, 0f));
+                }
+            }
+        }
+
+        return validPositions;
+    }
+    /// <summary>
+    /// Counts how many of the 4 cardinal directions (up, down, left, right) have walls
+    /// </summary>
+    private int CountAdjacentWalls(Vector2Int position)
+    {
+        if (currentMapData == null || currentMapData.wallTiles == null)
+            return 0;
+
+        int wallCount = 0;
+
+        // Check 4 cardinal directions only
+        Vector2Int[] cardinalDirections = new Vector2Int[]
+        {
+            new Vector2Int(0, 1),   // Up
+            new Vector2Int(0, -1),  // Down
+            new Vector2Int(-1, 0),  // Left
+            new Vector2Int(1, 0)    // Right
+        };
+
+        foreach (var direction in cardinalDirections)
+        {
+            Vector2Int checkPos = position + direction;
+            if (currentMapData.wallTiles.Contains(checkPos))
+            {
+                wallCount++;
+            }
+        }
+
+        return wallCount;
+    }
     /// <summary>
     /// Configure spawner settings based on room properties
     /// </summary>
@@ -589,8 +721,13 @@ public class DungeonMapGenerator : MonoBehaviour
     {
         if (currentMapData == null) return;
 
+        // Spawn in ALL rooms now, not just main artery rooms
         foreach (var room in currentMapData.rooms.Values)
         {
+            // Skip start and end rooms if you want
+            if (room.uniqueId == currentMapData.startRoomId || room.uniqueId == currentMapData.endRoomId)
+                continue;
+                
             SpawnEnemySpawnerInRoom(room);
         }
     }
@@ -634,10 +771,137 @@ public class DungeonMapGenerator : MonoBehaviour
 
         // Rename for easier identification
         spawner.name = $"EnemySpawner_Room_{room.uniqueId}_{room.type}";
+
+        // NEW: Set dungeon generator reference
+        EnemySpawner spawnerScript = spawner.GetComponent<EnemySpawner>();
+        if (spawnerScript != null)
+        {
+            spawnerScript.SetDungeonGenerator(this);
+        }
     }
 
+    /// <summary>
+    /// Called by EnemySpawner when it dies and wants to respawn
+    /// </summary>
+    public void RequestSpawnerRespawn(Vector3 deadSpawnerPosition, float exclusionRadius, float respawnDelay)
+    {
+        if (!enableSpawnerRespawn) return;
 
+        // Add exclusion zone (temporary, expires after respawn delay * 2)
+        float expirationTime = Time.time + (respawnDelay * 2f);
+        spawnerExclusionZones.Add(new SpawnerExclusionZone(deadSpawnerPosition, exclusionRadius, expirationTime));
 
+        // Start respawn coroutine
+        StartCoroutine(RespawnSpawnerAfterDelay(respawnDelay));
+    }
+    private IEnumerator RespawnSpawnerAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // Clean up expired exclusion zones
+        spawnerExclusionZones.RemoveAll(zone => Time.time > zone.expirationTime);
+
+        // Try to find a valid respawn position
+        Vector3? respawnPosition = FindValidRespawnPosition();
+
+        if (respawnPosition.HasValue)
+        {
+            // Find which room this position is in
+            Room targetRoom = null;
+            foreach (var room in currentMapData.rooms.Values)
+            {
+                if (IsPositionInRoom(new Vector2Int(Mathf.RoundToInt(respawnPosition.Value.x), 
+                                                    Mathf.RoundToInt(respawnPosition.Value.y)), room))
+                {
+                    targetRoom = room;
+                    break;
+                }
+            }
+
+            if (targetRoom != null)
+            {
+                // Spawn new spawner
+                GameObject spawnedSpawner = Instantiate(enemySpawnerPrefab, respawnPosition.Value, Quaternion.identity);
+
+                EnemySpawner spawnerScript = spawnedSpawner.GetComponent<EnemySpawner>();
+                if (spawnerScript != null)
+                {
+                    ConfigureSpawnerForRoom(spawnerScript, targetRoom);
+                }
+
+                OrganizeSpawnerInHierarchy(spawnedSpawner, targetRoom);
+
+                Debug.Log($"Spawner respawned at position {respawnPosition.Value}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Could not find valid respawn position for spawner!");
+        }
+    }
+
+    /// <summary>
+    /// Finds a valid position to respawn a spawner, avoiding exclusion zones and other spawners
+    /// </summary>
+    private Vector3? FindValidRespawnPosition()
+    {
+        List<Vector3> allValidPositions = new List<Vector3>();
+
+        // Gather all valid edge positions from all rooms
+        foreach (var room in currentMapData.rooms.Values)
+        {
+            // Skip start/end rooms
+            if (room.uniqueId == currentMapData.startRoomId || room.uniqueId == currentMapData.endRoomId)
+                continue;
+
+            List<Vector3> roomPositions = GetValidEdgeSpawnPositions(room);
+            allValidPositions.AddRange(roomPositions);
+        }
+
+        // Filter out positions that are too close to exclusion zones or existing spawners
+        List<Vector3> validRespawnPositions = new List<Vector3>();
+        EnemySpawner[] existingSpawners = FindObjectsOfType<EnemySpawner>();
+
+        foreach (var position in allValidPositions)
+        {
+            bool isValid = true;
+
+            // Check against exclusion zones
+            foreach (var zone in spawnerExclusionZones)
+            {
+                if (Vector3.Distance(position, zone.position) < zone.radius)
+                {
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (!isValid) continue;
+
+            // Check against existing spawners
+            foreach (var spawner in existingSpawners)
+            {
+                if (Vector3.Distance(position, spawner.transform.position) < minDistanceBetweenSpawners)
+                {
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (isValid)
+            {
+                validRespawnPositions.Add(position);
+            }
+        }
+
+        // Return random valid position, or null if none found
+        if (validRespawnPositions.Count > 0)
+        {
+            return validRespawnPositions[UnityEngine.Random.Range(0, validRespawnPositions.Count)];
+        }
+
+        return null;
+    }
     private void ConnectRooms(int room1Id, int room2Id, ConnectionType connectionType, Dictionary<int, Room> rooms)
     {
         if (rooms.ContainsKey(room1Id) && rooms.ContainsKey(room2Id))
@@ -1135,7 +1399,20 @@ public class DungeonMapGenerator : MonoBehaviour
                 Gizmos.DrawLine(start, end);
             }
         }
+        // Draw spawner exclusion zones
+        if (spawnerExclusionZones != null && spawnerExclusionZones.Count > 0)
+        {
+            Gizmos.color = new Color(1f, 0f, 0f, 0.3f); // Semi-transparent red
+            foreach (var zone in spawnerExclusionZones)
+            {
+                if (Time.time < zone.expirationTime)
+                {
+                    Gizmos.DrawWireSphere(zone.position, zone.radius);
+                }
+            }
+        }
     }
+    
 
     public MapData GetCurrentMapData() => currentMapData;
     public MapParameters GetParameters() => parameters;
