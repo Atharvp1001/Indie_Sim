@@ -1987,7 +1987,7 @@ Tilemap:
   m_TileColorArray: []
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
+  m_Color: {r: 0.6603774, g: 0.6603774, b: 0.6603774, a: 1}
   m_Origin: {x: 0, y: 0, z: 0}
   m_Size: {x: 0, y: 0, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -7881,6 +7881,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2168372277178147741, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: m_Parameters.colorGradient.key1.a
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2653043561720520502, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2693588683566327872, guid: edbd5360888064b468af922cde708f5e, type: 3}

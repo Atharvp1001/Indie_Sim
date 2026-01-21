@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 1680445409647377601}
   - component: {fileID: 3527862313629942301}
   - component: {fileID: 6872814849207381837}
+  - component: {fileID: 2210084066149846197}
   m_Layer: 7
   m_Name: Enemy 2
   m_TagString: Enemy
@@ -83,8 +84,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 3
+  rotationSpeed: 5
   normalDrag: 1
   knockbackDrag: 25
+  detectionRadius: 5
+  separationRadius: 1.5
+  leaderRadius: 3
+  minFlockSize: 6
+  alignmentWeight: 1
+  cohesionWeight: 1
+  separationWeight: 1.5
+  playerSeekWeight: 2
+  tileSize: 1
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  pathCheckDistance: 2
+  pathUpdateInterval: 0.5
 --- !u!50 &257384993561902794
 Rigidbody2D:
   serializedVersion: 5
@@ -243,6 +259,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BloodSplatterEffect
   bloodSplatterPrefab: {fileID: 5654014773513644217, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
+  maxRandomSpread: 15
 --- !u!82 &6872814849207381837
 AudioSource:
   m_ObjectHideFlags: 0
@@ -340,6 +357,18 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &2210084066149846197
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1773204433277557146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ca43aa1596ebc045b3a7d5a9a49b6b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JumpFloodAlgorithm
 --- !u!1 &7865423505771993537
 GameObject:
   m_ObjectHideFlags: 0
