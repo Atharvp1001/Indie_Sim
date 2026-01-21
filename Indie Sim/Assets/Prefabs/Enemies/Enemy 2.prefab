@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 1680445409647377601}
   - component: {fileID: 3527862313629942301}
   - component: {fileID: 6872814849207381837}
+  - component: {fileID: -6399206438952731371}
   m_Layer: 7
   m_Name: Enemy 2
   m_TagString: Enemy
@@ -83,8 +84,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 3
+  rotationSpeed: 5
   normalDrag: 1
   knockbackDrag: 25
+  detectionRadius: 5
+  separationRadius: 0.6
+  leaderRadius: 3
+  minFlockSize: 6
+  alignmentWeight: 1
+  cohesionWeight: 1
+  separationWeight: 1.5
+  playerSeekWeight: 2
+  tileSize: 2
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  pathCheckDistance: 2
+  pathUpdateInterval: 0.5
 --- !u!50 &257384993561902794
 Rigidbody2D:
   serializedVersion: 5
@@ -341,6 +357,29 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &-6399206438952731371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1773204433277557146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ca43aa1596ebc045b3a7d5a9a49b6b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JumpFloodAlgorithm
+  gridWidth: 30
+  gridHeight: 30
+  cellSize: 1
+  gridOrigin: {x: 0, y: 0}
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  updateInterval: 0.5
+  jumpFloodIterations: 4
+  showDebugGrid: 0
+  showFlowField: 0
 --- !u!1 &7865423505771993537
 GameObject:
   m_ObjectHideFlags: 0

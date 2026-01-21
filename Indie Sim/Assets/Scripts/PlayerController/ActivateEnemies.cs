@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ActivateEnemies : MonoBehaviour
+public class ActivateEnemiesAdvanced : MonoBehaviour
 {
     [Header("Activation Settings")]
     [SerializeField] private float activationRadius = 15f;
@@ -17,7 +17,7 @@ public class ActivateEnemies : MonoBehaviour
     [SerializeField] private bool showDebugGizmos = true;
 
     // Static reference
-    public static ActivateEnemies Instance;
+    public static ActivateEnemiesAdvanced Instance;
 
     // Enemy tracking
     private HashSet<GameObject> activatedEnemies = new HashSet<GameObject>();
@@ -29,10 +29,21 @@ public class ActivateEnemies : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            // Don't destroy on load if you want it to persist
+            // DontDestroyOnLoad(gameObject);
         }
         else
         {
-            Destroy(this);
+            Destroy(gameObject);
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Clean up if this instance is being destroyed
+        if (Instance == this)
+        {
+            Instance = null;
         }
     }
 
@@ -52,6 +63,9 @@ public class ActivateEnemies : MonoBehaviour
 
     private void UpdateEnemyActivation()
     {
+        // Clean up destroyed enemies from activated set
+        activatedEnemies.RemoveWhere(e => e == null);
+        
         // Find all enemies in range
         Collider2D[] enemiesInRangeColliders = Physics2D.OverlapCircleAll(transform.position, activationRadius);
         
@@ -60,10 +74,22 @@ public class ActivateEnemies : MonoBehaviour
         
         foreach (Collider2D enemy in enemiesInRangeColliders)
         {
-            if (enemy.CompareTag("Enemy"))
+            if (enemy != null && enemy.CompareTag("Enemy"))
             {
                 enemiesInRange.Add(enemy.gameObject);
             }
+        }
+        
+        // AUTO-CLEAR: If no enemies in range at all, clear everything to start fresh
+        if (enemiesInRange.Count == 0)
+        {
+            if (activatedEnemies.Count > 0 || pathfindingEnemies.Count > 0)
+            {
+                Debug.Log("ActivateEnemiesAdvanced: No enemies in range, clearing all references");
+                activatedEnemies.Clear();
+                pathfindingEnemies.Clear();
+            }
+            return; // Early exit, nothing to activate
         }
         
         // Sort by distance (closest first for priority)
@@ -98,7 +124,7 @@ public class ActivateEnemies : MonoBehaviour
         List<GameObject> toDeactivate = new List<GameObject>();
         foreach (GameObject enemy in activatedEnemies)
         {
-            if (!shouldBeActive.Contains(enemy))
+            if (enemy == null || !shouldBeActive.Contains(enemy))
             {
                 toDeactivate.Add(enemy);
             }
@@ -109,13 +135,16 @@ public class ActivateEnemies : MonoBehaviour
             activatedEnemies.Remove(enemy);
             
             // Also disable pathfinding if they had it
-            EnemyMovement enemyMovement = enemy.GetComponent<EnemyMovement>();
-            if (enemyMovement != null && enemyMovement.IsPathfinding())
+            if (enemy != null)
             {
-                enemyMovement.DisablePathfinding();
+                EnemyMovement enemyMovement = enemy.GetComponent<EnemyMovement>();
+                if (enemyMovement != null && enemyMovement.IsPathfinding())
+                {
+                    enemyMovement.DisablePathfinding();
+                }
+                
+                Debug.Log($"Deactivated enemy: {enemy.name}");
             }
-            
-            Debug.Log($"Deactivated enemy: {enemy.name}");
         }
         
         // Update pathfinding assignments
@@ -132,6 +161,8 @@ public class ActivateEnemies : MonoBehaviour
         
         foreach (GameObject enemy in activatedEnemies)
         {
+            if (enemy == null) continue;
+            
             EnemyMovement movement = enemy.GetComponent<EnemyMovement>();
             if (movement != null)
             {
@@ -177,19 +208,29 @@ public class ActivateEnemies : MonoBehaviour
         List<EnemyMovement> toDisable = new List<EnemyMovement>();
         foreach (EnemyMovement enemy in pathfindingEnemies)
         {
-            if (enemy != null)
+            if (enemy == null)
             {
-                float distance = Vector2.Distance(transform.position, enemy.transform.position);
-                if (distance > pathfindingPriorityRadius)
-                {
-                    toDisable.Add(enemy);
-                }
+                toDisable.Add(enemy);
+                continue;
+            }
+            
+            float distance = Vector2.Distance(transform.position, enemy.transform.position);
+            if (distance > pathfindingPriorityRadius)
+            {
+                toDisable.Add(enemy);
             }
         }
         
         foreach (EnemyMovement enemy in toDisable)
         {
-            enemy.DisablePathfinding();
+            if (enemy != null)
+            {
+                enemy.DisablePathfinding();
+            }
+            else
+            {
+                pathfindingEnemies.Remove(enemy);
+            }
         }
     }
 
@@ -248,6 +289,15 @@ public class ActivateEnemies : MonoBehaviour
     public int GetPathfindingEnemyCount()
     {
         return pathfindingEnemies.Count;
+    }
+
+    // Call this when loading a new level to clean up old references
+    public void ClearAllEnemies()
+    {
+        activatedEnemies.Clear();
+        enemiesInRange.Clear();
+        pathfindingEnemies.Clear();
+        Debug.Log("ActivateEnemiesAdvanced: Cleared all enemy references");
     }
 
     private void OnDrawGizmos()

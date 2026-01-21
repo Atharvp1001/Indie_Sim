@@ -83,10 +83,10 @@ public class EnemyMovement : MonoBehaviour
             }
         }
         
-        // Tell ActivateEnemies to stop pathfinding for us
-        if (isPathfindingEnabled && ActivateEnemies.Instance != null)
+        // Tell ActivateEnemiesAdvanced to stop pathfinding for us
+        if (isPathfindingEnabled && ActivateEnemiesAdvanced.Instance != null)
         {
-            ActivateEnemies.Instance.UnregisterPathfindingEnemy(this);
+            ActivateEnemiesAdvanced.Instance.UnregisterPathfindingEnemy(this);
         }
     }
 
@@ -95,9 +95,9 @@ public class EnemyMovement : MonoBehaviour
         if (player == null) return;
 
         // Check activation
-        if (!isActivated && ActivateEnemies.Instance != null)
+        if (!isActivated && ActivateEnemiesAdvanced.Instance != null)
         {
-            isActivated = ActivateEnemies.Instance.IsEnemyActivated(gameObject);
+            isActivated = ActivateEnemiesAdvanced.Instance.IsEnemyActivated(gameObject);
             if (!isActivated) return;
         }
 
@@ -299,9 +299,9 @@ public class EnemyMovement : MonoBehaviour
         if (isLeader && !isPathfindingEnabled)
         {
             // Try to claim a pathfinding slot
-            if (ActivateEnemies.Instance != null)
+            if (ActivateEnemiesAdvanced.Instance != null)
             {
-                ActivateEnemies.Instance.TryEnablePathfinding(this);
+                ActivateEnemiesAdvanced.Instance.TryEnablePathfinding(this);
             }
         }
         else if (!isLeader && isPathfindingEnabled)
@@ -333,9 +333,9 @@ public class EnemyMovement : MonoBehaviour
         }
         
         // Try to enable pathfinding for this new leader
-        if (ActivateEnemies.Instance != null)
+        if (ActivateEnemiesAdvanced.Instance != null)
         {
-            ActivateEnemies.Instance.TryEnablePathfinding(this);
+            ActivateEnemiesAdvanced.Instance.TryEnablePathfinding(this);
         }
         
         Debug.Log($"Enemy {gameObject.name} became flock leader with {flockMembers.Count} members");
@@ -358,9 +358,9 @@ public class EnemyMovement : MonoBehaviour
                 member.flockLeader = null;
                 
                 // Give disbanded members a chance to pathfind
-                if (ActivateEnemies.Instance != null)
+                if (ActivateEnemiesAdvanced.Instance != null)
                 {
-                    ActivateEnemies.Instance.TryEnablePathfinding(member);
+                    ActivateEnemiesAdvanced.Instance.TryEnablePathfinding(member);
                 }
             }
         }
@@ -392,6 +392,9 @@ public class EnemyMovement : MonoBehaviour
     List<EnemyMovement> GetNearbyEnemies(float radius)
     {
         List<EnemyMovement> nearby = new List<EnemyMovement>();
+        
+        // Clean up null references while iterating
+        allEnemies.RemoveAll(e => e == null);
         
         foreach (var enemy in allEnemies)
         {
@@ -477,10 +480,10 @@ public class EnemyMovement : MonoBehaviour
         pathfindTarget = null;
         hasValidPath = false;
         
-        // Notify ActivateEnemies
-        if (ActivateEnemies.Instance != null)
+        // Notify ActivateEnemiesAdvanced
+        if (ActivateEnemiesAdvanced.Instance != null)
         {
-            ActivateEnemies.Instance.UnregisterPathfindingEnemy(this);
+            ActivateEnemiesAdvanced.Instance.UnregisterPathfindingEnemy(this);
         }
         
         Debug.Log($"Enemy {gameObject.name}: Pathfinding DISABLED");
