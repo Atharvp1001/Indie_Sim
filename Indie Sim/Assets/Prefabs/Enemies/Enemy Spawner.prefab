@@ -48,10 +48,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyLevel1Prefab: {fileID: 1773204433277557146, guid: 56da4d5d08d2d3046b2ab1d007b5174e, type: 3}
   enemyLevel2Prefab: {fileID: 1773204433277557146, guid: 4ab6385bfb62248479107c25efb7f6d7, type: 3}
-  enemyLevel3Prefab: {fileID: 1773204433277557146, guid: 92ef062a7f4a47144a2169c2d4f4746c, type: 3}
+  enemyLevel3Prefab: {fileID: 0}
   spawnRadius: 5
   spawnInterval: 3
-  maxEnemies: 0
+  maxEnemies: 6
   currentDungeonLevel: 1
   maxHealth: 100
   currentHealth: 0
@@ -64,7 +64,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   canRespawn: 1
-  respawnDelay: 1
+  respawnDelay: 10
   respawnExclusionRadius: 8
 --- !u!212 &3399380655111319332
 SpriteRenderer:
