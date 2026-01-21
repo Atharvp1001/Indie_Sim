@@ -18,10 +18,6 @@ public class BossEnemy : MonoBehaviour, IDamageable
     [SerializeField] private float moveSpeed = 4f; // Slower than normal enemy
     [SerializeField] private float wallBounceMultiplier = 1.2f;
     [SerializeField] private float directionChangeInterval = 2f; // Recalculate path to player
-    [SerializeField] private float spinSpeed = 360f; // Degrees per second of spin
-
-    [Header("Layer Settings")]
-    [SerializeField] private LayerMask wallsLayer; // Assign your Walls layer in inspector
 
     [Header("Visual Feedback")]
     [SerializeField] private float flashDuration = 0.1f;
@@ -115,13 +111,6 @@ public class BossEnemy : MonoBehaviour, IDamageable
 
         // Move in current direction
         rb.linearVelocity = moveDirection * moveSpeed;
-
-        // Spin the sprite based on movement speed
-        if (rb.linearVelocity.magnitude > 0.1f)
-        {
-            float spin = spinSpeed * Time.fixedDeltaTime;
-            transform.Rotate(0f, 0f, spin);
-        }
     }
 
     private void UpdateMoveDirection()
@@ -134,8 +123,8 @@ public class BossEnemy : MonoBehaviour, IDamageable
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        // Bounce off walls using layer check
-        if (IsOnLayer(collision.gameObject, wallsLayer))
+        // Bounce off walls
+        if (collision.gameObject.CompareTag("Walls") || collision.gameObject.layer == LayerMask.NameToLayer("Walls"))
         {
             BounceOffWall(collision);
         }
@@ -154,14 +143,6 @@ public class BossEnemy : MonoBehaviour, IDamageable
         {
             AttemptAttackPlayer(collision.gameObject);
         }
-    }
-
-    /// <summary>
-    /// Checks if a GameObject is on any of the layers in the LayerMask
-    /// </summary>
-    private bool IsOnLayer(GameObject obj, LayerMask layerMask)
-    {
-        return ((1 << obj.layer) & layerMask) != 0;
     }
 
     private void BounceOffWall(Collision2D collision)

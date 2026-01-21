@@ -145,8 +145,6 @@ public class Teleporter : MonoBehaviour
         // Wait for teleport delay
         yield return new WaitForSeconds(teleportDelay);
 
-        mapGenerator?.OnTeleporterUsed();//for increments of teleporter uses.
-
         // NEW: Call RoguelikeManager to complete the dungeon
         if (roguelikeManager != null)
         {
