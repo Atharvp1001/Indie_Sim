@@ -30,6 +30,9 @@ public class PlayerHealth : MonoBehaviour
     [Header("UI Reference")]
     public HealthHeartBar healthHeartBar;
 
+    [Header("Damage Indicator")]
+    [SerializeField] private DamageIndicator damageIndicator;
+
     [Header("References")]
     private SpriteRenderer spriteRenderer;
     private Collider2D playerCollider;
@@ -72,6 +75,11 @@ public class PlayerHealth : MonoBehaviour
         if (deathUIPanel != null)
         {
             deathUIPanel.SetActive(false);
+        }
+
+        if (damageIndicator == null)
+        {
+            damageIndicator = GetComponent<DamageIndicator>();
         }
 
         Debug.Log($"Player initialized with {maxHealth} health");
@@ -142,6 +150,11 @@ public class PlayerHealth : MonoBehaviour
 
         // Reduce health
         currentHealth -= damage;
+
+        if (damageIndicator != null)
+        {
+            damageIndicator.TriggerDamageFlash();
+        }
 
         // Clamp health between 0 and maxHealth (which includes upgrades)
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);

@@ -50,6 +50,12 @@ public class PlayerConeShooter : MonoBehaviour
     [SerializeField] private float damageDelay = 0.05f;
     [SerializeField] private int trailPoolSize = 20;
 
+    [Header("Cone Edge Visualizer")]
+     private LineRenderer leftEdgeLine;
+     private LineRenderer rightEdgeLine;
+    [SerializeField] private Color edgeLineColor = Color.yellow;
+    [SerializeField] private float edgeLineWidth = 0.05f;
+
     private List<LineRenderer> trailPool = new List<LineRenderer>();
     private List<LineRenderer> activeTrails = new List<LineRenderer>();
 
@@ -67,6 +73,7 @@ public class PlayerConeShooter : MonoBehaviour
     {
         InitializeWeaponLockSystem();
         InitializeBulletTrailPool();
+        //InitializeConeEdgeLines(); // NEW LINE - Add this
 
         if (availableWeapons.Length > 0)
         {
@@ -95,6 +102,7 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
+
     private void InitializeBulletTrailPool()
     {
         if (bulletTrailPrefab == null)
@@ -122,6 +130,55 @@ public class PlayerConeShooter : MonoBehaviour
 
         Debug.Log($"[PlayerConeShooter] Bullet trail pool initialized with {trailPool.Count} trails");
     }
+
+    // Create the cone edge line renderers programmatically
+   /*
+    private void InitializeConeEdgeLines()
+    {
+        // Create Left Edge Line
+        GameObject leftEdgeObj = new GameObject("LeftEdgeLine");
+        leftEdgeObj.transform.SetParent(transform);
+        leftEdgeObj.transform.localPosition = Vector3.zero;
+        leftEdgeLine = leftEdgeObj.AddComponent<LineRenderer>();
+
+        leftEdgeLine.positionCount = 2;
+        leftEdgeLine.startWidth = edgeLineWidth;
+        leftEdgeLine.endWidth = edgeLineWidth;
+        leftEdgeLine.startColor = edgeLineColor;
+        leftEdgeLine.endColor = edgeLineColor;
+        leftEdgeLine.material = new Material(Shader.Find("Sprites/Default"));
+
+        // CHANGED: Set sorting layer and order
+        leftEdgeLine.sortingLayerName = "character"; // Change "Default" to your tilemap's layer if needed
+        leftEdgeLine.sortingOrder = 1; // High value to render on top
+
+        leftEdgeLine.useWorldSpace = true;
+        leftEdgeLine.enabled = false;
+
+        // Create Right Edge Line
+        GameObject rightEdgeObj = new GameObject("RightEdgeLine");
+        rightEdgeObj.transform.SetParent(transform);
+        rightEdgeObj.transform.localPosition = Vector3.zero;
+        rightEdgeLine = rightEdgeObj.AddComponent<LineRenderer>();
+
+        rightEdgeLine.positionCount = 2;
+        rightEdgeLine.startWidth = edgeLineWidth;
+        rightEdgeLine.endWidth = edgeLineWidth;
+        rightEdgeLine.startColor = edgeLineColor;
+        rightEdgeLine.endColor = edgeLineColor;
+        rightEdgeLine.material = new Material(Shader.Find("Sprites/Default"));
+
+        // CHANGED: Set sorting layer and order
+        rightEdgeLine.sortingLayerName = "character"; // Change "Default" to your tilemap's layer if needed
+        rightEdgeLine.sortingOrder = 1; // High value to render on top
+
+        rightEdgeLine.useWorldSpace = true;
+        rightEdgeLine.enabled = false;
+
+        Debug.Log("[PlayerConeShooter] Cone edge lines created programmatically");
+    }
+   */
+
 
     private LineRenderer GetTrailFromPool()
     {
@@ -192,8 +249,10 @@ public class PlayerConeShooter : MonoBehaviour
         {
             shootDirection = shootDirection.normalized;
 
-            // CHANGED: Store direction for Gizmo instead of updating LineRenderer
             currentShootingDirection = shootDirection;
+
+            // NEW: Update cone edge visualizer
+            UpdateConeEdgeVisual(shootDirection);
 
             if (Time.time >= nextFireTime)
             {
@@ -204,8 +263,10 @@ public class PlayerConeShooter : MonoBehaviour
         }
         else
         {
-            // CHANGED: Clear shooting direction when not shooting
             currentShootingDirection = Vector2.zero;
+
+            // NEW: Hide edge lines when not shooting
+            HideConeEdgeVisual();
 
             if (wasShooting)
             {
@@ -214,6 +275,40 @@ public class PlayerConeShooter : MonoBehaviour
             wasShooting = false;
         }
     }
+
+    // NEW: Update the cone edge lines to show the shooting cone
+    private void UpdateConeEdgeVisual(Vector2 direction)
+    {
+        if (leftEdgeLine == null || rightEdgeLine == null || currentWeapon == null) return;
+
+        // Get the trapezium points
+        Vector2[] trapeziumPoints = currentWeapon.GetTrapeziumPoints(firePoint.position, direction);
+
+        // Left edge: from origin to left far corner
+        leftEdgeLine.enabled = true;
+        leftEdgeLine.SetPosition(0, new Vector3(trapeziumPoints[0].x, trapeziumPoints[0].y, 0));
+        leftEdgeLine.SetPosition(1, new Vector3(trapeziumPoints[2].x, trapeziumPoints[2].y, 0));
+
+        // Right edge: from origin to right far corner
+        rightEdgeLine.enabled = true;
+        rightEdgeLine.SetPosition(0, new Vector3(trapeziumPoints[0].x, trapeziumPoints[0].y, 0));
+        rightEdgeLine.SetPosition(1, new Vector3(trapeziumPoints[3].x, trapeziumPoints[3].y, 0));
+    }
+
+    // NEW: Hide the cone edge lines
+    private void HideConeEdgeVisual()
+    {
+        if (leftEdgeLine != null)
+        {
+            leftEdgeLine.enabled = false;
+        }
+
+        if (rightEdgeLine != null)
+        {
+            rightEdgeLine.enabled = false;
+        }
+    }
+
 
     // CHANGED: New Gizmo drawing method - only visible in Unity Editor
     private void OnDrawGizmos()

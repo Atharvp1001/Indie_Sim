@@ -216,8 +216,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: -783603659
-  m_SortingLayer: 1
+  m_SortingLayerID: -1247100275
+  m_SortingLayer: 3
   m_SortingOrder: 3
   m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -243,6 +243,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BloodSplatterEffect
   bloodSplatterPrefab: {fileID: 5654014773513644217, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
+  maxRandomSpread: 30
 --- !u!82 &6872814849207381837
 AudioSource:
   m_ObjectHideFlags: 0
@@ -464,6 +465,14 @@ PrefabInstance:
     - target: {fileID: 1414684362247989671, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
       propertyPath: m_Name
       value: BloodSplatterEffect
+      objectReference: {fileID: 0}
+    - target: {fileID: 2535280734505842108, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
+      propertyPath: m_SortingLayer
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2535280734505842108, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
+      propertyPath: m_SortingLayerID
+      value: -1247100275
       objectReference: {fileID: 0}
     - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
       propertyPath: m_LocalPosition.x
