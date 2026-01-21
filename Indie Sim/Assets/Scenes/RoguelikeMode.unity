@@ -5956,9 +5956,6 @@ MonoBehaviour:
   roomsPerRelicType: 1
   relicSpawnChance: 0.25
   relicSpawnHeight: 0
-  bossPrefabs: []
-  bossSpawnInterval: 2
-  bossSpawnLocation: 0
   generateOnStart: 0
 --- !u!4 &1550044708
 Transform:
@@ -8006,7 +8003,11 @@ PrefabInstance:
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: bulletTrailPrefab
       value: 
-      objectReference: {fileID: 2475267044848316794, guid: 022ec939485f8a54c826ae042c1026f0, type: 3}
+      objectReference: {fileID: 0}
+    - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: coneFlashDuration
+      value: 0.05
+      objectReference: {fileID: 0}
     - target: {fileID: 6900749776920343997, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: bulletTrailDuration
       value: 0.05

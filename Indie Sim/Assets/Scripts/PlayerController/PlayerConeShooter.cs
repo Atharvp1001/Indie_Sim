@@ -51,10 +51,12 @@ public class PlayerConeShooter : MonoBehaviour
     [SerializeField] private int trailPoolSize = 20;
 
     [Header("Cone Edge Visualizer")]
-     private LineRenderer leftEdgeLine;
-     private LineRenderer rightEdgeLine;
+    private LineRenderer leftEdgeLine;
+    private LineRenderer rightEdgeLine;
     [SerializeField] private Color edgeLineColor = Color.yellow;
     [SerializeField] private float edgeLineWidth = 0.05f;
+    [SerializeField] private float coneFlashDuration = 0.1f;
+    private bool isShowingConeFlash = false;
 
     private List<LineRenderer> trailPool = new List<LineRenderer>();
     private List<LineRenderer> activeTrails = new List<LineRenderer>();
@@ -73,7 +75,7 @@ public class PlayerConeShooter : MonoBehaviour
     {
         InitializeWeaponLockSystem();
         InitializeBulletTrailPool();
-        //InitializeConeEdgeLines(); // NEW LINE - Add this
+        InitializeConeEdgeLines(); // NEW LINE - Add this
 
         if (availableWeapons.Length > 0)
         {
@@ -132,7 +134,7 @@ public class PlayerConeShooter : MonoBehaviour
     }
 
     // Create the cone edge line renderers programmatically
-   /*
+   
     private void InitializeConeEdgeLines()
     {
         // Create Left Edge Line
@@ -177,7 +179,7 @@ public class PlayerConeShooter : MonoBehaviour
 
         Debug.Log("[PlayerConeShooter] Cone edge lines created programmatically");
     }
-   */
+   
 
 
     private LineRenderer GetTrailFromPool()
@@ -248,15 +250,15 @@ public class PlayerConeShooter : MonoBehaviour
         if (shouldShoot)
         {
             shootDirection = shootDirection.normalized;
-
             currentShootingDirection = shootDirection;
-
-            // NEW: Update cone edge visualizer
-            UpdateConeEdgeVisual(shootDirection);
 
             if (Time.time >= nextFireTime)
             {
                 FireCone(shootDirection);
+
+                // NEW: Show cone flash when firing
+                ShowConeFlash(shootDirection);
+
                 nextFireTime = Time.time + (1f / currentWeapon.fireRate);
             }
             wasShooting = true;
@@ -265,8 +267,11 @@ public class PlayerConeShooter : MonoBehaviour
         {
             currentShootingDirection = Vector2.zero;
 
-            // NEW: Hide edge lines when not shooting
-            HideConeEdgeVisual();
+            // NEW: Only hide if not in middle of a flash
+            if (!isShowingConeFlash)
+            {
+                HideConeEdgeVisual();
+            }
 
             if (wasShooting)
             {
@@ -276,6 +281,34 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
+
+    // NEW: Show cone flash synchronized with shooting
+    private void ShowConeFlash(Vector2 direction)
+    {
+        if (isShowingConeFlash) return; // Already showing a flash
+
+        StartCoroutine(ConeFlashCoroutine(direction));
+    }
+
+    // NEW: Coroutine to handle cone flash timing
+    private IEnumerator ConeFlashCoroutine(Vector2 direction)
+    {
+        isShowingConeFlash = true;
+
+        // Show the cone edges
+        UpdateConeEdgeVisual(direction);
+
+        // Wait for flash duration
+        yield return new WaitForSeconds(coneFlashDuration);
+
+        // Hide the cone edges
+        HideConeEdgeVisual();
+
+        isShowingConeFlash = false;
+    }
+
+
+    // NEW: Update the cone edge lines to show the shooting cone
     // NEW: Update the cone edge lines to show the shooting cone
     private void UpdateConeEdgeVisual(Vector2 direction)
     {
@@ -284,16 +317,23 @@ public class PlayerConeShooter : MonoBehaviour
         // Get the trapezium points
         Vector2[] trapeziumPoints = currentWeapon.GetTrapeziumPoints(firePoint.position, direction);
 
-        // Left edge: from origin to left far corner
+        // Trapezium points structure:
+        // points[0] = base left
+        // points[1] = base right
+        // points[2] = top right
+        // points[3] = top left
+
+        // Left edge: from base left to top left
         leftEdgeLine.enabled = true;
         leftEdgeLine.SetPosition(0, new Vector3(trapeziumPoints[0].x, trapeziumPoints[0].y, 0));
-        leftEdgeLine.SetPosition(1, new Vector3(trapeziumPoints[2].x, trapeziumPoints[2].y, 0));
+        leftEdgeLine.SetPosition(1, new Vector3(trapeziumPoints[3].x, trapeziumPoints[3].y, 0));
 
-        // Right edge: from origin to right far corner
+        // Right edge: from base right to top right
         rightEdgeLine.enabled = true;
-        rightEdgeLine.SetPosition(0, new Vector3(trapeziumPoints[0].x, trapeziumPoints[0].y, 0));
-        rightEdgeLine.SetPosition(1, new Vector3(trapeziumPoints[3].x, trapeziumPoints[3].y, 0));
+        rightEdgeLine.SetPosition(0, new Vector3(trapeziumPoints[1].x, trapeziumPoints[1].y, 0));
+        rightEdgeLine.SetPosition(1, new Vector3(trapeziumPoints[2].x, trapeziumPoints[2].y, 0));
     }
+
 
     // NEW: Hide the cone edge lines
     private void HideConeEdgeVisual()
@@ -644,53 +684,23 @@ public class PlayerConeShooter : MonoBehaviour
 
     private IEnumerator BulletTrailCoroutine(Vector3 startPos, Vector3 endPos, IDamageable target, int damage)
     {
-        LineRenderer trail = GetTrailFromPool();
-        if (trail == null) yield break;
+        // No visual trail - just handle damage timing
 
-        trail.SetPosition(0, startPos);
-        trail.SetPosition(1, startPos);
+        // Wait for damage delay
+        yield return new WaitForSeconds(damageDelay);
 
-        float travelTime = Vector3.Distance(startPos, endPos) / bulletTrailSpeed;
-        float elapsedTime = 0f;
-
-        // Animate the trail traveling
-        while (elapsedTime < travelTime)
+        // Apply damage if we hit an enemy
+        if (target != null && !target.IsDead())
         {
-            elapsedTime += Time.deltaTime;
-            float t = elapsedTime / travelTime;
+            target.TakeDamage(damage);
 
-            Vector3 currentEnd = Vector3.Lerp(startPos, endPos, t);
-            trail.SetPosition(1, currentEnd);
-
-            yield return null;
-        }
-
-        // Trail reached end position
-        trail.SetPosition(1, endPos);
-
-        // CHANGED: Only damage if we actually hit an enemy (target is not null)
-        if (target != null)
-        {
-            yield return new WaitForSeconds(damageDelay);
-
-            if (!target.IsDead())
+            if (currentWeapon.hitEffect != null)
             {
-                target.TakeDamage(damage);
-
-                if (currentWeapon.hitEffect != null)
-                {
-                    Instantiate(currentWeapon.hitEffect, endPos, Quaternion.identity);
-                }
-
-                Debug.Log($"Damaged {target.GetGameObject().name} for {damage} damage with {currentWeapon.weaponName}");
+                Instantiate(currentWeapon.hitEffect, endPos, Quaternion.identity);
             }
+
+            Debug.Log($"Damaged {target.GetGameObject().name} for {damage} damage with {currentWeapon.weaponName}");
         }
-
-        // Keep trail visible
-        yield return new WaitForSeconds(bulletTrailDuration - travelTime - (target != null ? damageDelay : 0));
-
-        // Return trail to pool
-        ReturnTrailToPool(trail);
     }
 
     private IDamageable GetClosestTarget(out Vector3 hitPosition)
