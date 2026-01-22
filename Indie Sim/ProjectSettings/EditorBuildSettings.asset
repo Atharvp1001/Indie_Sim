@@ -30,6 +30,9 @@ EditorBuildSettings:
     path: Assets/Scenes/CasualMode.unity
     guid: 46981ef6568efe1459ccd516e1a0316f
   - enabled: 0
+    path: Assets/Scenes/SohamScene.unity
+    guid: 8607c527105b4054fb35675e5d93e0e1
+  - enabled: 0
     path: Assets/Scenes/HardcoreMode.unity
     guid: 6da243c7b5c32f74e9431094393b3ef8
   - enabled: 1

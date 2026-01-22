@@ -1991,7 +1991,7 @@ Tilemap:
   m_TileColorArray: []
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 0.8, g: 0.8, b: 0.8, a: 1}
+  m_Color: {r: 0.5660378, g: 0.5660378, b: 0.5660378, a: 1}
   m_Origin: {x: 0, y: 0, z: 0}
   m_Size: {x: 0, y: 0, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -2330,7 +2330,7 @@ Tilemap:
     m_Data: {r: 7.8051605e-19, g: 7.8051605e-19, b: 7.8051605e-19, a: 7.8051605e-19}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 0.7433963, g: 0.7433963, b: 0.7433963, a: 1}
+  m_Color: {r: 0.2924528, g: 0.2924528, b: 0.2924528, a: 1}
   m_Origin: {x: -5, y: -3, z: 0}
   m_Size: {x: 8, y: 6, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -5306,7 +5306,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1191198787}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -5334,11 +5334,10 @@ MonoBehaviour:
     m_Bits: 256
   detectionRadius: 10
   ambientTracks:
-  - {fileID: 8300000, guid: b45b4c1ef31391040af03b02980c0e30, type: 3}
-  ambientMinVolume: 0.01
-  ambientMaxVolume: 0.5
-  powerTracks:
-  - {fileID: 8300000, guid: f73cc87e1e9fc5c46961a38499df8584, type: 3}
+  - {fileID: 8300000, guid: 51c3f66b8cfda2647a74f5f8477df3ce, type: 3}
+  ambientMinVolume: 0.739
+  ambientMaxVolume: 0.766
+  powerTracks: []
   powerMinVolume: 0.01
   powerMaxVolume: 0.768
   powerTrackLoopStartTime: 6
@@ -5588,7 +5587,7 @@ Tilemap:
     m_Data: {r: 7.8051605e-19, g: 7.8051605e-19, b: 7.8051605e-19, a: 7.8051605e-19}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 0.7433963, g: 0.7433963, b: 0.7433963, a: 1}
+  m_Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_Origin: {x: -5, y: -3, z: 0}
   m_Size: {x: 8, y: 6, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -5900,23 +5899,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonMapGenerator
   parameters:
-    nodeCount: 5
-    mainRoomSpacing: 8
-    chanceForLTurn: 0.3
-    mainArteryPositionJitter: 2
-    distributiveNodeChancePerSegment: 1
+    nodeCount: 7
+    mainRoomSpacing: 3
+    chanceForLTurn: 0.5
+    mainArteryPositionJitter: 0.5
+    distributiveNodeChancePerSegment: 0.9
     minLeafNodesPerDistributive: 1
     maxLeafNodesPerDistributive: 3
-    leafBranchLength: 6
-    leafNodePositionJitter: 1.5
-    baseStartRoomSize: {x: 8, y: 8}
-    baseEndRoomSize: {x: 8, y: 8}
+    leafBranchLength: 2
+    leafNodePositionJitter: 0.5
+    baseStartRoomSize: {x: 4, y: 4}
+    baseEndRoomSize: {x: 8, y: 7}
     baseMainArteryRoomSize: {x: 6, y: 6}
-    baseDistributiveRoomSize: {x: 4, y: 4}
-    baseLeafRoomSize: {x: 5, y: 5}
-    baseCornerRoomSize: {x: 3, y: 3}
-    roomSizeVariationPercentage: 0.2
-    minRoomDistance: 2
+    baseDistributiveRoomSize: {x: 14, y: 2}
+    baseLeafRoomSize: {x: 6, y: 8}
+    baseCornerRoomSize: {x: 5, y: 9}
+    roomSizeVariationPercentage: 0.25
+    minRoomDistance: 0.1
     maxRepositionAttempts: 10
     repositionSearchRadius: 3
     corridorWidth: 2
@@ -5926,7 +5925,7 @@ MonoBehaviour:
   wallTilemap: {fileID: 333646817}
   foliageTilemap: {fileID: 1362343707}
   floorTiles:
-  - {fileID: 11400000, guid: 7910a0842a26d3840882b82c933a8a0e, type: 2}
+  - {fileID: 11400000, guid: a9857e3032a7f9b4f821c03917a638bd, type: 2}
   wallTile: {fileID: 11400000, guid: cd36cb088087bd448a44bb12c8a614ee, type: 2}
   foliageTiles:
   - {fileID: 11400000, guid: 1209dd56dcf464444b45fc2c9fbe3f9f, type: 2}
@@ -5937,7 +5936,7 @@ MonoBehaviour:
   spawnFoliageInCorridors: 1
   teleporterPrefab: {fileID: 4745575045145191664, guid: af192055a030fbe45b3cf6c3ea6426fa, type: 3}
   enemySpawnerPrefab: {fileID: 3680310007741697520, guid: 785bc85b44a6f8546b846805547bee60, type: 3}
-  spawnEnemySpawnersInMainRooms: 1
+  spawnEnemySpawnersInMainRooms: 0
   spawnerOffsetFromCenter: 0
   minDistanceBetweenSpawners: 5
   enableSpawnerRespawn: 1
@@ -8252,6 +8251,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4060607709702875625, guid: 2515409c008b7164e9a9a4f7e3e7758a, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: d002859cacf6e5740a3e4c67dd49cd9f, type: 3}
     - target: {fileID: 5567092838738821391, guid: 2515409c008b7164e9a9a4f7e3e7758a, type: 3}
       propertyPath: m_LocalPosition.x
       value: 6.25
@@ -8292,6 +8295,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5598514688985381337, guid: 2515409c008b7164e9a9a4f7e3e7758a, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 6078fe0b9555af246b0c9a5f9a5f6911, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

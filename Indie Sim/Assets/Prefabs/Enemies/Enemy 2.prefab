@@ -88,7 +88,7 @@ MonoBehaviour:
   normalDrag: 1
   knockbackDrag: 25
   detectionRadius: 5
-  separationRadius: 0.6
+  separationRadius: 0.4
   leaderRadius: 3
   minFlockSize: 6
   alignmentWeight: 1
@@ -408,7 +408,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 5567092838738821391}
@@ -460,7 +460,7 @@ SpriteRenderer:
   m_SortingLayerID: -783603659
   m_SortingLayer: 1
   m_SortingOrder: 5
-  m_Sprite: {fileID: 21300000, guid: 31e7b041bd63b084794088946194888d, type: 3}
+  m_Sprite: {fileID: 21300000, guid: d002859cacf6e5740a3e4c67dd49cd9f, type: 3}
   m_Color: {r: 1, g: 0.49622637, b: 0.49622637, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -481,7 +481,7 @@ Animator:
   m_GameObject: {fileID: 7865423505771993537}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 23806c0955db2944682a54859dd48603, type: 2}
+  m_Controller: {fileID: 9100000, guid: 6078fe0b9555af246b0c9a5f9a5f6911, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -512,6 +512,10 @@ PrefabInstance:
     - target: {fileID: 2535280734505842108, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
       propertyPath: m_SortingLayerID
       value: -1247100275
+      objectReference: {fileID: 0}
+    - target: {fileID: 5654014773513644217, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
+      propertyPath: InitialModule.gravitySource
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
       propertyPath: m_LocalPosition.x

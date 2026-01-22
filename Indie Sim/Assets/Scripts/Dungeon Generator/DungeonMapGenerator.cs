@@ -742,12 +742,12 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         spawner.spawnRadius = Mathf.Clamp(roomSizeMultiplier * 3f, 2f, 8f); // Min 2, Max 8
 
         // Adjust max enemies based on room size
-        int baseEnemies = 5;
+        int baseEnemies = 8;
         int roomSizeBonus = Mathf.RoundToInt(roomSizeMultiplier * 2f);
         spawner.maxEnemies = baseEnemies + roomSizeBonus;
 
         // Adjust spawn rate (optional - make larger rooms spawn faster/slower)
-        spawner.spawnInterval = UnityEngine.Random.Range(2f, 4f); // Random spawn rate per room
+        spawner.spawnInterval = UnityEngine.Random.Range(1f, 3f); // Random spawn rate per room
 
         Debug.Log($"Configured spawner in room {room.uniqueId}: radius={spawner.spawnRadius}, maxEnemies={spawner.maxEnemies}");
     }
@@ -1074,13 +1074,25 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
 
         var lineTiles = GetLineTiles(startInt, endInt);
 
+        // Determine corridor direction
+        bool isHorizontal = Mathf.Abs(end.x - start.x) >= Mathf.Abs(end.y - start.y);
+
         foreach (var tile in lineTiles)
         {
-            for (int x = -width / 2; x <= width / 2; x++)
+            if (isHorizontal)
             {
-                for (int y = -width / 2; y <= width / 2; y++)
+                // Horizontal corridor: expand up/down only
+                for (int y = 0; y < width; y++)
                 {
-                    floorTiles.Add(new Vector2Int(tile.x + x, tile.y + y));
+                    floorTiles.Add(new Vector2Int(tile.x, tile.y + y - width/2));
+                }
+            }
+            else
+            {
+                // Vertical corridor: expand left/right only
+                for (int x = 0; x < width; x++)
+                {
+                    floorTiles.Add(new Vector2Int(tile.x + x - width/2, tile.y));
                 }
             }
         }

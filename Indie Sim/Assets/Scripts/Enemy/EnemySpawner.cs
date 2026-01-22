@@ -16,8 +16,8 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
     [Header("Spawner Settings")]
     public float spawnRadius = 5f; // Radius within which enemies will spawn
-    public float spawnInterval = 3f; // Time between spawns
-    public int maxEnemies = 5; // Max number of enemies at a time
+    public float spawnInterval = 1.5f; // Time between spawns
+    public int maxEnemies = 8; // Max number of enemies at a time
 
     [Header("Difficulty Scaling")]
     [Tooltip("Current dungeon number (set by RoguelikeManager)")]
@@ -42,7 +42,7 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     [Header("Respawn Settings")]
     [SerializeField] private bool canRespawn = true;
     [SerializeField] private float respawnDelay = 10f; // Time before respawning
-    [SerializeField] private float respawnExclusionRadius = 8f; // Area where new spawner can't spawn after this one dies
+    [SerializeField] private float respawnExclusionRadius = 12f; // Area where new spawner can't spawn after this one dies
     
     private DungeonMapGenerator dungeonGenerator;
     // Components
@@ -55,8 +55,8 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     private int currentEnemyCount = 0;
 
     // Spawn rate cache (calculated once per dungeon)
-    private float spawnRate_Level1 = 80f;
-    private float spawnRate_Level2 = 15f;
+    private float spawnRate_Level1 = 60f;
+    private float spawnRate_Level2 = 25f;
     private float spawnRate_Level3 = 5f;
     
     //For Respawn Settings.
