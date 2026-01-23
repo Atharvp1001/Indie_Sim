@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ActivateEnemiesAdvanced : MonoBehaviour
+public class ActivateEnemies : MonoBehaviour
 {
     [Header("Activation Settings")]
     [SerializeField] private float activationRadius = 15f;
@@ -17,7 +17,7 @@ public class ActivateEnemiesAdvanced : MonoBehaviour
     [SerializeField] private bool showDebugGizmos = true;
 
     // Static reference
-    public static ActivateEnemiesAdvanced Instance;
+    public static ActivateEnemies Instance;
 
     // Enemy tracking
     private HashSet<GameObject> activatedEnemies = new HashSet<GameObject>();
@@ -85,7 +85,7 @@ public class ActivateEnemiesAdvanced : MonoBehaviour
         {
             if (activatedEnemies.Count > 0 || pathfindingEnemies.Count > 0)
             {
-                Debug.Log("ActivateEnemiesAdvanced: No enemies in range, clearing all references");
+                Debug.Log("ActivateEnemies: No enemies in range, clearing all references");
                 activatedEnemies.Clear();
                 pathfindingEnemies.Clear();
             }
@@ -297,7 +297,7 @@ public class ActivateEnemiesAdvanced : MonoBehaviour
         activatedEnemies.Clear();
         enemiesInRange.Clear();
         pathfindingEnemies.Clear();
-        Debug.Log("ActivateEnemiesAdvanced: Cleared all enemy references");
+        Debug.Log("ActivateEnemies: Cleared all enemy references");
     }
 
     private void OnDrawGizmos()

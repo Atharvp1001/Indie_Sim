@@ -83,8 +83,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 3
+  rotationSpeed: 5
   normalDrag: 1
   knockbackDrag: 25
+  detectionRadius: 5
+  separationRadius: 1.5
+  leaderRadius: 3
+  minFlockSize: 6
+  alignmentWeight: 1
+  cohesionWeight: 1
+  separationWeight: 1.5
+  playerSeekWeight: 2
+  tileSize: 1
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  pathCheckDistance: 2
+  pathUpdateInterval: 0.5
 --- !u!50 &257384993561902794
 Rigidbody2D:
   serializedVersion: 5

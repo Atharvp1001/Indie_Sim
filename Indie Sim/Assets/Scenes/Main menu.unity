@@ -3178,7 +3178,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2281418c229b16145b9240010099a327, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Scene1: RoguelikeMode
+  Scene1: SohamScene
   Scene2: 
 --- !u!114 &2058781939
 MonoBehaviour:

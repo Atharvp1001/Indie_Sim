@@ -73,20 +73,29 @@ public class EnemyMovement : MonoBehaviour
         // Unregister this enemy
         allEnemies.Remove(this);
         
-        // If this was a leader, disband the flock
+        // If this was a leader, disband the flock immediately
         if (isLeader)
         {
             foreach (var member in flockMembers)
             {
                 if (member != null)
+                {
                     member.flockLeader = null;
+                }
             }
+            flockMembers.Clear();
         }
         
-        // Tell ActivateEnemiesAdvanced to stop pathfinding for us
-        if (isPathfindingEnabled && ActivateEnemiesAdvanced.Instance != null)
+        // If we were a member, remove ourselves from the leader's list
+        if (flockLeader != null && flockLeader.isLeader)
         {
-            ActivateEnemiesAdvanced.Instance.UnregisterPathfindingEnemy(this);
+            flockLeader.flockMembers.Remove(this);
+        }
+        
+        // Tell ActivateEnemies to stop pathfinding for us
+        if (isPathfindingEnabled && ActivateEnemies.Instance != null)
+        {
+            ActivateEnemies.Instance.UnregisterPathfindingEnemy(this);
         }
     }
 
@@ -95,9 +104,9 @@ public class EnemyMovement : MonoBehaviour
         if (player == null) return;
 
         // Check activation
-        if (!isActivated && ActivateEnemiesAdvanced.Instance != null)
+        if (!isActivated && ActivateEnemies.Instance != null)
         {
-            isActivated = ActivateEnemiesAdvanced.Instance.IsEnemyActivated(gameObject);
+            isActivated = ActivateEnemies.Instance.IsEnemyActivated(gameObject);
             if (!isActivated) return;
         }
 
@@ -188,6 +197,12 @@ public class EnemyMovement : MonoBehaviour
 
     Vector2 CalculateFlockingBehavior()
     {
+        // Check if our leader was destroyed
+        if (!isLeader && flockLeader != null && flockLeader == null)
+        {
+            flockLeader = null; // Clear destroyed leader reference
+        }
+        
         // If we're a leader with pathfinding, use the pathfinding target
         if (isLeader && isPathfindingEnabled && hasValidPath && pathfindTarget.HasValue)
         {
@@ -223,6 +238,8 @@ public class EnemyMovement : MonoBehaviour
         
         foreach (var enemy in GetNearbyEnemies(detectionRadius))
         {
+            if (enemy == null) continue; // Skip destroyed enemies
+            
             if (enemy.flockLeader == flockLeader)
             {
                 averageDirection += enemy.rb.linearVelocity.normalized;
@@ -243,6 +260,8 @@ public class EnemyMovement : MonoBehaviour
         
         foreach (var enemy in GetNearbyEnemies(detectionRadius))
         {
+            if (enemy == null) continue; // Skip destroyed enemies
+            
             if (enemy.flockLeader == flockLeader)
             {
                 centerOfMass += (Vector2)enemy.transform.position;
@@ -265,6 +284,8 @@ public class EnemyMovement : MonoBehaviour
         
         foreach (var enemy in GetNearbyEnemies(separationRadius))
         {
+            if (enemy == null) continue; // Skip destroyed enemies
+            
             Vector2 awayFromNeighbor = (Vector2)(transform.position - enemy.transform.position);
             float distance = awayFromNeighbor.magnitude;
             
@@ -279,6 +300,12 @@ public class EnemyMovement : MonoBehaviour
 
     void CheckFlockFormation()
     {
+        // Clean up destroyed members from flock
+        if (isLeader)
+        {
+            flockMembers.RemoveAll(m => m == null);
+        }
+        
         List<EnemyMovement> nearbyEnemies = GetNearbyEnemies(leaderRadius);
         
         // Formation logic
@@ -299,9 +326,9 @@ public class EnemyMovement : MonoBehaviour
         if (isLeader && !isPathfindingEnabled)
         {
             // Try to claim a pathfinding slot
-            if (ActivateEnemiesAdvanced.Instance != null)
+            if (ActivateEnemies.Instance != null)
             {
-                ActivateEnemiesAdvanced.Instance.TryEnablePathfinding(this);
+                ActivateEnemies.Instance.TryEnablePathfinding(this);
             }
         }
         else if (!isLeader && isPathfindingEnabled)
@@ -319,6 +346,8 @@ public class EnemyMovement : MonoBehaviour
         // Collect pathfinding members and disable their pathfinding
         foreach (var enemy in nearbyEnemies)
         {
+            if (enemy == null) continue; // Skip destroyed enemies
+            
             if (enemy.flockLeader == null)
             {
                 // If this enemy was pathfinding, disable it
@@ -333,9 +362,9 @@ public class EnemyMovement : MonoBehaviour
         }
         
         // Try to enable pathfinding for this new leader
-        if (ActivateEnemiesAdvanced.Instance != null)
+        if (ActivateEnemies.Instance != null)
         {
-            ActivateEnemiesAdvanced.Instance.TryEnablePathfinding(this);
+            ActivateEnemies.Instance.TryEnablePathfinding(this);
         }
         
         Debug.Log($"Enemy {gameObject.name} became flock leader with {flockMembers.Count} members");
@@ -358,9 +387,9 @@ public class EnemyMovement : MonoBehaviour
                 member.flockLeader = null;
                 
                 // Give disbanded members a chance to pathfind
-                if (ActivateEnemiesAdvanced.Instance != null)
+                if (ActivateEnemies.Instance != null)
                 {
-                    ActivateEnemiesAdvanced.Instance.TryEnablePathfinding(member);
+                    ActivateEnemies.Instance.TryEnablePathfinding(member);
                 }
             }
         }
@@ -373,6 +402,8 @@ public class EnemyMovement : MonoBehaviour
     {
         foreach (var enemy in GetNearbyEnemies(leaderRadius))
         {
+            if (enemy == null) continue; // Skip destroyed enemies
+            
             if (enemy.isLeader && enemy.flockMembers.Count < minFlockSize * 2)
             {
                 // Disable our pathfinding if we're joining a flock
@@ -480,10 +511,10 @@ public class EnemyMovement : MonoBehaviour
         pathfindTarget = null;
         hasValidPath = false;
         
-        // Notify ActivateEnemiesAdvanced
-        if (ActivateEnemiesAdvanced.Instance != null)
+        // Notify ActivateEnemies
+        if (ActivateEnemies.Instance != null)
         {
-            ActivateEnemiesAdvanced.Instance.UnregisterPathfindingEnemy(this);
+            ActivateEnemies.Instance.UnregisterPathfindingEnemy(this);
         }
         
         Debug.Log($"Enemy {gameObject.name}: Pathfinding DISABLED");
@@ -492,6 +523,11 @@ public class EnemyMovement : MonoBehaviour
     public bool IsPathfinding()
     {
         return isPathfindingEnabled;
+    }
+
+    public bool IsLeader()
+    {
+        return isLeader;
     }
 
     // Debug visualization

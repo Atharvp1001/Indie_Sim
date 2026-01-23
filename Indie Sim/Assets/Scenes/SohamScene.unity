@@ -5901,9 +5901,9 @@ MonoBehaviour:
   parameters:
     nodeCount: 7
     mainRoomSpacing: 3
-    chanceForLTurn: 0.5
+    chanceForLTurn: 0.739
     mainArteryPositionJitter: 0.5
-    distributiveNodeChancePerSegment: 0.9
+    distributiveNodeChancePerSegment: 0.564
     minLeafNodesPerDistributive: 1
     maxLeafNodesPerDistributive: 3
     leafBranchLength: 2
@@ -5918,6 +5918,9 @@ MonoBehaviour:
     minRoomDistance: 0.1
     maxRepositionAttempts: 10
     repositionSearchRadius: 3
+    startRoomToArteryDistance: 12
+    minStartToEndDistance: 40
+    roomRotationChance: 0.5
     corridorWidth: 2
   showGizmos: 1
   showRoomIds: 1
