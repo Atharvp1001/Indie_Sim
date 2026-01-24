@@ -180,6 +180,8 @@ MonoBehaviour:
   leaveCorpse: 1
   corpseLifetime: 5
   corpseAlpha: 0.8
+  corpseSortingLayer: Floor
+  corpseSortingOrder: 3
   deathEffect: {fileID: 0}
   deathEffectDuration: 2
   audioSource: {fileID: 6872814849207381837}
@@ -258,8 +260,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7ffd812323656a4295b84cffb1d50db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BloodSplatterEffect
-  bloodSplatterPrefab: {fileID: 5654014773513644217, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-  maxRandomSpread: 30
+  bloodSplatterPrefabs:
+  - {fileID: 4632746306492434432, guid: 222607b62edaa0a44ba2a147cef90fc9, type: 3}
+  bloodLifetime: 2
 --- !u!82 &6872814849207381837
 AudioSource:
   m_ObjectHideFlags: 0
@@ -505,13 +508,17 @@ PrefabInstance:
       propertyPath: m_Name
       value: BloodSplatterEffect
       objectReference: {fileID: 0}
+    - target: {fileID: 1414684362247989671, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 2535280734505842108, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
       propertyPath: m_SortingLayer
-      value: 3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2535280734505842108, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
       propertyPath: m_SortingLayerID
-      value: -1247100275
+      value: -783603659
       objectReference: {fileID: 0}
     - target: {fileID: 5654014773513644217, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
       propertyPath: InitialModule.gravitySource

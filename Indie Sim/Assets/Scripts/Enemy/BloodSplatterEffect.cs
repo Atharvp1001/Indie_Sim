@@ -2,75 +2,50 @@ using UnityEngine;
 
 public class BloodSplatterEffect : MonoBehaviour
 {
-    [Header("Blood Splatter Prefab")]
-    public ParticleSystem bloodSplatterPrefab; // Assign your blood particle system prefab
+    [Header("Blood Splatter Animation Prefabs")]
+    public GameObject[] bloodSplatterPrefabs; // Array of blood animation GameObjects
+    
+    [Header("Lifetime Settings")]
+    public float bloodLifetime = 2f; // How long the blood animation stays before being destroyed
 
-    [Header("Juice Settings")]
-    [Range(0f, 90f)] public float maxRandomSpread = 30f; // How many degrees to wobble left/right
+    [Header("Blood Chunk Settings")]
+    public Sprite bloodChunkSprite; // Single sprite that gets thrown
+    [Range(3, 10)] public int chunkCount = 4; // How many chunks to spawn
+    public float chunkLifetime = 0.5f; // How long chunks stay visible
+    public float chunkSpeed = 5f; // How fast chunks fly away
+    public float chunkSpreadAngle = 45f; // Spread angle for chunks
+    
+    [Header("Blood Chunk Sorting")]
+    public string chunkSortingLayer = "Default";
+    public int chunkSortingOrder = 0;
+
     /// <summary>
-    /// Spawns blood splatter at enemy position, spraying away from player
+    /// Spawns blood splatter at enemy position
     /// </summary>
     /// <param name="enemyPosition">Position where enemy was hit</param>
     /// <param name="playerPosition">Position of the player who shot</param>
     public void SpawnBloodSplatter(Vector3 enemyPosition, Vector3 playerPosition)
     {
-        if (bloodSplatterPrefab == null)
+        if (bloodSplatterPrefabs == null || bloodSplatterPrefabs.Length == 0)
         {
-            Debug.LogError("Blood splatter prefab NOT ASSIGNED in BloodSplatterEffect!");
+            Debug.LogError("Blood splatter prefabs NOT ASSIGNED in BloodSplatterEffect!");
             return;
         }
 
-        Debug.Log($"SpawnBloodSplatter called at position: {enemyPosition}");
+        // Pick a random blood splatter prefab from the array
+        GameObject randomBloodPrefab = bloodSplatterPrefabs[Random.Range(0, bloodSplatterPrefabs.Length)];
 
-        // Calculate direction from player to enemy (where blood should spray)
-        Vector3 direction = (enemyPosition - playerPosition).normalized;
+        // Instantiate blood effect at enemy position
+        GameObject blood = Instantiate(randomBloodPrefab, enemyPosition, Quaternion.identity);
 
-        // Calculate angle for 2D top-down (rotation around Z-axis)
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        // Destroy after specified lifetime
+        Destroy(blood, bloodLifetime);
 
-        Debug.Log($"Blood spray direction: {direction}, angle: {angle}");
-        //allows the blood to splatter a little randmoly.(quality of life visual feature)
-        float randomOffset = Random.Range(-maxRandomSpread, maxRandomSpread);
-        float finalAngle = angle + randomOffset;
-
-        // Create rotation for the blood splatter cone
-        Quaternion rotation = Quaternion.Euler(0f, 0f, finalAngle);
-
-        // Instantiate blood effect at enemy position with calculated rotation
-        ParticleSystem blood = Instantiate(bloodSplatterPrefab, enemyPosition, rotation);
-
-        if (blood == null)
+        // Spawn blood chunks flying away from player
+        if (bloodChunkSprite != null)
         {
-            Debug.LogError("Failed to instantiate blood particle system!");
-            return;
+            SpawnBloodChunks(enemyPosition, playerPosition);
         }
-
-        Debug.Log($"Blood particle system instantiated: {blood.name}");
-
-        // IMPORTANT: Make sure the particle system is active
-        blood.gameObject.SetActive(true);
-
-        // Get the main module to check settings
-        var main = blood.main;
-        Debug.Log($"Blood particle - Duration: {main.duration}, PlayOnAwake: {main.playOnAwake}, Looping: {main.loop}");
-        Debug.Log($"Blood particle - MaxParticles: {main.maxParticles}, SimulationSpace: {main.simulationSpace}");
-
-        // Check emission
-        var emission = blood.emission;
-        Debug.Log($"Blood particle - Emission enabled: {emission.enabled}, RateOverTime: {emission.rateOverTime.constant}, RateOverDistance: {emission.rateOverDistance.constant}");
-        Debug.Log($"Blood particle - Burst count: {emission.burstCount}");
-
-        // CRITICAL: Clear any existing particles and play fresh
-        blood.Clear();
-        blood.Play();
-
-        Debug.Log($"Blood particle system played. IsPlaying: {blood.isPlaying}, IsEmitting: {blood.isEmitting}");
-
-        // Destroy after particle lifetime ends
-        float totalDuration = main.duration + main.startLifetime.constantMax;
-        Destroy(blood.gameObject, totalDuration + 0.5f); // Add 0.5s buffer
-
-        Debug.Log($"Blood particle will be destroyed in {totalDuration} seconds");
     }
 
     /// <summary>
@@ -80,35 +55,82 @@ public class BloodSplatterEffect : MonoBehaviour
     /// <param name="hitDirection">Direction of the bullet/hit</param>
     public void SpawnBloodSplatter(Vector3 hitPosition, Vector2 hitDirection)
     {
-        if (bloodSplatterPrefab == null)
+        if (bloodSplatterPrefabs == null || bloodSplatterPrefabs.Length == 0)
         {
-            Debug.LogError("Blood splatter prefab NOT ASSIGNED!");
+            Debug.LogError("Blood splatter prefabs NOT ASSIGNED!");
             return;
         }
 
-        Debug.Log($"SpawnBloodSplatter (direction version) called at: {hitPosition}");
+        // Pick a random blood splatter prefab from the array
+        GameObject randomBloodPrefab = bloodSplatterPrefabs[Random.Range(0, bloodSplatterPrefabs.Length)];
 
-        // Calculate angle from direction vector
-        float angle = Mathf.Atan2(hitDirection.y, hitDirection.x) * Mathf.Rad2Deg;
-        Quaternion rotation = Quaternion.Euler(0f, 0f, angle);
+        // Instantiate blood effect
+        GameObject blood = Instantiate(randomBloodPrefab, hitPosition, Quaternion.identity);
 
-        ParticleSystem blood = Instantiate(bloodSplatterPrefab, hitPosition, rotation);
+        // Destroy after specified lifetime
+        Destroy(blood, bloodLifetime);
 
-        if (blood == null)
+        // Spawn blood chunks in opposite direction
+        if (bloodChunkSprite != null)
         {
-            Debug.LogError("Failed to instantiate blood particle system!");
-            return;
+            Vector3 oppositeDirection = -hitDirection;
+            SpawnBloodChunksWithDirection(hitPosition, oppositeDirection);
         }
+    }
 
-        // IMPORTANT: Ensure active and play
-        blood.gameObject.SetActive(true);
-        blood.Clear();
-        blood.Play();
+    private void SpawnBloodChunks(Vector3 enemyPosition, Vector3 playerPosition)
+    {
+        // Calculate direction away from player (opposite of bullet direction)
+        Vector3 awayFromPlayer = (enemyPosition - playerPosition).normalized;
+        SpawnBloodChunksWithDirection(enemyPosition, awayFromPlayer);
+    }
 
-        var main = blood.main;
-        float totalDuration = main.duration + main.startLifetime.constantMax;
-        Destroy(blood.gameObject, totalDuration + 0.5f);
+    private void SpawnBloodChunksWithDirection(Vector3 spawnPosition, Vector3 baseDirection)
+    {
+        for (int i = 0; i < chunkCount; i++)
+        {
+            // Create chunk GameObject
+            GameObject chunk = new GameObject("BloodChunk");
+            chunk.transform.position = spawnPosition;
 
-        Debug.Log($"Blood spawned. IsPlaying: {blood.isPlaying}");
+            // Add sprite renderer
+            SpriteRenderer renderer = chunk.AddComponent<SpriteRenderer>();
+            renderer.sprite = bloodChunkSprite;
+            renderer.sortingLayerName = chunkSortingLayer;
+            renderer.sortingOrder = chunkSortingOrder;
+
+            // Calculate spread direction
+            float spreadOffset = Random.Range(-chunkSpreadAngle / 2f, chunkSpreadAngle / 2f);
+            float baseAngle = Mathf.Atan2(baseDirection.y, baseDirection.x) * Mathf.Rad2Deg;
+            float finalAngle = baseAngle + spreadOffset;
+            
+            Vector2 direction = new Vector2(
+                Mathf.Cos(finalAngle * Mathf.Deg2Rad),
+                Mathf.Sin(finalAngle * Mathf.Deg2Rad)
+            );
+
+            // Add movement component
+            BloodChunkMover mover = chunk.AddComponent<BloodChunkMover>();
+            mover.Initialize(direction * chunkSpeed, chunkLifetime);
+        }
+    }
+}
+
+// Simple component to move blood chunks
+public class BloodChunkMover : MonoBehaviour
+{
+    private Vector2 velocity;
+    private float lifetime;
+
+    public void Initialize(Vector2 initialVelocity, float life)
+    {
+        velocity = initialVelocity;
+        lifetime = life;
+        Destroy(gameObject, lifetime);
+    }
+
+    private void Update()
+    {
+        transform.position += (Vector3)velocity * Time.deltaTime;
     }
 }

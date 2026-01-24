@@ -1991,7 +1991,7 @@ Tilemap:
   m_TileColorArray: []
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 0.5660378, g: 0.5660378, b: 0.5660378, a: 1}
+  m_Color: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   m_Origin: {x: 0, y: 0, z: 0}
   m_Size: {x: 0, y: 0, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -2330,7 +2330,7 @@ Tilemap:
     m_Data: {r: 7.8051605e-19, g: 7.8051605e-19, b: 7.8051605e-19, a: 7.8051605e-19}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 0.2924528, g: 0.2924528, b: 0.2924528, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Origin: {x: -5, y: -3, z: 0}
   m_Size: {x: 8, y: 6, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -2377,7 +2377,7 @@ TilemapRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 2100000, guid: 6e0337efe804f6c48a4559454d7a5575, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2398,7 +2398,7 @@ TilemapRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -783603659
   m_SortingLayer: 1
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_ChunkSize: {x: 32, y: 32, z: 32}
   m_ChunkCullingBounds: {x: 0, y: 0, z: 0}
   m_MaxChunkCount: 16
@@ -2406,7 +2406,7 @@ TilemapRenderer:
   m_SortOrder: 0
   m_Mode: 0
   m_DetectChunkCullingBounds: 0
-  m_MaskInteraction: 0
+  m_MaskInteraction: 2
 --- !u!4 &375523325
 Transform:
   m_ObjectHideFlags: 0
@@ -5934,9 +5934,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1209dd56dcf464444b45fc2c9fbe3f9f, type: 2}
   - {fileID: 11400000, guid: e322f6681c2d5174dbf06850a7d2256c, type: 2}
   - {fileID: 11400000, guid: 7e76699c5de610f4ea222a50fbdd02d6, type: 2}
-  foliageSpawnChance: 0.2
-  spawnFoliageInRooms: 1
-  spawnFoliageInCorridors: 1
+  foliageSpawnChance: 0
+  spawnFoliageInRooms: 0
+  spawnFoliageInCorridors: 0
   teleporterPrefab: {fileID: 4745575045145191664, guid: af192055a030fbe45b3cf6c3ea6426fa, type: 3}
   enemySpawnerPrefab: {fileID: 3680310007741697520, guid: 785bc85b44a6f8546b846805547bee60, type: 3}
   spawnEnemySpawnersInMainRooms: 0
@@ -7937,6 +7937,46 @@ PrefabInstance:
     - target: {fileID: 2693588683566327872, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_ClearFlags
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: field of view
+      value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_FocalLength
+      value: 13.858139
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_SensorSize.x
+      value: 21.946
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_SensorSize.y
+      value: 16.002
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_OcclusionCulling
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008973793089747527, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_projectionMatrixMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4161862380435632757, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_RenderShadows
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4161862380435632757, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_RendererIndex
+      value: -1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4161862380435632757, guid: edbd5360888064b468af922cde708f5e, type: 3}
+      propertyPath: m_RenderPostProcessing
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4168114898144869375, guid: edbd5360888064b468af922cde708f5e, type: 3}
       propertyPath: coinText
