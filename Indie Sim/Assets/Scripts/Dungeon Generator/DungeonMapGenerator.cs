@@ -134,8 +134,15 @@ public class MapParameters
     public float minRoomDistance = 2f;
     public int maxRepositionAttempts = 10;
     public float repositionSearchRadius = 3f;
-// NEW: Minimum distance between spawners
-        [Header("Corridor Settings")]
+
+    [Header("Start Room Isolation")]
+    public float startRoomToArteryDistance = 12f; // Distance before main artery begins
+    public float minStartToEndDistance = 40f; // Minimum distance between start and teleporter
+
+    [Header("Room Rotation")]
+    [Range(0f, 1f)] public float roomRotationChance = 0.5f; // Chance for rectangular rooms to rotate
+
+    [Header("Corridor Settings")]
     public int corridorWidth = 2;
 }
 
@@ -200,7 +207,8 @@ public class DungeonMapGenerator : MonoBehaviour
 
     [Header("Spawner Respawn")]
     [SerializeField] private bool enableSpawnerRespawn = true;
-private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclusionZone>();
+    private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclusionZone>();
+
     [Header("Key Spawning")]
     [SerializeField] private GameObject keyPrefab;
     [SerializeField] private bool hasKeyBeenSpawned = false; // Ensures only one key spawns
@@ -230,6 +238,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
     private int distributiveRoomIdCounter = RoomIDCategories.DISTRIBUTIVE_ROOM_START;
     private int cornerRoomIdCounter = RoomIDCategories.CORNER_ROOM_START;
     private int keyRoomId = -1;
+
     void Start()
     {
         // Only generate if not being controlled by CasualGameModeManager
@@ -316,20 +325,29 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         var mapData = new MapData();
         var mainPathIds = new List<int>();
 
-        // Generate the room network
-        GenerateMainArtery(param, mapData.rooms, mainPathIds);
+        // NEW: Generate isolated start room FIRST
+        var startRoom = CreateIsolatedStartRoom(param, mapData.rooms);
+        mapData.startRoomId = startRoom.uniqueId;
 
-        // Set start and end room IDs
+        // Generate the main artery (now starts AFTER the start room)
+        GenerateMainArtery(param, mapData.rooms, mainPathIds, startRoom);
+
+        // Connect start room to first main artery room
         if (mainPathIds.Count > 0)
         {
-            mapData.startRoomId = mainPathIds[0];
-            mapData.endRoomId = mainPathIds[mainPathIds.Count - 1];
-            mapData.lastMainRoomId = mapData.endRoomId; // The last main room is where teleporter spawns
+            ConnectRooms(startRoom.uniqueId, mainPathIds[0], ConnectionType.ARTERY_PATH, mapData.rooms);
+        }
 
-            // Update room types for start and end rooms
-            mapData.rooms[mapData.startRoomId].type = RoomType.START_ROOM;
+        // Set end room ID
+        if (mainPathIds.Count > 0)
+        {
+            mapData.endRoomId = mainPathIds[mainPathIds.Count - 1];
+            mapData.lastMainRoomId = mapData.endRoomId;
             mapData.rooms[mapData.endRoomId].type = RoomType.END_ROOM;
         }
+
+        // NEW: Validate minimum distance between start and end
+        ValidateStartToEndDistance(param, mapData, startRoom);
 
         InsertDistributiveNodesAndSproutLeaves(param, mapData.rooms, mainPathIds);
 
@@ -340,6 +358,59 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         GenerateWallTiles(mapData.floorTiles, mapData.wallTiles);
 
         return mapData;
+    }
+
+    /// <summary>
+    /// Creates an isolated start room at origin with standard generation rules
+    /// </summary>
+    private Room CreateIsolatedStartRoom(MapParameters param, Dictionary<int, Room> rooms)
+    {
+        Vector2 startPosition = Vector2.zero;
+        
+        // Get size with variation applied (follows normal rules)
+        Vector2Int size = GetRoomSizeForType(RoomType.START_ROOM, param);
+
+        var startRoom = new Room
+        {
+            uniqueId = GetNextRoomId(RoomType.START_ROOM),
+            worldPosition = startPosition,
+            type = RoomType.START_ROOM,
+            size = size
+        };
+        
+        rooms[startRoom.uniqueId] = startRoom;
+        
+        Debug.Log($"Isolated Start Room created at {startPosition} with size {size}");
+        
+        return startRoom;
+    }
+
+    /// <summary>
+    /// Validates that end room is far enough from start room, repositions if needed
+    /// </summary>
+    private void ValidateStartToEndDistance(MapParameters param, MapData mapData, Room startRoom)
+    {
+        Room endRoom = mapData.GetEndRoom();
+        if (endRoom == null || startRoom == null) return;
+
+        float currentDistance = Vector2.Distance(startRoom.worldPosition, endRoom.worldPosition);
+        
+        if (currentDistance < param.minStartToEndDistance)
+        {
+            Debug.LogWarning($"End room too close to start ({currentDistance} < {param.minStartToEndDistance}). Repositioning...");
+            
+            // Calculate direction away from start
+            Vector2 directionFromStart = (endRoom.worldPosition - startRoom.worldPosition).normalized;
+            
+            // Move end room to minimum distance
+            Vector2 newEndPosition = startRoom.worldPosition + directionFromStart * param.minStartToEndDistance;
+            
+            // Find valid position near the target
+            endRoom.worldPosition = FindValidRoomPosition(newEndPosition, endRoom.size, param, mapData.rooms);
+            
+            float newDistance = Vector2.Distance(startRoom.worldPosition, endRoom.worldPosition);
+            Debug.Log($"End room repositioned. New distance: {newDistance}");
+        }
     }
 
     private void PaintTiles(MapData mapData)
@@ -360,8 +431,6 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         floorTilemap.ClearAllTiles();
         wallTilemap.ClearAllTiles();
         foliageTilemap.ClearAllTiles();
-
-     
 
         Debug.Log($"Painting {mapData.floorTiles.Count} floor tiles and {mapData.wallTiles.Count} wall tiles");
 
@@ -444,10 +513,19 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         int widthVariation = Mathf.RoundToInt(baseSize.x * param.roomSizeVariationPercentage * RandomRange(-1f, 1f));
         int heightVariation = Mathf.RoundToInt(baseSize.y * param.roomSizeVariationPercentage * RandomRange(-1f, 1f));
 
-        return new Vector2Int(
+        Vector2Int finalSize = new Vector2Int(
             Mathf.Max(2, baseSize.x + widthVariation),
             Mathf.Max(2, baseSize.y + heightVariation)
         );
+
+        // NEW: Random rotation for rectangular rooms (swap width/height)
+        if (finalSize.x != finalSize.y && RandomValue() < param.roomRotationChance)
+        {
+            finalSize = new Vector2Int(finalSize.y, finalSize.x); // Swap dimensions
+            Debug.Log($"Room rotated: {roomType} - New size: {finalSize}");
+        }
+
+        return finalSize;
     }
 
     private Room CreateRoom(Vector2 position, RoomType type, MapParameters param, Dictionary<int, Room> rooms)
@@ -463,7 +541,6 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         };
         rooms[newRoom.uniqueId] = newRoom;
 
-
         if (shouldKeyBeSpawned)
         {
             // NEW: Spawn key in LeafNodeRoom (only once)
@@ -475,7 +552,6 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
 
         return newRoom;
     }
-
 
     private Vector2 FindValidRoomPosition(Vector2 desiredPosition, Vector2Int roomSize, MapParameters param, Dictionary<int, Room> rooms)
     {
@@ -551,8 +627,6 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         Debug.Log($"Key spawned in room {room.uniqueId} at position {keySpawnPosition}");
     }
 
-
-
     public void ResetKeySpawnStatus()
     {
         hasKeyBeenSpawned = false;
@@ -611,6 +685,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
             Debug.Log($"Enemy spawner created in room {room.uniqueId} at edge position {spawnerPosition.Value}");
         }
     }
+
     /// <summary>
     /// Finds a valid spawner position from the list that respects minimum distance from other spawners
     /// Removes the chosen position from the list
@@ -684,6 +759,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
 
         return validPositions;
     }
+
     /// <summary>
     /// Counts how many of the 4 cardinal directions (up, down, left, right) have walls
     /// </summary>
@@ -714,6 +790,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
 
         return wallCount;
     }
+
     /// <summary>
     /// Configure spawner settings based on room properties
     /// </summary>
@@ -721,16 +798,17 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
     {
         if (currentMapData == null) return;
 
-        // Spawn in ALL rooms now, not just main artery rooms
+        // Spawn in ALL rooms except start and end
         foreach (var room in currentMapData.rooms.Values)
         {
-            // Skip start and end rooms if you want
+            // Skip start and end rooms
             if (room.uniqueId == currentMapData.startRoomId || room.uniqueId == currentMapData.endRoomId)
                 continue;
                 
             SpawnEnemySpawnerInRoom(room);
         }
     }
+
     /// <param name="spawner">The spawner component to configure</param>
     /// <param name="room">The room containing the spawner</param>
     private void ConfigureSpawnerForRoom(EnemySpawner spawner, Room room)
@@ -742,12 +820,12 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         spawner.spawnRadius = Mathf.Clamp(roomSizeMultiplier * 3f, 2f, 8f); // Min 2, Max 8
 
         // Adjust max enemies based on room size
-        int baseEnemies = 5;
+        int baseEnemies = 8;
         int roomSizeBonus = Mathf.RoundToInt(roomSizeMultiplier * 2f);
         spawner.maxEnemies = baseEnemies + roomSizeBonus;
 
         // Adjust spawn rate (optional - make larger rooms spawn faster/slower)
-        spawner.spawnInterval = UnityEngine.Random.Range(2f, 4f); // Random spawn rate per room
+        spawner.spawnInterval = UnityEngine.Random.Range(1f, 3f); // Random spawn rate per room
 
         Debug.Log($"Configured spawner in room {room.uniqueId}: radius={spawner.spawnRadius}, maxEnemies={spawner.maxEnemies}");
     }
@@ -794,6 +872,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         // Start respawn coroutine
         StartCoroutine(RespawnSpawnerAfterDelay(respawnDelay));
     }
+
     private IEnumerator RespawnSpawnerAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -902,6 +981,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
 
         return null;
     }
+
     private void ConnectRooms(int room1Id, int room2Id, ConnectionType connectionType, Dictionary<int, Room> rooms)
     {
         if (rooms.ContainsKey(room1Id) && rooms.ContainsKey(room2Id))
@@ -920,19 +1000,19 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         }
     }
 
-    private void GenerateMainArtery(MapParameters param, Dictionary<int, Room> rooms, List<int> mainPathIds)
+    private void GenerateMainArtery(MapParameters param, Dictionary<int, Room> rooms, List<int> mainPathIds, Room startRoom)
     {
-        Vector2 currentPos = Vector2.zero;
+        // Calculate starting position for main artery (away from start room)
+        Vector2 currentPos = startRoom.worldPosition + Vector2.right * (startRoom.size.x / 2f + param.startRoomToArteryDistance);
         Vector2 currentDirection = Vector2.right;
 
-        // Create the first room as START_ROOM initially (will be set properly later)
-        var firstRoom = CreateRoom(currentPos, RoomType.MAIN_ARTERY_ROOM, param, rooms);
-        mainPathIds.Add(firstRoom.uniqueId);
+        // Create the FIRST main artery room (no longer the start room)
+        var firstMainRoom = CreateRoom(currentPos, RoomType.MAIN_ARTERY_ROOM, param, rooms);
+        mainPathIds.Add(firstMainRoom.uniqueId);
 
-        // Spawn enemy spawner in first room
-        //SpawnEnemySpawnerInRoom(firstRoom);
-        int roomCount = parameters.nodeCount;
+        int roomCount = param.nodeCount; // This now controls ONLY main artery rooms
 
+        // Generate remaining main artery rooms
         for (int i = 1; i < roomCount; i++)
         {
             bool isLTurn = RandomValue() < param.chanceForLTurn;
@@ -951,12 +1031,8 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
             var mainRoom = CreateRoom(currentPos, RoomType.MAIN_ARTERY_ROOM, param, rooms);
             ConnectRooms(mainPathIds.Last(), mainRoom.uniqueId, ConnectionType.ARTERY_PATH, rooms);
             mainPathIds.Add(mainRoom.uniqueId);
-
-            // Spawn enemy spawner in this main room
-            //SpawnEnemySpawnerInRoom(mainRoom);
         }
     }
-
 
     private void InsertDistributiveNodesAndSproutLeaves(MapParameters param, Dictionary<int, Room> rooms, List<int> mainPathIds)
     {
@@ -996,6 +1072,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         var leafRoom = CreateRoom(leafPos, RoomType.LEAF_NODE_ROOM, param, rooms);
         ConnectRooms(fromNode.uniqueId, leafRoom.uniqueId, ConnectionType.VEIN_PATH, rooms);
     }
+
     private TileBase GetRandomFloorTile()
     {
         // Check if array exists and has elements
@@ -1025,6 +1102,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         // Return random valid tile
         return validTiles[UnityEngine.Random.Range(0, validTiles.Count)];
     }
+
     private void GenerateFloorTiles(MapParameters param, Dictionary<int, Room> rooms, HashSet<Vector2Int> floorTiles)
     {
         floorTiles.Clear();
@@ -1074,13 +1152,25 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
 
         var lineTiles = GetLineTiles(startInt, endInt);
 
+        // Determine corridor direction
+        bool isHorizontal = Mathf.Abs(end.x - start.x) >= Mathf.Abs(end.y - start.y);
+
         foreach (var tile in lineTiles)
         {
-            for (int x = -width / 2; x <= width / 2; x++)
+            if (isHorizontal)
             {
-                for (int y = -width / 2; y <= width / 2; y++)
+                // Horizontal corridor: expand up/down only
+                for (int y = 0; y < width; y++)
                 {
-                    floorTiles.Add(new Vector2Int(tile.x + x, tile.y + y));
+                    floorTiles.Add(new Vector2Int(tile.x, tile.y + y - width/2));
+                }
+            }
+            else
+            {
+                // Vertical corridor: expand left/right only
+                for (int x = 0; x < width; x++)
+                {
+                    floorTiles.Add(new Vector2Int(tile.x + x - width/2, tile.y));
                 }
             }
         }
@@ -1174,8 +1264,6 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
             Debug.LogError("Teleporter prefab became null before coroutine could start.");
         }
     }
-
-
 
     private IEnumerator SpawnTeleporterDelayed()
     {
@@ -1301,7 +1389,6 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
         return true;
     }
 
-
     // Helper method to check if a room ID is the last main room (for teleporter spawning)
     public bool IsLastMainRoom(int roomId)
     {
@@ -1328,6 +1415,7 @@ private List<SpawnerExclusionZone> spawnerExclusionZones = new List<SpawnerExclu
     {
         return RandomValue() < 0.5f ? new Vector2(-current.y, current.x) : new Vector2(current.y, -current.x);
     }
+
 
     void OnDrawGizmos()
     {

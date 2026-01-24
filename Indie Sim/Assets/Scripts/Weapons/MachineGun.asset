@@ -24,7 +24,7 @@ MonoBehaviour:
   baseDistanceRatio: 0.08
   shapeProfile: 0
   expansionCurve: 1
-  shootSound: {fileID: 8300000, guid: 260582bc136b37046a7dd87436b0da31, type: 3}
+  shootSound: {fileID: 8300000, guid: daf8e29ac479ba14bac60a3b30327434, type: 3}
   reloadSound: {fileID: 0}
   muzzleFlashEffect: {fileID: 0}
   hitEffect: {fileID: 0}

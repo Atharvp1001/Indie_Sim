@@ -8,6 +8,10 @@ public class EnemyDeath : MonoBehaviour
     [SerializeField] private bool leaveCorpse = true;
     [SerializeField] private float corpseLifetime = 30f; // 0 = stays forever
     [SerializeField] private float corpseAlpha = 0.8f;
+    
+    [Header("Corpse Sorting Layer")]
+    [SerializeField] private string corpseSortingLayer = "Floor";
+    [SerializeField] private int corpseSortingOrder = 2;
 
     [Header("Death Effects")]
     [SerializeField] private GameObject deathEffect;
@@ -111,9 +115,9 @@ public class EnemyDeath : MonoBehaviour
         SpriteRenderer corpseRenderer = corpse.AddComponent<SpriteRenderer>();
         corpseRenderer.sprite = corpseSprite;
 
-        // Copy sorting settings from original enemy
-        corpseRenderer.sortingLayerName = "Floor"; // Set to Floor sorting layer
-        corpseRenderer.sortingOrder = 2; // Set order to 2 in Floor layer
+        // Set sorting layer from inspector
+        corpseRenderer.sortingLayerName = corpseSortingLayer;
+        corpseRenderer.sortingOrder = corpseSortingOrder;
 
         // Make corpse semi-transparent
         Color corpseColor = new Color(130 / 255f, 212 / 255f, 140 / 255f);
