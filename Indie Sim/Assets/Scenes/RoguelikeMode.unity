@@ -5900,25 +5900,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DungeonMapGenerator
   parameters:
-    nodeCount: 5
-    mainRoomSpacing: 8
-    chanceForLTurn: 0.3
-    mainArteryPositionJitter: 2
-    distributiveNodeChancePerSegment: 1
-    minLeafNodesPerDistributive: 1
-    maxLeafNodesPerDistributive: 3
-    leafBranchLength: 6
-    leafNodePositionJitter: 1.5
-    baseStartRoomSize: {x: 8, y: 8}
-    baseEndRoomSize: {x: 8, y: 8}
-    baseMainArteryRoomSize: {x: 6, y: 6}
-    baseDistributiveRoomSize: {x: 4, y: 4}
-    baseLeafRoomSize: {x: 5, y: 5}
-    baseCornerRoomSize: {x: 3, y: 3}
+    nodeCount: 10
+    mainRoomSpacing: 10
+    chanceForLTurn: 0.823
+    mainArteryPositionJitter: 0.5
+    distributiveNodeChancePerSegment: 0.793
+    minLeafNodesPerDistributive: 2
+    maxLeafNodesPerDistributive: 4
+    leafBranchLength: 3.5
+    leafNodePositionJitter: 0.3
+    baseStartRoomSize: {x: 6, y: 8}
+    baseEndRoomSize: {x: 6, y: 6}
+    baseMainArteryRoomSize: {x: 6, y: 7}
+    baseDistributiveRoomSize: {x: 2, y: 12}
+    baseLeafRoomSize: {x: 4, y: 8}
+    baseCornerRoomSize: {x: 6, y: 4}
     roomSizeVariationPercentage: 0.2
-    minRoomDistance: 2
+    minRoomDistance: 0.1
     maxRepositionAttempts: 10
-    repositionSearchRadius: 3
+    repositionSearchRadius: 2
     corridorWidth: 2
   showGizmos: 1
   showRoomIds: 1
