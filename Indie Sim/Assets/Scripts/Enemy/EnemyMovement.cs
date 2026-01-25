@@ -87,7 +87,7 @@ public class EnemyMovement : MonoBehaviour
         }
         
         // If we were a member, remove ourselves from the leader's list
-        if (flockLeader != null && flockLeader.isLeader)
+        if (flockLeader != null && flockLeader.IsLeader())
         {
             flockLeader.flockMembers.Remove(this);
         }
@@ -322,18 +322,12 @@ public class EnemyMovement : MonoBehaviour
             TryJoinNearbyFlock();
         }
         
-        // Check if we should transfer pathfinding when joining/forming flocks
-        if (isLeader && !isPathfindingEnabled)
+        // REMOVED: Auto pathfinding request for new leaders
+        // The ActivateEnemies system will assign pathfinding to leaders when available
+        
+        // If we lost leadership, disable pathfinding
+        if (!isLeader && isPathfindingEnabled)
         {
-            // Try to claim a pathfinding slot
-            if (ActivateEnemies.Instance != null)
-            {
-                ActivateEnemies.Instance.TryEnablePathfinding(this);
-            }
-        }
-        else if (!isLeader && isPathfindingEnabled)
-        {
-            // We lost leadership, disable pathfinding
             DisablePathfinding();
         }
     }
@@ -361,11 +355,8 @@ public class EnemyMovement : MonoBehaviour
             }
         }
         
-        // Try to enable pathfinding for this new leader
-        if (ActivateEnemies.Instance != null)
-        {
-            ActivateEnemies.Instance.TryEnablePathfinding(this);
-        }
+        // REMOVED: Auto pathfinding request
+        // ActivateEnemies will assign pathfinding to this leader if slots are available
         
         Debug.Log($"Enemy {gameObject.name} became flock leader with {flockMembers.Count} members");
     }
@@ -385,12 +376,8 @@ public class EnemyMovement : MonoBehaviour
             if (member != null)
             {
                 member.flockLeader = null;
-                
-                // Give disbanded members a chance to pathfind
-                if (ActivateEnemies.Instance != null)
-                {
-                    ActivateEnemies.Instance.TryEnablePathfinding(member);
-                }
+                // REMOVED: Don't give disbanded members pathfinding
+                // They need to form a new flock to get pathfinding
             }
         }
         
@@ -404,7 +391,7 @@ public class EnemyMovement : MonoBehaviour
         {
             if (enemy == null) continue; // Skip destroyed enemies
             
-            if (enemy.isLeader && enemy.flockMembers.Count < minFlockSize * 2)
+            if (enemy.IsLeader() && enemy.flockMembers.Count < minFlockSize * 2)
             {
                 // Disable our pathfinding if we're joining a flock
                 if (isPathfindingEnabled)
