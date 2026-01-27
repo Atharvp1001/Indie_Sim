@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -43,7 +43,25 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     [SerializeField] private bool canRespawn = true;
     [SerializeField] private float respawnDelay = 10f; // Time before respawning
     [SerializeField] private float respawnExclusionRadius = 12f; // Area where new spawner can't spawn after this one dies
-    
+
+    [Header("Activation Settings")]
+    [SerializeField] private bool requiresActivation = true; // Does this spawner need player activation?
+    [SerializeField] private bool isActivated = false; // Has it been activated?
+    [SerializeField] private AudioClip activationSound; // Sound when activated
+
+    [Header("Burst Spawn Settings")]
+    [SerializeField] private bool useBurstMode = true; // Use burst spawning instead of continuous
+    [SerializeField] private int minEnemiesPerBurst = 5;
+    [SerializeField] private int maxEnemiesPerBurst = 8;
+    [SerializeField] private float burstCooldown = 10f; // Time between bursts
+    [SerializeField] private int maxActiveBursts = 3; // Max number of bursts
+    [SerializeField] private int maxTotalEnemies = 20; // Total enemies this spawner can create
+
+    private int burstsCompleted = 0;
+    private int totalEnemiesSpawned = 0;
+
+
+
     private DungeonMapGenerator dungeonGenerator;
     // Components
     private SpriteRenderer spriteRenderer;
@@ -65,16 +83,185 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     // Events
     public System.Action<int, int> OnHealthChanged;
     public System.Action OnDeath;
+    public System.Action OnActivated;
+
 
     void Start()
     {
+        Debug.Log($"[EnemySpawner] ========== SPAWNER START ==========");
+        Debug.Log($"[EnemySpawner] Position: {transform.position}");
+        Debug.Log($"[EnemySpawner] requiresActivation = {requiresActivation}");
+        Debug.Log($"[EnemySpawner] isActivated = {isActivated}");
+        Debug.Log($"[EnemySpawner] useBurstMode = {useBurstMode}");
+
         InitializeSpawner();
 
         // Calculate spawn rates for current dungeon
         CalculateSpawnRates(currentDungeonLevel);
 
-        InvokeRepeating(nameof(SpawnEnemy), spawnInterval, spawnInterval);
+        // IMPORTANT: Only start spawning if activation is NOT required
+        if (!requiresActivation)
+        {
+            Debug.Log($"[EnemySpawner] ⚠️ SPAWNING IMMEDIATELY (requiresActivation = false)");
+            StartSpawning();
+        }
+        else if (isActivated)
+        {
+            Debug.Log($"[EnemySpawner] ⚠️ SPAWNING IMMEDIATELY (isActivated = true)");
+            StartSpawning();
+        }
+        else
+        {
+            Debug.Log($"[EnemySpawner] ✅ WAITING for player activation...");
+        }
+
+        Debug.Log($"[EnemySpawner] =====================================");
     }
+
+
+
+    public void ActivateSpawner()
+    {
+        Debug.Log($"[EnemySpawner] ========== ACTIVATE CALLED ==========");
+        Debug.Log($"[EnemySpawner] Position: {transform.position}");
+        Debug.Log($"[EnemySpawner] isActivated (before): {isActivated}");
+        Debug.Log($"[EnemySpawner] isDead: {isDead}");
+
+        if (isActivated || isDead)
+        {
+            Debug.Log($"[EnemySpawner] ❌ ACTIVATION BLOCKED (already activated or dead)");
+            return;
+        }
+
+        isActivated = true;
+        Debug.Log($"[EnemySpawner] ✅ ACTIVATING NOW!");
+
+        // Play activation sound
+        if (audioSource != null && activationSound != null)
+        {
+            audioSource.PlayOneShot(activationSound);
+        }
+
+        // Visual feedback
+        if (spriteRenderer != null)
+        {
+            StartCoroutine(ActivationFlash());
+        }
+
+        OnActivated?.Invoke();
+
+        // Start spawning
+        StartSpawning();
+        Debug.Log($"[EnemySpawner] =====================================");
+    }
+
+    /// <summary>
+    /// Visual feedback when spawner activates
+    /// </summary>
+    private IEnumerator ActivationFlash()
+    {
+        Color activationColor = Color.yellow;
+        Color originalCol = spriteRenderer.color;
+        spriteRenderer.color = activationColor;
+        yield return new WaitForSeconds(0.3f);
+        spriteRenderer.color = originalCol;
+    }
+
+    private void StartSpawning()
+    {
+        Debug.Log($"[EnemySpawner] ========== START SPAWNING ==========");
+        Debug.Log($"[EnemySpawner] useBurstMode = {useBurstMode}");
+
+        if (useBurstMode)
+        {
+            Debug.Log($"[EnemySpawner] Starting BURST MODE");
+            // Spawn first burst immediately
+            SpawnBurst();
+
+            // Start burst cycle
+            StartCoroutine(BurstCycle());
+        }
+        else
+        {
+            Debug.Log($"[EnemySpawner] Starting CONTINUOUS MODE");
+            // Original continuous spawning
+            InvokeRepeating(nameof(SpawnEnemy), spawnInterval, spawnInterval);
+        }
+        Debug.Log($"[EnemySpawner] =====================================");
+    }
+
+
+    /// <summary>
+    /// Coroutine that handles burst spawning cycle
+    /// </summary>
+    private IEnumerator BurstCycle()
+    {
+        while (burstsCompleted < maxActiveBursts && !isDead)
+        {
+            // Wait for cooldown
+            yield return new WaitForSeconds(burstCooldown);
+
+            // Check if we should spawn another burst
+            if (totalEnemiesSpawned >= maxTotalEnemies)
+            {
+                Debug.Log($"[EnemySpawner] Max total enemies reached ({maxTotalEnemies})");
+                break;
+            }
+
+            // Spawn next burst
+            SpawnBurst();
+        }
+
+        Debug.Log($"[EnemySpawner] Completed all {burstsCompleted} bursts");
+    }
+
+    /// <summary>
+    /// Spawns a burst of enemies (between min and max)
+    /// </summary>
+    private void SpawnBurst()
+    {
+        if (isDead) return;
+
+        int enemiesToSpawn = Random.Range(minEnemiesPerBurst, maxEnemiesPerBurst + 1);
+
+        // Don't exceed max total enemies
+        if (useBurstMode)
+        {
+            int remainingCapacity = maxTotalEnemies - totalEnemiesSpawned;
+            enemiesToSpawn = Mathf.Min(enemiesToSpawn, remainingCapacity);
+        }
+
+        if (enemiesToSpawn <= 0)
+        {
+            return;
+        }
+
+        Debug.Log($"[EnemySpawner] Spawning burst of {enemiesToSpawn} enemies");
+
+        for (int i = 0; i < enemiesToSpawn; i++)
+        {
+            SpawnEnemy();
+        }
+
+        burstsCompleted++;
+    }
+
+    /// <summary>
+    /// Check if spawner is activated (for PlayerSpawnerActivator to query)
+    /// </summary>
+    public bool IsActivated()
+    {
+        return isActivated;
+    }
+
+    /// <summary>
+    /// Check if spawner requires activation
+    /// </summary>
+    public bool RequiresActivation()
+    {
+        return requiresActivation;
+    }
+
 
     public void SetDungeonGenerator(DungeonMapGenerator generator)
     {
@@ -138,14 +325,21 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         Debug.Log($"  Level 3: {spawnRate_Level3}%");
     }
 
-    /// <summary>
-    /// Spawns an enemy based on weighted probability
-    /// Uses cumulative distribution for selection
-    /// </summary>
     void SpawnEnemy()
     {
         if (isDead) return;
-        if (currentEnemyCount >= maxEnemies) return;
+
+        // In burst mode, check total enemy cap
+        if (useBurstMode && totalEnemiesSpawned >= maxTotalEnemies)
+        {
+            return;
+        }
+
+        // In continuous mode, check current count
+        if (!useBurstMode && currentEnemyCount >= maxEnemies)
+        {
+            return;
+        }
 
         // Select which enemy to spawn based on spawn rates
         GameObject selectedEnemyPrefab = SelectEnemyByWeight();
@@ -163,6 +357,11 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         GameObject enemy = Instantiate(selectedEnemyPrefab, randomPosition, Quaternion.identity);
         currentEnemyCount++;
 
+        if (useBurstMode)
+        {
+            totalEnemiesSpawned++;
+        }
+
         // Subscribe to enemy death event
         Enemy enemyScript = enemy.GetComponent<Enemy>();
         if (enemyScript != null)
@@ -170,6 +369,7 @@ public class EnemySpawner : MonoBehaviour, IDamageable
             enemyScript.OnDeath += EnemyDied;
         }
     }
+
 
     /// <summary>
     /// Selects an enemy prefab based on weighted spawn rates
@@ -382,7 +582,9 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
         isDead = true;
 
+        // Stop all spawning
         CancelInvoke(nameof(SpawnEnemy));
+        StopAllCoroutines();
 
         if (audioSource != null && deathSound != null)
         {
@@ -399,6 +601,7 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
         StartCoroutine(DeathSequence());
     }
+
 
     private IEnumerator DeathSequence()
     {
@@ -452,12 +655,14 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     {
         spawnInterval = Mathf.Max(0.1f, newSpawnInterval);
 
-        CancelInvoke(nameof(SpawnEnemy));
-        if (!isDead)
+        // Only restart spawning if already active and not in burst mode
+        if (isActivated && !isDead && !useBurstMode)
         {
+            CancelInvoke(nameof(SpawnEnemy));
             InvokeRepeating(nameof(SpawnEnemy), spawnInterval, spawnInterval);
         }
     }
+
 
     public void SetMaxEnemies(int newMaxEnemies)
     {
@@ -490,25 +695,52 @@ public class EnemySpawner : MonoBehaviour, IDamageable
             currentLevel = 1;
         }
 
-        int enemyIncrements = (currentLevel - 1) / 2;
-        int spawnRateIncrements = (currentLevel - 1) / 3;
+        // ===== IMPORTANT FIX: Don't start spawning if activation is required =====
+        // Only update the settings, don't start the spawner
 
-        int newMaxEnemies = maxEnemies + enemyIncrements;
-        float newSpawnInterval = spawnInterval - (spawnRateIncrements * 0.5f);
+        // Update burst settings based on level
+        if (useBurstMode)
+        {
+            minEnemiesPerBurst = 5 + (currentLevel - 1) / 2;
+            maxEnemiesPerBurst = 8 + (currentLevel - 1) / 2;
+            burstCooldown = Mathf.Max(5f, 10f - (currentLevel - 1) * 0.5f);
+            maxTotalEnemies = 20 + (currentLevel - 1) * 3;
+        }
+        else
+        {
+            // Continuous mode settings
+            int enemyIncrements = (currentLevel - 1) / 2;
+            int spawnRateIncrements = (currentLevel - 1) / 3;
 
-        newMaxEnemies = Mathf.Max(newMaxEnemies, 1);
-        newSpawnInterval = Mathf.Max(newSpawnInterval, 0.5f);
+            int newMaxEnemies = maxEnemies + enemyIncrements;
+            float newSpawnInterval = spawnInterval - (spawnRateIncrements * 0.5f);
 
-        SetMaxEnemies(newMaxEnemies);
-        SetSpawnRate(newSpawnInterval);
+            newMaxEnemies = Mathf.Max(newMaxEnemies, 1);
+            newSpawnInterval = Mathf.Max(newSpawnInterval, 0.5f);
+
+            SetMaxEnemies(newMaxEnemies);
+
+            // DON'T call SetSpawnRate() as it starts InvokeRepeating
+            spawnInterval = newSpawnInterval;
+        }
 
         // Also update dungeon level for spawn rates
         SetDungeonLevel(currentLevel);
 
         Debug.Log($"[EnemySpawner] Difficulty updated for Level {currentLevel}:");
-        Debug.Log($"  - Max Enemies: {newMaxEnemies}");
-        Debug.Log($"  - Spawn Interval: {newSpawnInterval}s");
+        if (useBurstMode)
+        {
+            Debug.Log($"  - Burst size: {minEnemiesPerBurst}-{maxEnemiesPerBurst}");
+            Debug.Log($"  - Burst cooldown: {burstCooldown}s");
+            Debug.Log($"  - Max total enemies: {maxTotalEnemies}");
+        }
+        else
+        {
+            Debug.Log($"  - Max Enemies: {maxEnemies}");
+            Debug.Log($"  - Spawn Interval: {spawnInterval}s");
+        }
     }
+
 
     /// <summary>
     /// Get current spawn rates (for debugging/UI)
