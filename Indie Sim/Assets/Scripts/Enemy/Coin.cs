@@ -1,66 +1,75 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Coin : MonoBehaviour
 {
     [Header("Coin Settings")]
-    public int coinValue = 1; // How much this coin is worth
-    public float magnetRange = 2f; // Distance at which coin moves to player
-    public float magnetSpeed = 5f; // Speed at which coin moves to player
+    [SerializeField] private int coinValue = 1;
 
-    private Transform playerTransform;
+    private Rigidbody2D rb;
     private bool isBeingCollected = false;
 
-    void Start()
+    void Awake()
     {
-        // Find player
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        rb = GetComponent<Rigidbody2D>();
+
+        // Auto-setup if Rigidbody2D is missing
+        if (rb == null)
         {
-            playerTransform = player.transform;
+            rb = gameObject.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.gravityScale = 0;
+            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
         }
     }
 
-    void Update()
+    /// <summary>
+    /// Called by PlayerCoinCollector to move coin towards player
+    /// </summary>
+    public void MoveTowardsPlayer(Vector3 playerPosition, float magnetStrength)
     {
-        // If close enough to player, move towards them
-        if (playerTransform != null && !isBeingCollected)
-        {
-            float distance = Vector2.Distance(transform.position, playerTransform.position);
+        if (isBeingCollected || rb == null) return;
 
-            if (distance < magnetRange)
-            {
-                // Move towards player
-                transform.position = Vector2.MoveTowards(
-                    transform.position,
-                    playerTransform.position,
-                    magnetSpeed * Time.deltaTime
-                );
-            }
-        }
+        Vector2 direction = (playerPosition - transform.position).normalized;
+
+        // Use MovePosition for physics-based movement
+        Vector2 newPosition = rb.position + direction * magnetStrength * Time.deltaTime;
+        rb.MovePosition(newPosition);
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    /// <summary>
+    /// Check if coin can be attracted by magnet
+    /// </summary>
+    public bool CanBeAttracted()
     {
-        if (collision.CompareTag("Player"))
-        {
-            CoinManager.Instance.AddCoins(coinValue);
-            Destroy(gameObject);
-        }
+        return !isBeingCollected;
     }
 
-    void CollectCoin()
+    /// <summary>
+    /// Collect this coin (called by PlayerCoinCollector)
+    /// </summary>
+    public void Collect()
     {
         if (isBeingCollected) return;
 
         isBeingCollected = true;
 
-        // Add coin to player's inventory/currency
-        // Example: GameManager.Instance.AddCoins(coinValue);
-        // Or: other.GetComponent<PlayerInventory>().AddCoins(coinValue);
+        // Add to CoinManager
+        if (CoinManager.Instance != null)
+        {
+            CoinManager.Instance.AddCoins(coinValue);
+        }
 
         Debug.Log($"Coin collected! Value: {coinValue}");
 
-        // Destroy the coin
+        // Destroy coin
         Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// Get coin value (useful for display or special coins)
+    /// </summary>
+    public int GetValue()
+    {
+        return coinValue;
     }
 }

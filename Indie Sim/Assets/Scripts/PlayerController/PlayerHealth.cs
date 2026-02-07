@@ -4,10 +4,16 @@ using UnityEngine.SceneManagement;
 
 public class PlayerHealth : MonoBehaviour
 {
-    [Header("Health Settings")]
-    public int maxHealth = 100;
-    public int baseMaxHealth = 100; // Base health without upgrades
-    public int currentHealth;
+    [Header("Coin-Based Health Settings")]
+    [SerializeField] private int coinsLostPerHit = 100; // How many coins lost when taking damage
+    [SerializeField] private bool useCoinsAsHealth = true; // Toggle coin-based health system
+
+    [Header("Coin Drop Visual Feedback")]
+    [SerializeField] private GameObject coinPrefab; // Coin prefab to spawn when taking damage
+    [SerializeField] private int coinsToSpawnOnDamage = 10; // Number of coin objects to spawn
+    [SerializeField] private float coinSpawnRadius = 2f; // How far coins spawn from player
+    [SerializeField] private float coinSpawnForce = 5f; // Force applied to spawned coins
+    [SerializeField] private float coinLifetime = 2f; // How long coins exist before disappearing
 
     [Header("Damage Cooldown Settings")]
     public float damageCooldown = 1f; // Cooldown time before player can be damaged again
@@ -44,14 +50,9 @@ public class PlayerHealth : MonoBehaviour
     private SimplePlayerRotation playerRotation; // Reference to player rotation script
     private PlayerAutoAimShooter playerAutoAimShooter; // Reference to auto-aim shooter script
     private PlayerConeShooter playerConeShooter; // Reference to cone shooter script
-    //private CasualGameModeManager casualGameModeManager;
 
     void Start()
     {
-        // Calculate initial max health with any upgrades
-        
-        currentHealth = maxHealth;
-
         // Get SpriteRenderer from child object (the player sprite)
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         playerController = GetComponent<PlayerController>();
@@ -82,62 +83,13 @@ public class PlayerHealth : MonoBehaviour
             damageIndicator = GetComponent<DamageIndicator>();
         }
 
-        Debug.Log($"Player initialized with {maxHealth} health");
-        /*
-        casualGameModeManager = FindObjectOfType<CasualGameModeManager>();
-        if (casualGameModeManager == null)
-        {
-            Debug.LogWarning("CasualGameModeManager not found in scene");
-        }
-        */
-    }
-
-    void Update()
-    {
-        // Keep max health updated with upgrades
-       
-       // Debug.Log("Current Health = " + currentHealth);
+        Debug.Log($"Player initialized with coin-based health system. Coins per hit: {coinsLostPerHit}");
     }
 
     /// <summary>
-    /// Set maximum health value
+    /// Player takes damage - loses coins instead of health
     /// </summary>
-    public void SetMaxHealth(int newMaxHealth)
-    {
-        maxHealth = newMaxHealth;
-        currentHealth = newMaxHealth;
-
-        // Notify heart UI to update
-        if (healthHeartBar != null)
-        {
-            healthHeartBar.RefreshHearts();
-        }
-
-        Debug.Log($"[PlayerHealth] Max health updated to: {newMaxHealth}");
-    }
-
-    public void AddHealth(int amount)
-    {
-        currentHealth += amount;
-
-        if (currentHealth > maxHealth)
-        {
-            maxHealth = currentHealth;
-
-            // Notify heart UI that max health increased
-            if (healthHeartBar != null)
-            {
-                healthHeartBar.RefreshHearts();
-            }
-        }
-
-        Debug.Log($"Health added: +{amount}. Current Health: {currentHealth}/{maxHealth}");
-    }
-
-    /// <summary>
-    /// Player takes damage from an enemy
-    /// </summary>
-    /// <param name="damage">Amount of damage to take</param>
+    /// <param name="damage">Amount of damage (unused in coin system, we use coinsLostPerHit)</param>
     /// <param name="enemyPosition">Position of the enemy (for knockback direction)</param>
     public void TakeDamage(int damage, Vector3 enemyPosition)
     {
@@ -148,40 +100,116 @@ public class PlayerHealth : MonoBehaviour
             return;
         }
 
-        // Reduce health
-        currentHealth -= damage;
-
-        if (damageIndicator != null)
+        if (useCoinsAsHealth)
         {
-            damageIndicator.TriggerDamageFlash();
-        }
+            // Check if player has enough coins
+            if (CoinManager.Instance == null)
+            {
+                Debug.LogError("CoinManager not found! Cannot process coin-based damage.");
+                return;
+            }
 
-        // Clamp health between 0 and maxHealth (which includes upgrades)
-        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+            int currentCoins = CoinManager.Instance.GetCurrentCoins();
 
-        Debug.Log($"Player took {damage} damage. Health: {currentHealth}/{maxHealth}");
+            if (currentCoins <= 0)
+            {
+                // Player has no coins - instant death
+                Die();
+                return;
+            }
 
-        // Set the next time player can take damage (current time + cooldown)
-        nextDamageTime = Time.time + damageCooldown;
+            // Calculate coins to lose (don't go below 0)
+            int coinsToLose = Mathf.Min(coinsLostPerHit, currentCoins);
 
-        // Apply knockback away from enemy
-        ApplyKnockback(enemyPosition);
+            // Subtract coins from CoinManager
+            CoinManager.Instance.SpendCoins(coinsToLose);
 
-        // Check if dead
-        if (currentHealth <= 0)
-        {
-            Die();
+            Debug.Log($"Player hit! Lost {coinsToLose} coins. Remaining: {CoinManager.Instance.GetCurrentCoins()}");
+
+            // Spawn visual coin feedback
+            SpawnCoinDropVisual(enemyPosition);
+
+            // Trigger damage flash
+            if (damageIndicator != null)
+            {
+                damageIndicator.TriggerDamageFlash();
+            }
+
+            // Set the next time player can take damage
+            nextDamageTime = Time.time + damageCooldown;
+
+            // Apply knockback away from enemy
+            ApplyKnockback(enemyPosition);
+
+            // Check if player is out of coins (death)
+            if (CoinManager.Instance.GetCurrentCoins() <= 0)
+            {
+                Die();
+            }
+            else
+            {
+                // Start visual feedback (flashing)
+                if (!isFlashing)
+                {
+                    StartCoroutine(FlashEffect());
+                }
+            }
         }
         else
         {
-            // Start visual feedback (flashing) but keep collider enabled
-            if (!isFlashing)
-            {
-                StartCoroutine(FlashEffect());
-            }
+            // Legacy health system (if you want to keep it as fallback)
+            Debug.LogWarning("Coin-based health is disabled. Enable it in Inspector.");
         }
     }
 
+    /// <summary>
+    /// Spawns coins that fly away from player to indicate coin loss
+    /// </summary>
+    private void SpawnCoinDropVisual(Vector3 damageSourcePosition)
+    {
+        if (coinPrefab == null)
+        {
+            Debug.LogWarning("Coin prefab not assigned! Cannot spawn visual feedback.");
+            return;
+        }
+
+        for (int i = 0; i < coinsToSpawnOnDamage; i++)
+        {
+            // Random angle for coin spawn
+            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+
+            // Calculate spawn position in a circle around player
+            Vector2 spawnOffset = new Vector2(
+                Mathf.Cos(angle) * coinSpawnRadius,
+                Mathf.Sin(angle) * coinSpawnRadius
+            );
+
+            Vector3 spawnPosition = transform.position + (Vector3)spawnOffset;
+
+            // Instantiate coin
+            GameObject coin = Instantiate(coinPrefab, spawnPosition, Quaternion.identity);
+
+            // Make coin non-collectible (disable its collector script if it has one)
+            Coin coinScript = coin.GetComponent<Coin>();
+            if (coinScript != null)
+            {
+                coinScript.enabled = false; // Disable collection
+            }
+
+            // Apply force away from damage source
+            Rigidbody2D coinRb = coin.GetComponent<Rigidbody2D>();
+            if (coinRb != null)
+            {
+                Vector2 forceDirection = ((Vector2)spawnPosition - (Vector2)damageSourcePosition).normalized;
+                coinRb.AddForce(forceDirection * coinSpawnForce, ForceMode2D.Impulse);
+            }
+
+            // Destroy coin after lifetime
+            Destroy(coin, coinLifetime);
+        }
+
+        Debug.Log($"Spawned {coinsToSpawnOnDamage} visual coins");
+    }
 
     /// <summary>
     /// Apply knockback force pushing player away from enemy
@@ -194,7 +222,7 @@ public class PlayerHealth : MonoBehaviour
         // Calculate direction away from enemy
         Vector2 knockbackDirection = (transform.position - enemyPosition).normalized;
 
-        // Apply knockback force (using linearVelocity instead of velocity)
+        // Apply knockback force
         rb.linearVelocity = Vector2.zero; // Reset current velocity
         rb.AddForce(knockbackDirection * knockbackForce, ForceMode2D.Impulse);
 
@@ -202,15 +230,11 @@ public class PlayerHealth : MonoBehaviour
     }
 
     /// <summary>
-    /// Visual flashing effect during damage cooldown - COLLIDER STAYS ENABLED
+    /// Visual flashing effect during damage cooldown
     /// </summary>
     private IEnumerator FlashEffect()
     {
         isFlashing = true;
-
-        // NOTE: We do NOT disable the collider anymore - this fixes both bugs:
-        // 1. Enemies can't pass through and overlap with player
-        // 2. Player stays inside map bounds
 
         Debug.Log("Player flashing effect started (damage cooldown active)");
 
@@ -250,7 +274,7 @@ public class PlayerHealth : MonoBehaviour
         if (isDead) return;
 
         isDead = true;
-        Debug.Log("Player died!");
+        Debug.Log("Player died! (Out of coins)");
 
         // Stop any ongoing flash effect
         StopAllCoroutines();
@@ -289,7 +313,7 @@ public class PlayerHealth : MonoBehaviour
             spriteRenderer.sprite = deathSprite;
         }
 
-        // Stop player movement (using linearVelocity instead of velocity)
+        // Stop player movement
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
@@ -322,48 +346,35 @@ public class PlayerHealth : MonoBehaviour
     }
 
     /// <summary>
-    /// Retry button - reload current level with specific requirements
+    /// Retry button - reload current level
     /// </summary>
     public void Retry()
     {
-        // 1. Close the death UI panel
+        // Close the death UI panel
         if (deathUIPanel != null)
         {
             deathUIPanel.SetActive(false);
         }
 
-        // 2. Reposition player to (0, 0, 0)
+        // Reposition player to (0, 0, 0)
         transform.position = Vector3.zero;
         Debug.Log("Player repositioned to (0, 0, 0)");
 
-        // 3. Reset player state (health, visuals, components)
+        // Reset player state
         ResetPlayerStateForRetry();
 
-        // 4. Unpause the game temporarily (tutorial will pause it again)
+        // Unpause the game
         Time.timeScale = 1f;
 
-        /*
-        // 5. Regenerate the current dungeon level
-        if (casualGameModeManager != null)
-        {
-            Debug.Log("Regenerating current dungeon level");
-            casualGameModeManager.GenerateCurrentDungeon();
-        }
-        */
-
-        // 6. Restart the tutorial
+        // Restart the tutorial
         TutorialManager tutorialManager = FindObjectOfType<TutorialManager>();
         if (tutorialManager != null)
         {
             Debug.Log("Restarting tutorial");
             tutorialManager.StartTutorial();
         }
-        else
-        {
-            Debug.LogWarning("TutorialManager not found in scene!");
-        }
 
-        // 7. Make sure auto aim shooter stays DISABLED (tutorial will handle enabling it if needed)
+        // Keep auto aim shooter disabled (tutorial will enable if needed)
         if (playerAutoAimShooter != null)
         {
             playerAutoAimShooter.enabled = false;
@@ -372,19 +383,17 @@ public class PlayerHealth : MonoBehaviour
     }
 
     /// <summary>
-    /// Reset player state for retry - does NOT enable auto-aim shooter
+    /// Reset player state for retry
     /// </summary>
     private void ResetPlayerStateForRetry()
     {
-        // Reset health
-        currentHealth = maxHealth;
+        // Reset death state
         isDead = false;
 
         // Reset visuals
         if (spriteRenderer != null)
         {
             spriteRenderer.color = originalColor;
-            // If you have an alive sprite, restore it here
             spriteRenderer.sprite = aliveSprite;
         }
 
@@ -419,9 +428,8 @@ public class PlayerHealth : MonoBehaviour
             rb.linearVelocity = Vector2.zero;
         }
 
-        Debug.Log("Player state reset for retry (auto-aim NOT enabled)");
+        Debug.Log("Player state reset for retry");
     }
-
 
     /// <summary>
     /// Main menu button - load main menu scene
@@ -429,16 +437,34 @@ public class PlayerHealth : MonoBehaviour
     public void GoToMainMenu()
     {
         Time.timeScale = 1f; // Unpause
-        SceneManager.LoadScene("MainMenu"); // Change "MainMenu" to your actual main menu scene name
+        SceneManager.LoadScene("MainMenu");
         Debug.Log("Going to main menu");
     }
 
     // Public getters
-    public int GetCurrentHealth() { return currentHealth; }
-    public int GetMaxHealth() { return maxHealth; }
+    public int GetCurrentHealth()
+    {
+        if (useCoinsAsHealth && CoinManager.Instance != null)
+        {
+            return CoinManager.Instance.GetCurrentCoins();
+        }
+        return 0;
+    }
+
+    public int GetMaxHealth()
+    {
+        if (useCoinsAsHealth && CoinManager.Instance != null)
+        {
+            return CoinManager.Instance.GetTotalCoinsEverCollected();
+        }
+        return 100;
+    }
+
     public bool IsDead() { return isDead; }
-    public bool IsOnDamageCooldown() { return Time.time < nextDamageTime; } // New getter for cooldown status
+    public bool IsOnDamageCooldown() { return Time.time < nextDamageTime; }
 
-    
-
+    /// <summary>
+    /// Get how many coins player loses per hit
+    /// </summary>
+    public int GetCoinsLostPerHit() { return coinsLostPerHit; }
 }

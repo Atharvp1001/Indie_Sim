@@ -12,10 +12,6 @@ public class UpgradeManager : MonoBehaviour
     [SerializeField] private float speedUpgradeBonus = 1f; // How much speed to add per upgrade
     private int speedUpgradeLevel = 0;
 
-    [Header("Health Upgrade")]
-    [SerializeField] private int baseMaxHealth = 100;
-    [SerializeField] private int healthUpgradeBonus = 20; // How much health to add per upgrade
-    private int healthUpgradeLevel = 0;
 
     [Header("Gun Damage Upgrade")]
     [SerializeField] private int basePistolDamage = 10;
@@ -70,31 +66,11 @@ public class UpgradeManager : MonoBehaviour
 
     // ===== HEALTH UPGRADES =====
 
-    /// <summary>
-    /// Upgrade player health by adding +25 HP to CURRENT health (not max)
-    /// This heals the player instantly
-    /// </summary>
-    public void UpgradePlayerHealth()
-    {
-        if (playerHealth == null)
-        {
-            Debug.LogError("[UpgradeManager] Cannot upgrade health - PlayerHealth not assigned!");
-            return;
-        }
-
-        healthUpgradeLevel++;
-        int healthBoost = 25; // Add 25 HP per upgrade
-
-        // Add health to current health (this heals the player)
-        playerHealth.AddHealth(healthBoost);
-
-        Debug.Log($"[UpgradeManager] ✅ HEALTH UPGRADED! Level {healthUpgradeLevel}");
-        Debug.Log($"[UpgradeManager] Added {healthBoost} HP to current health");
-    }
+    
 
 
-    public int GetHealthUpgradeLevel() => healthUpgradeLevel;
-    public int GetCurrentMaxHealth() => baseMaxHealth + (healthUpgradeLevel * healthUpgradeBonus);
+  
+    
 
     // ===== GUN DAMAGE UPGRADES =====
 
@@ -298,8 +274,7 @@ public class UpgradeManager : MonoBehaviour
         Debug.Log("--- SPEED ---");
         Debug.Log($"Level: {GetSpeedUpgradeLevel()} | Current Speed: {GetCurrentPlayerSpeed()}");
         Debug.Log("--- HEALTH ---");
-        Debug.Log($"Level: {GetHealthUpgradeLevel()} | Current Max Health: {GetCurrentMaxHealth()}");
-        Debug.Log("--- WEAPON DAMAGE ---");
+      
         Debug.Log($"Pistol: Level {GetPistolDamageLevel()} | Damage: {GetCurrentPistolDamage()}");
         Debug.Log($"Shotgun: Level {GetShotgunDamageLevel()} | Damage: {GetCurrentShotgunDamage()}");
         Debug.Log($"Machine Gun: Level {GetMachineGunDamageLevel()} | Damage: {GetCurrentMachineGunDamage()}");
@@ -313,7 +288,7 @@ public class UpgradeManager : MonoBehaviour
     public void DEBUG_ResetAllUpgrades()
     {
         speedUpgradeLevel = 0;
-        healthUpgradeLevel = 0;
+       
         pistolDamageLevel = 0;
         shotgunDamageLevel = 0;
         machineGunDamageLevel = 0;
@@ -340,7 +315,7 @@ public class UpgradeManager : MonoBehaviour
     /// Get the upgrade bonus values (used by preview system)
     /// </summary>
     public float GetSpeedUpgradeBonus() => speedUpgradeBonus;
-    public int GetHealthUpgradeBonus() => healthUpgradeBonus;
+ 
     public int GetDamageUpgradeBonus() => damageUpgradeBonus;
 
 }
