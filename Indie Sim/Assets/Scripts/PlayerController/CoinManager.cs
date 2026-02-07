@@ -70,7 +70,8 @@ public class CoinManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Spend coins from current run
+    /// Spend coins (returns true if successful)
+    /// Also triggers coin loss achievements
     /// </summary>
     public bool SpendCoins(int amount)
     {
@@ -96,6 +97,7 @@ public class CoinManager : MonoBehaviour
 
         return false;
     }
+
 
     /// <summary>
     /// Get current run coins

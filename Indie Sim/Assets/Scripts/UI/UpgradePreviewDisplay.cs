@@ -11,7 +11,6 @@ public class UpgradePreviewDisplay : MonoBehaviour
     public enum UpgradeType
     {
         Speed,
-        Health,
         PistolDamage,
         ShotgunDamage,
         MachineGunDamage,
@@ -27,8 +26,7 @@ public class UpgradePreviewDisplay : MonoBehaviour
     [SerializeField] private UpgradeManager upgradeManager;
     [SerializeField] private TextMeshProUGUI previewText;
 
-    [Header("Optional - For Health Preview")]
-    [SerializeField] private PlayerHealth playerHealth;
+    
 
     void Start()
     {
@@ -36,9 +34,7 @@ public class UpgradePreviewDisplay : MonoBehaviour
         if (upgradeManager == null)
             upgradeManager = FindObjectOfType<UpgradeManager>();
 
-        // Auto-find PlayerHealth if needed and not assigned
-        if (playerHealth == null && upgradeType == UpgradeType.Health)
-            playerHealth = FindObjectOfType<PlayerHealth>();
+      
     }
 
     void OnEnable()
@@ -78,18 +74,7 @@ public class UpgradePreviewDisplay : MonoBehaviour
                 previewString = $"Upgrade Speed: {currentSpeed:0.#} → {newSpeed:0.#}";
                 break;
 
-            case UpgradeType.Health:
-                int currentHP = 0;
-                if (playerHealth != null)
-                    currentHP = playerHealth.currentHealth;
-                else
-                    Debug.LogWarning($"[UpgradePreview] PlayerHealth not assigned for Health upgrade on {gameObject.name}!");
-
-                int healthBonus = 25;
-                int newHP = currentHP + healthBonus;
-                previewString = $"Heal: +{healthBonus} HP";
-                break;
-
+           
             case UpgradeType.PistolDamage:
                 int currentPistol = upgradeManager.GetCurrentPistolDamage();
                 int damageBonus = upgradeManager.GetDamageUpgradeBonus();
