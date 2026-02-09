@@ -1,87 +1,115 @@
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class SimplePlayerRotation : MonoBehaviour
 {
     [Header("Setup")]
-    [SerializeField] private FixedJoystick movementJoystick;
-    [SerializeField] private PlayerConeShooter playerShooter; // Direct reference to your shooter
-    [SerializeField] private PlayerAutoAimShooter autoAimShooter; // Reference to auto-aim shooter
-    [SerializeField] private Transform spriteToRotate;
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private float gamePlayPlaneZ = 0f; // Z position of your game plane (usually 0 for 2D)
 
     [Header("Settings")]
-    [SerializeField] private float rotationSpeed = 720f;
-    [SerializeField] private float deadZone = 0.1f;
+    [SerializeField] private float rotationSpeed = 0f; // 0 = instant
+    [SerializeField] private float minRotationDistance = 0.01f;
 
-    void Start()
+    [Header("Debug")]
+    [SerializeField] private bool showDebugLine = true;
+
+    private PlayerControls inputActions;
+    private Vector2 mousePositionInput;
+    private Vector3 cachedWorldMousePos;
+    private Rigidbody2D rb;
+
+    void Awake()
     {
-        // Auto-find PlayerConeShooter if not assigned
-        if (playerShooter == null)
-        {
-            playerShooter = GetComponent<PlayerConeShooter>();
-        }
+        rb = GetComponent<Rigidbody2D>();
 
-        // Auto-find PlayerAutoAimShooter if not assigned
-        if (autoAimShooter == null)
-        {
-            autoAimShooter = GetComponent<PlayerAutoAimShooter>();
-        }
+        inputActions = new PlayerControls();
+        inputActions.Player.Look.performed += ctx => mousePositionInput = ctx.ReadValue<Vector2>();
+
+        if (mainCamera == null) mainCamera = Camera.main;
+    }
+
+    void OnEnable()
+    {
+        inputActions.Enable();
+    }
+
+    void OnDisable()
+    {
+        inputActions.Disable();
     }
 
     void Update()
     {
-        Vector2 rotationInput = GetPriorityRotationInput();
+        UpdateWorldMousePosition();
+        RotateTowardsMouse();
+    }
 
-        if (rotationInput.magnitude > deadZone)
+    /// <summary>
+    /// ✅ NEW METHOD: Use Ray intersection instead of ScreenToWorldPoint
+    /// This is NOT affected by camera position/lag!
+    /// </summary>
+    private void UpdateWorldMousePosition()
+    {
+        if (mainCamera == null) return;
+
+        // Create a ray from camera through mouse position
+        Ray ray = mainCamera.ScreenPointToRay(new Vector3(mousePositionInput.x, mousePositionInput.y, 0));
+
+        // Create a plane at your game's Z position (usually 0 for 2D games)
+        Plane gamePlane = new Plane(Vector3.forward, new Vector3(0, 0, gamePlayPlaneZ));
+
+        // Find where the ray intersects the plane
+        if (gamePlane.Raycast(ray, out float distance))
         {
-            RotateTowards(rotationInput);
+            cachedWorldMousePos = ray.GetPoint(distance);
         }
     }
 
-    private Vector2 GetPriorityRotationInput()
+    private void RotateTowardsMouse()
     {
-        // PRIORITY 1: Auto-aim direction (if auto-aim is enabled and has a target)
-        if (autoAimShooter != null && autoAimShooter.isActiveAndEnabled)
-        {
-            Vector2 autoAimDirection = autoAimShooter.GetAutoAimDirection();
-            if (autoAimDirection.magnitude > deadZone)
-            {
-                return autoAimDirection; // Highest priority - rotate towards auto-aim target
-            }
-        }
-
-        // PRIORITY 2: Manual shooting direction (if actively shooting)
-        if (playerShooter != null)
-        {
-            Vector2 shootingDirection = playerShooter.GetShootingDirection();
-            if (shootingDirection.magnitude > deadZone)
-            {
-                return shootingDirection; // Manual shooting takes priority over movement
-            }
-        }
-
-        // PRIORITY 3: Movement direction (fallback)
-        if (movementJoystick != null)
-        {
-            Vector2 movementInput = new Vector2(movementJoystick.Horizontal, movementJoystick.Vertical);
-            if (movementInput.magnitude > deadZone)
-            {
-                return movementInput;
-            }
-        }
-
-        return Vector2.zero;
-    }
-
-    private void RotateTowards(Vector2 input)
-    {
-        float targetAngle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg - 90f;
-        Quaternion targetRotation = Quaternion.AngleAxis(targetAngle + 180f, Vector3.forward);
-
-        if (spriteToRotate == null) spriteToRotate = transform;
-        spriteToRotate.rotation = Quaternion.RotateTowards(
-            spriteToRotate.rotation,
-            targetRotation,
-            rotationSpeed * Time.deltaTime
+        Vector2 direction = new Vector2(
+            cachedWorldMousePos.x - transform.position.x,
+            cachedWorldMousePos.y - transform.position.y
         );
+
+        // Only rotate if mouse is far enough from player
+        if (direction.sqrMagnitude < minRotationDistance * minRotationDistance) return;
+
+        float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+        // Adjust for sprite orientation
+        float adjustedAngle = targetAngle + 90; // Change to targetAngle - 90 if sprite faces UP
+
+        if (rotationSpeed > 0)
+        {
+            float currentAngle = rb.rotation;
+            float newAngle = Mathf.MoveTowardsAngle(currentAngle, adjustedAngle, rotationSpeed * Time.deltaTime);
+            rb.rotation = newAngle;
+        }
+        else
+        {
+            rb.rotation = adjustedAngle;
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!showDebugLine || mainCamera == null || !Application.isPlaying) return;
+
+        // Cyan line to mouse
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawLine(transform.position, cachedWorldMousePos);
+        Gizmos.DrawWireSphere(cachedWorldMousePos, 0.5f);
+
+        // Red line showing player forward direction
+        Gizmos.color = Color.red;
+        Vector2 forward = new Vector2(Mathf.Cos(rb.rotation * Mathf.Deg2Rad), Mathf.Sin(rb.rotation * Mathf.Deg2Rad));
+        Gizmos.DrawRay(transform.position, forward * 2f);
+
+        // Yellow line showing the ray from camera to mouse (for debugging)
+        Ray ray = mainCamera.ScreenPointToRay(new Vector3(mousePositionInput.x, mousePositionInput.y, 0));
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawRay(ray.origin, ray.direction * 50f);
     }
 }

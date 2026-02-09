@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem; // REQUIRED
 
 public class PlayerConeShooter : MonoBehaviour
 {
     [Header("Shooting References")]
-    [SerializeField] private FixedJoystick shootingJoystick;
+    // REMOVED: [SerializeField] private FixedJoystick shootingJoystick;
     [SerializeField] private Transform firePoint;
+    [SerializeField] private Camera mainCamera; // Needed to convert mouse to world position
 
     [Header("Weapon System")]
     [SerializeField] private WeaponData[] availableWeapons;
@@ -19,11 +21,9 @@ public class PlayerConeShooter : MonoBehaviour
 
     [Header("General Settings")]
     [SerializeField] private LayerMask enemyLayers = -1;
-    // CHANGED: Removed coneVisualizer LineRenderer
-    // CHANGED: Added Gizmo settings
-    [SerializeField] private bool showConeGizmo = true; // Toggle cone gizmo in editor
-    [SerializeField] private Color coneGizmoColor = new Color(1f, 0f, 0f, 0.3f); // Red with transparency
-    [SerializeField] private float joystickDeadZone = 0.1f;
+    [SerializeField] private bool showConeGizmo = true;
+    [SerializeField] private Color coneGizmoColor = new Color(1f, 0f, 0f, 0.3f);
+    [SerializeField] private float joystickDeadZone = 0.1f; // Can rename to "aimDeadZone" if preferred
 
     [Header("Audio Source")]
     [SerializeField] private AudioSource audioSource;
@@ -68,14 +68,52 @@ public class PlayerConeShooter : MonoBehaviour
     private bool wasShooting = false;
     private List<IDamageable> damageableTargets = new List<IDamageable>();
 
-    // CHANGED: Store current shooting direction for Gizmo visualization
     private Vector2 currentShootingDirection = Vector2.zero;
+
+    // Input System Variables
+    private PlayerControls inputActions;
+    private Vector2 mousePositionInput;
+    private bool isFiring = false;
+
+    private void Awake()
+    {
+        inputActions = new PlayerControls();
+
+        // Bind Look (Mouse Position)
+        //inputActions.Player.Look.performed += ctx => mousePositionInput = ctx.ReadValue<Vector2>();
+
+        inputActions.Player.Fire.performed += ctx =>
+        {
+            isFiring = true;
+            //Debug.Log("[PlayerConeShooter] ✅ FIRE STARTED via Input System");
+        };
+
+        inputActions.Player.Fire.canceled += ctx =>
+        {
+            isFiring = false;
+            //Debug.Log("[PlayerConeShooter] ❌ FIRE STOPPED via Input System");
+        };
+
+        if (mainCamera == null) mainCamera = Camera.main;
+
+        // Debug.Log("[PlayerConeShooter] Input Actions initialized");
+    }
+
+    private void OnEnable()
+    {
+        inputActions.Enable();
+    }
+
+    private void OnDisable()
+    {
+        inputActions.Disable();
+    }
 
     private void Start()
     {
         InitializeWeaponLockSystem();
         InitializeBulletTrailPool();
-        InitializeConeEdgeLines(); // NEW LINE - Add this
+        InitializeConeEdgeLines();
 
         if (availableWeapons.Length > 0)
         {
@@ -95,21 +133,20 @@ public class PlayerConeShooter : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("[PlayerConeShooter] No weapons unlocked! Unlock at least one weapon to start.");
+                //Debug.LogWarning("[PlayerConeShooter] No weapons unlocked! Unlock at least one weapon to start.");
             }
         }
         else
         {
-            Debug.LogError("No weapons assigned to PlayerConeShooter!");
+            //Debug.LogError("No weapons assigned to PlayerConeShooter!");
         }
     }
-
 
     private void InitializeBulletTrailPool()
     {
         if (bulletTrailPrefab == null)
         {
-            Debug.LogWarning("[PlayerConeShooter] No bullet trail prefab assigned! Bullet trails will not appear.");
+            //Debug.LogWarning("[PlayerConeShooter] No bullet trail prefab assigned! Bullet trails will not appear.");
             return;
         }
 
@@ -120,7 +157,7 @@ public class PlayerConeShooter : MonoBehaviour
 
             if (trail == null)
             {
-                Debug.LogError("[PlayerConeShooter] Bullet trail prefab doesn't have a LineRenderer component!");
+                // Debug.LogError("[PlayerConeShooter] Bullet trail prefab doesn't have a LineRenderer component!");
                 Destroy(trailObj);
                 continue;
             }
@@ -130,14 +167,11 @@ public class PlayerConeShooter : MonoBehaviour
             trailPool.Add(trail);
         }
 
-        Debug.Log($"[PlayerConeShooter] Bullet trail pool initialized with {trailPool.Count} trails");
+        //Debug.Log($"[PlayerConeShooter] Bullet trail pool initialized with {trailPool.Count} trails");
     }
 
-    // Create the cone edge line renderers programmatically
-   
     private void InitializeConeEdgeLines()
     {
-        // Create Left Edge Line
         GameObject leftEdgeObj = new GameObject("LeftEdgeLine");
         leftEdgeObj.transform.SetParent(transform);
         leftEdgeObj.transform.localPosition = Vector3.zero;
@@ -149,15 +183,11 @@ public class PlayerConeShooter : MonoBehaviour
         leftEdgeLine.startColor = edgeLineColor;
         leftEdgeLine.endColor = edgeLineColor;
         leftEdgeLine.material = new Material(Shader.Find("Sprites/Default"));
-
-        // CHANGED: Set sorting layer and order
-        leftEdgeLine.sortingLayerName = "character"; // Change "Default" to your tilemap's layer if needed
-        leftEdgeLine.sortingOrder = 1; // High value to render on top
-
+        leftEdgeLine.sortingLayerName = "character";
+        leftEdgeLine.sortingOrder = 1;
         leftEdgeLine.useWorldSpace = true;
         leftEdgeLine.enabled = false;
 
-        // Create Right Edge Line
         GameObject rightEdgeObj = new GameObject("RightEdgeLine");
         rightEdgeObj.transform.SetParent(transform);
         rightEdgeObj.transform.localPosition = Vector3.zero;
@@ -169,18 +199,13 @@ public class PlayerConeShooter : MonoBehaviour
         rightEdgeLine.startColor = edgeLineColor;
         rightEdgeLine.endColor = edgeLineColor;
         rightEdgeLine.material = new Material(Shader.Find("Sprites/Default"));
-
-        // CHANGED: Set sorting layer and order
-        rightEdgeLine.sortingLayerName = "character"; // Change "Default" to your tilemap's layer if needed
-        rightEdgeLine.sortingOrder = 1; // High value to render on top
-
+        rightEdgeLine.sortingLayerName = "character";
+        rightEdgeLine.sortingOrder = 1;
         rightEdgeLine.useWorldSpace = true;
         rightEdgeLine.enabled = false;
 
-        Debug.Log("[PlayerConeShooter] Cone edge lines created programmatically");
+        //Debug.Log("[PlayerConeShooter] Cone edge lines created programmatically");
     }
-   
-
 
     private LineRenderer GetTrailFromPool()
     {
@@ -237,6 +262,18 @@ public class PlayerConeShooter : MonoBehaviour
 
     private void Update()
     {
+        
+
+        if (Input.GetMouseButton(0))
+        {
+            // Debug.LogError("🔥🔥🔥 LEFT MOUSE CLICKED!"); // Using LogError so it shows in red
+            isFiring = true;
+        }
+        else
+        {
+            isFiring = false;
+        }
+
         HandleWeaponSwitching();
     }
 
@@ -244,21 +281,18 @@ public class PlayerConeShooter : MonoBehaviour
     {
         if (currentWeapon == null) return;
 
-        Vector2 shootDirection = new Vector2(shootingJoystick.Horizontal, shootingJoystick.Vertical);
-        bool shouldShoot = shootDirection.magnitude > joystickDeadZone;
+        // Calculate shooting direction from player to mouse
+        Vector2 shootDirection = GetMouseAimDirection();
+        bool shouldShoot = isFiring && shootDirection.magnitude > 0.01f;
 
         if (shouldShoot)
         {
-            shootDirection = shootDirection.normalized;
             currentShootingDirection = shootDirection;
 
             if (Time.time >= nextFireTime)
             {
                 FireCone(shootDirection);
-
-                // NEW: Show cone flash when firing
                 ShowConeFlash(shootDirection);
-
                 nextFireTime = Time.time + (1f / currentWeapon.fireRate);
             }
             wasShooting = true;
@@ -267,7 +301,6 @@ public class PlayerConeShooter : MonoBehaviour
         {
             currentShootingDirection = Vector2.zero;
 
-            // NEW: Only hide if not in middle of a flash
             if (!isShowingConeFlash)
             {
                 HideConeEdgeVisual();
@@ -281,113 +314,91 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Calculate direction from player/firepoint to mouse cursor
+    /// </summary>
+    private Vector2 GetMouseAimDirection()
+    {
+        if (mainCamera == null || firePoint == null)
+        {
+            //Debug.LogWarning("[GetMouseAimDirection] Missing camera or firePoint!");
+            return Vector2.zero;
+        }
 
-    // NEW: Show cone flash synchronized with shooting
+        // ✅ Use Input.mousePosition directly (works with both Input systems)
+        Vector3 mouseScreenPos = Input.mousePosition;
+        mouseScreenPos.z = Mathf.Abs(mainCamera.transform.position.z - firePoint.position.z);
+
+        Vector3 worldMousePos = mainCamera.ScreenToWorldPoint(mouseScreenPos);
+        Vector2 direction = ((Vector2)worldMousePos - (Vector2)firePoint.position).normalized;
+
+        return direction;
+    }
+
+
     private void ShowConeFlash(Vector2 direction)
     {
-        if (isShowingConeFlash) return; // Already showing a flash
-
+        if (isShowingConeFlash) return;
         StartCoroutine(ConeFlashCoroutine(direction));
     }
 
-    // NEW: Coroutine to handle cone flash timing
     private IEnumerator ConeFlashCoroutine(Vector2 direction)
     {
         isShowingConeFlash = true;
-
-        // Show the cone edges
         UpdateConeEdgeVisual(direction);
-
-        // Wait for flash duration
         yield return new WaitForSeconds(coneFlashDuration);
-
-        // Hide the cone edges
         HideConeEdgeVisual();
-
         isShowingConeFlash = false;
     }
 
-
-    // NEW: Update the cone edge lines to show the shooting cone
-    // NEW: Update the cone edge lines to show the shooting cone
     private void UpdateConeEdgeVisual(Vector2 direction)
     {
         if (leftEdgeLine == null || rightEdgeLine == null || currentWeapon == null) return;
 
-        // Get the trapezium points
         Vector2[] trapeziumPoints = currentWeapon.GetTrapeziumPoints(firePoint.position, direction);
 
-        // Trapezium points structure:
-        // points[0] = base left
-        // points[1] = base right
-        // points[2] = top right
-        // points[3] = top left
-
-        // Left edge: from base left to top left
         leftEdgeLine.enabled = true;
         leftEdgeLine.SetPosition(0, new Vector3(trapeziumPoints[0].x, trapeziumPoints[0].y, 0));
         leftEdgeLine.SetPosition(1, new Vector3(trapeziumPoints[3].x, trapeziumPoints[3].y, 0));
 
-        // Right edge: from base right to top right
         rightEdgeLine.enabled = true;
         rightEdgeLine.SetPosition(0, new Vector3(trapeziumPoints[1].x, trapeziumPoints[1].y, 0));
         rightEdgeLine.SetPosition(1, new Vector3(trapeziumPoints[2].x, trapeziumPoints[2].y, 0));
     }
 
-
-    // NEW: Hide the cone edge lines
     private void HideConeEdgeVisual()
     {
-        if (leftEdgeLine != null)
-        {
-            leftEdgeLine.enabled = false;
-        }
-
-        if (rightEdgeLine != null)
-        {
-            rightEdgeLine.enabled = false;
-        }
+        if (leftEdgeLine != null) leftEdgeLine.enabled = false;
+        if (rightEdgeLine != null) rightEdgeLine.enabled = false;
     }
 
-
-    // CHANGED: New Gizmo drawing method - only visible in Unity Editor
     private void OnDrawGizmos()
     {
         if (!showConeGizmo || currentWeapon == null || firePoint == null) return;
-
-        // Only draw if we have a valid shooting direction
         if (currentShootingDirection.magnitude < joystickDeadZone) return;
 
-        // Get trapezium points from weapon
         Vector2[] trapeziumPoints = currentWeapon.GetTrapeziumPoints(firePoint.position, currentShootingDirection);
 
-        // Draw filled trapezium
         Gizmos.color = coneGizmoColor;
 
-        // Draw the cone as a filled polygon
-        // Unity Gizmos don't have direct polygon fill, so we draw triangles
         Vector3[] points3D = new Vector3[4];
         for (int i = 0; i < 4; i++)
         {
             points3D[i] = new Vector3(trapeziumPoints[i].x, trapeziumPoints[i].y, 0);
         }
 
-        // Draw two triangles to fill the trapezium
         DrawGizmoTriangle(points3D[0], points3D[1], points3D[2]);
         DrawGizmoTriangle(points3D[0], points3D[2], points3D[3]);
 
-        // Draw outline
-        Gizmos.color = new Color(coneGizmoColor.r, coneGizmoColor.g, coneGizmoColor.b, 1f); // Full opacity for outline
+        Gizmos.color = new Color(coneGizmoColor.r, coneGizmoColor.g, coneGizmoColor.b, 1f);
         Gizmos.DrawLine(points3D[0], points3D[1]);
         Gizmos.DrawLine(points3D[1], points3D[2]);
         Gizmos.DrawLine(points3D[2], points3D[3]);
         Gizmos.DrawLine(points3D[3], points3D[0]);
     }
 
-    // CHANGED: Helper method to draw filled triangle
     private void DrawGizmoTriangle(Vector3 p1, Vector3 p2, Vector3 p3)
     {
-        // Draw multiple lines to simulate fill
         int steps = 10;
         for (int i = 0; i <= steps; i++)
         {
@@ -577,61 +588,48 @@ public class PlayerConeShooter : MonoBehaviour
     {
         damageableTargets.Clear();
         DetectDamageableTargetsInCone(direction);
-
-        // CHANGED: Always create bullet trails, even if no enemies
         CreateBulletTrailsAndDamage(direction);
-
         PlayShootEffects();
     }
-
 
     private void CreateBulletTrailsAndDamage(Vector2 direction)
     {
         if (currentWeapon.weaponType == WeaponData.WeaponType.Standard)
         {
-            // Single bullet - check if we hit an enemy
             IDamageable closestTarget = GetClosestTarget(out Vector3 hitPosition);
 
             if (closestTarget != null)
             {
-                // Hit an enemy - trail goes to enemy and damages it
                 StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPosition, closestTarget, currentWeapon.damagePerShot));
             }
             else
             {
-                // No enemy - trail goes to max range in shooting direction
                 Vector3 endPosition = (Vector3)firePoint.position + new Vector3(direction.x, direction.y, 0) * currentWeapon.coneRange;
                 StartCoroutine(BulletTrailCoroutine(firePoint.position, endPosition, null, 0));
             }
         }
         else if (currentWeapon.weaponType == WeaponData.WeaponType.Shotgun)
         {
-            // CHANGED: Shotgun fires multiple bullets based on cone angle
-            int pelletsPerShot = 5; // Number of shotgun pellets
-            float spreadAngle = currentWeapon.GetAngleAtDistance(currentWeapon.coneRange); // Max spread angle
+            int pelletsPerShot = 5;
+            float spreadAngle = currentWeapon.GetAngleAtDistance(currentWeapon.coneRange);
 
-            // Track which enemies we've already hit
             List<IDamageable> hitTargets = new List<IDamageable>();
 
             for (int i = 0; i < pelletsPerShot; i++)
             {
-                // Calculate spread for this pellet
                 float angleOffset = Mathf.Lerp(-spreadAngle, spreadAngle, i / (float)(pelletsPerShot - 1));
                 Vector2 pelletDirection = RotateVector(direction, angleOffset);
 
-                // Check if this pellet hits an enemy
                 IDamageable hitEnemy = GetTargetInDirection(pelletDirection, hitTargets);
 
                 if (hitEnemy != null)
                 {
-                    // Hit an enemy
                     GameObject targetGO = hitEnemy.GetGameObject();
                     StartCoroutine(BulletTrailCoroutine(firePoint.position, targetGO.transform.position, hitEnemy, currentWeapon.damagePerShot));
-                    hitTargets.Add(hitEnemy); // Mark as hit so other pellets can still hit it
+                    hitTargets.Add(hitEnemy);
                 }
                 else
                 {
-                    // No enemy - trail goes to max range
                     Vector3 endPosition = (Vector3)firePoint.position + new Vector3(pelletDirection.x, pelletDirection.y, 0) * currentWeapon.coneRange;
                     StartCoroutine(BulletTrailCoroutine(firePoint.position, endPosition, null, 0));
                 }
@@ -652,11 +650,9 @@ public class PlayerConeShooter : MonoBehaviour
             Vector2 directionToTarget = (targetGO.transform.position - firePoint.position).normalized;
             float distanceToTarget = Vector3.Distance(firePoint.position, targetGO.transform.position);
 
-            // Check if target is in this pellet's direction (within a small angle)
             float angleToTarget = Vector2.Angle(direction, directionToTarget);
-            if (angleToTarget > 5f) continue; // 5 degree tolerance per pellet
+            if (angleToTarget > 5f) continue;
 
-            // Check for obstacles
             RaycastHit2D hit = Physics2D.Raycast(firePoint.position, directionToTarget, distanceToTarget, obstacleLayers);
             if (hit.collider != null) continue;
 
@@ -684,12 +680,8 @@ public class PlayerConeShooter : MonoBehaviour
 
     private IEnumerator BulletTrailCoroutine(Vector3 startPos, Vector3 endPos, IDamageable target, int damage)
     {
-        // No visual trail - just handle damage timing
-
-        // Wait for damage delay
         yield return new WaitForSeconds(damageDelay);
 
-        // Apply damage if we hit an enemy
         if (target != null && !target.IsDead())
         {
             target.TakeDamage(damage);
@@ -843,8 +835,6 @@ public class PlayerConeShooter : MonoBehaviour
         particlesPlaying = false;
     }
 
-    // CHANGED: Removed UpdateConeVisual method - no longer needed
-
     private void OnStopShooting()
     {
         CameraZoomOnSpeed.Instance.StopFiring();
@@ -855,10 +845,12 @@ public class PlayerConeShooter : MonoBehaviour
     public string GetCurrentWeaponName() { return currentWeapon?.weaponName ?? "None"; }
     public bool IsShooting() { return wasShooting; }
 
+    /// <summary>
+    /// Returns the direction from player to mouse (for rotation script compatibility)
+    /// </summary>
     public Vector2 GetShootingDirection()
     {
-        Vector2 direction = new Vector2(shootingJoystick.Horizontal, shootingJoystick.Vertical);
-        return direction.magnitude > joystickDeadZone ? direction.normalized : Vector2.zero;
+        return GetMouseAimDirection();
     }
 
     public int GetTargetsInCone() { return damageableTargets.Count; }

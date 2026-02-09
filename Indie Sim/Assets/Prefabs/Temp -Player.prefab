@@ -112,12 +112,12 @@ SpriteRenderer:
   m_SortingLayerID: -783603659
   m_SortingLayer: 1
   m_SortingOrder: 5
-  m_Sprite: {fileID: 21300000, guid: 997196f5322f2e24abf27227d75fb65d, type: 3}
+  m_Sprite: {fileID: 21300000, guid: cf8de6bec8a915145a9aba6ce7d7ab3b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 0.32, y: 0.32}
+  m_Size: {x: 2, y: 2}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -5229,10 +5229,13 @@ GameObject:
   - component: {fileID: 6531144439329103242}
   - component: {fileID: 4326419580110792452}
   - component: {fileID: 882940776345714267}
-  - component: {fileID: 4168114898144869375}
   - component: {fileID: 5970754329784749663}
   - component: {fileID: 2047155134849269702}
   - component: {fileID: 1658143020424988954}
+  - component: {fileID: 2866432960119828737}
+  - component: {fileID: 6598834033211393489}
+  - component: {fileID: 5360059026301571325}
+  - component: {fileID: 6351791454143980084}
   m_Layer: 0
   m_Name: Temp -Player
   m_TagString: Player
@@ -5274,10 +5277,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 604279fe2211a094cb4bb352c59449ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Rigidbody2D: {fileID: 5045363974331740693}
-  joystick: {fileID: 0}
-  moveSpeed: 7
-  trailParticleSystem: {fileID: 552857626009751671}
+  baseMoveSpeed: 5
+  mainCamera: {fileID: 3008973793089747527}
+  pushRadius: 2
+  pushStr: 5
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!61 &6221989387875595873
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -5285,7 +5291,7 @@ BoxCollider2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8485655876686838044}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Density: 1
   m_Material: {fileID: 0}
@@ -5363,20 +5369,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 379c917ef905350488f05e58d5d75eda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shootingJoystick: {fileID: 0}
   firePoint: {fileID: 5624597609566509571}
+  mainCamera: {fileID: 3008973793089747527}
   availableWeapons:
-  - {fileID: 11400000, guid: 8dfe85ede84364e4bbd47cc0fd9fd25c, type: 2}
   - {fileID: 11400000, guid: 5827dbebab0bf6f4583880f757b6faaa, type: 2}
-  - {fileID: 11400000, guid: 56c3f4ef79cead346984d21b7544d9d8, type: 2}
   currentWeaponIndex: 0
   weaponSwitchKey: 116
+  weaponUnlockStatus: 01
   enemyLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  showConeInEditor: 1
+  showConeGizmo: 1
+  coneGizmoColor: {r: 1, g: 0, b: 0, a: 0.3}
   joystickDeadZone: 0.1
-  coneVisualizer: {fileID: 2168372277178147741}
   audioSource: {fileID: 441459428130447590}
   weaponSprites:
   - {fileID: 21300000, guid: b17863074b0f77d4ca2d76818acea886, type: 3}
@@ -5391,6 +5396,14 @@ MonoBehaviour:
   smokeParticles: {fileID: 4820169304688611113}
   muzzlePoint: {fileID: 8321412686837148396}
   shellEjectionPoint: {fileID: 105890739993654744}
+  bulletTrailPrefab: {fileID: 0}
+  bulletTrailSpeed: 30
+  bulletTrailDuration: 0.05
+  damageDelay: 0.05
+  trailPoolSize: 20
+  edgeLineColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  edgeLineWidth: 0.05
+  coneFlashDuration: 0.05
 --- !u!120 &2168372277178147741
 LineRenderer:
   serializedVersion: 2
@@ -5399,7 +5412,7 @@ LineRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8485655876686838044}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -5436,9 +5449,9 @@ LineRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: -783603659
-  m_SortingLayer: 1
-  m_SortingOrder: 1
+  m_SortingLayerID: -1247100275
+  m_SortingLayer: 3
+  m_SortingOrder: 3
   m_Positions:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 1}
@@ -5462,8 +5475,8 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 0, b: 0, a: 1}
-      key1: {r: 1, g: 1, b: 1, a: 1}
+      key0: {r: 1, g: 0, b: 0, a: 0.101960786}
+      key1: {r: 1, g: 1, b: 1, a: 0}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
@@ -5610,10 +5623,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f792431329c20f4c940c6dd32a18522, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movementJoystick: {fileID: 0}
   playerShooter: {fileID: 6900749776920343997}
   autoAimShooter: {fileID: 882940776345714267}
   spriteToRotate: {fileID: 846267663619426444}
+  mainCamera: {fileID: 0}
   rotationSpeed: 720
   deadZone: 0
 --- !u!114 &8749358991344554026
@@ -5628,8 +5641,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bab5e37d5fe59ae4ab4fa6495caad325, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  activationRadius: 15
+  activationRadius: 10
   checkInterval: 0.1
+  maxActiveEnemies: 15
+  maxPathfindingEnemies: 10
+  pathfindingPriorityRadius: 8
   showDebugGizmos: 1
 --- !u!114 &6531144439329103242
 MonoBehaviour:
@@ -5643,7 +5659,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b65dc5f0f1d43c459395a5dbddbd51b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hasKey: 0
+  hasKey: 1
   keyTag: Key
   teleporterTag: Teleporter
   audioSource: {fileID: 0}
@@ -5679,7 +5695,7 @@ CircleCollider2D:
   m_CallbackLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
@@ -5708,19 +5724,6 @@ MonoBehaviour:
   obstacleLayers:
     serializedVersion: 2
     m_Bits: 256
---- !u!114 &4168114898144869375
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8485655876686838044}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c81baec4c8af2974694594698998c817, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CoinManager
-  coinText: {fileID: 0}
 --- !u!114 &5970754329784749663
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5733,7 +5736,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46483fae30e321b44a43ce408bedced6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
-  maxHealth: 100
+  coinsLostPerHit: 100
+  useCoinsAsHealth: 1
+  coinPrefab: {fileID: 5576711845111610058, guid: 6507a99d4a98a9e4a91ab2d3fd43d539, type: 3}
+  coinsToSpawnOnDamage: 10
+  coinSpawnRadius: 2
+  coinSpawnForce: 5
+  coinLifetime: 2
   damageCooldown: 1
   flashSpeed: 0.1
   flashDuration: 1
@@ -5743,6 +5752,8 @@ MonoBehaviour:
   deathDelay: 3
   deathUIPanel: {fileID: 0}
   aliveSprite: {fileID: 21300000, guid: 997196f5322f2e24abf27227d75fb65d, type: 3}
+  healthHeartBar: {fileID: 0}
+  damageIndicator: {fileID: 6598834033211393489}
 --- !u!108 &2047155134849269702
 Light:
   m_ObjectHideFlags: 0
@@ -5837,6 +5848,75 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &2866432960119828737
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e520eac8593751a449338360c61f06f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RelicManager
+  coinsForDuplicateRelic: 50
+  showDebugInfo: 1
+  relicsCollectedText: {fileID: 0}
+--- !u!114 &6598834033211393489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e66c217299c154b4fa0846d6f6c52cd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageIndicator
+  postProcessVolume: {fileID: 0}
+  damageColor: {r: 0.8, g: 0, b: 0, a: 1}
+  normalColor: {r: 0, g: 0, b: 0, a: 1}
+  flashIntensity: 0.5
+  flashCount: 2
+  flashDuration: 0.1
+  flashInterval: 0.05
+  normalIntensity: 0.3
+--- !u!114 &5360059026301571325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f9bd954f0db13d42b5ca163a17e2f63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSpawnerActivator
+  activationRange: 10
+  scanInterval: 0.5
+  showDebugGizmos: 1
+  activationRangeColor: {r: 1, g: 1, b: 0, a: 0.3}
+--- !u!114 &6351791454143980084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8d35554b51011f4abe85376099d4f6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCoinCollector
+  magnetRange: 2.64
+  magnetStrength: 10
+  coinLayer:
+    serializedVersion: 2
+    m_Bits: 512
+  checkInterval: 0.1
 --- !u!1001 &193800281715201901
 PrefabInstance:
   m_ObjectHideFlags: 0
