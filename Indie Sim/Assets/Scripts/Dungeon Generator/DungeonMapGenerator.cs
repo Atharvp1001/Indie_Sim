@@ -260,6 +260,8 @@ public class DungeonMapGenerator : MonoBehaviour
     {
         rng = new System.Random();
 
+        EnemySpawner.ResetCthulhuEyeTracking();
+        
         // Reset ID counters
         mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
         leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
@@ -827,7 +829,9 @@ public class DungeonMapGenerator : MonoBehaviour
         // Adjust spawn rate (optional - make larger rooms spawn faster/slower)
         spawner.spawnInterval = UnityEngine.Random.Range(1f, 3f); // Random spawn rate per room
 
-        Debug.Log($"Configured spawner in room {room.uniqueId}: radius={spawner.spawnRadius}, maxEnemies={spawner.maxEnemies}");
+        spawner.SetDungeonLevel(parameters.nodeCount); // Using nodeCount as dungeon level
+
+        Debug.Log($"Configured spawner in room {room.uniqueId}: radius={spawner.spawnRadius}, maxEnemies={spawner.maxEnemies}, dungeonLevel={parameters.nodeCount}");
     }
 
     /// <summary>

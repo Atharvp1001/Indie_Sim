@@ -57,6 +57,15 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     [SerializeField] private int maxActiveBursts = 3; // Max number of bursts
     [SerializeField] private int maxTotalEnemies = 20; // Total enemies this spawner can create
 
+    [Header("Special Enemy - Cthulhu Eye")]
+    [SerializeField] private GameObject cthulhuEyePrefab;
+    [SerializeField] private bool canSpawnCthulhuEye = true; // Toggle per spawner
+    [SerializeField] [Range(0f, 1f)] private float cthulhuEyeSpawnChance = 0.3f; // 30% chance
+    [SerializeField] private float cthulhuEyeSpawnRadius = 25f; // Exclusion radius
+    [SerializeField] private int minDungeonLevelForCthulhuEye = 2; // Only spawn after level 1
+
+    private bool hasCthulhuEyeSpawned = false; // Track if this spawner has spawned one
+    private static HashSet<Vector3> cthulhuEyeSpawnLocations = new HashSet<Vector3>(); // Global tracking
     private int burstsCompleted = 0;
     private int totalEnemiesSpawned = 0;
 
@@ -85,7 +94,6 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     public System.Action OnDeath;
     public System.Action OnActivated;
 
-
     void Start()
     {
         Debug.Log($"[EnemySpawner] ========== SPAWNER START ==========");
@@ -98,6 +106,9 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
         // Calculate spawn rates for current dungeon
         CalculateSpawnRates(currentDungeonLevel);
+
+        // Try to spawn Cthulhu Eye (if conditions met)
+        TrySpawnCthulhuEye();
 
         // IMPORTANT: Only start spawning if activation is NOT required
         if (!requiresActivation)
@@ -741,7 +752,6 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         }
     }
 
-
     /// <summary>
     /// Get current spawn rates (for debugging/UI)
     /// </summary>
@@ -773,6 +783,98 @@ public class EnemySpawner : MonoBehaviour, IDamageable
             Vector3 healthEnd = healthBarPos + Vector3.right * (healthPercentage * 2f - 1f);
             Gizmos.DrawLine(healthBarPos - Vector3.right * 1f, healthEnd);
         }
+    }
+
+    /// <summary>
+    /// Attempts to spawn a Cthulhu Eye if all conditions are met
+    /// </summary>
+    private void TrySpawnCthulhuEye()
+    {
+        // Check if we can spawn
+        if (!canSpawnCthulhuEye)
+        {
+            Debug.Log("[EnemySpawner] Cthulhu Eye spawning disabled on this spawner");
+            return;
+        }
+
+        if (cthulhuEyePrefab == null)
+        {
+            Debug.LogWarning("[EnemySpawner] Cthulhu Eye prefab not assigned!");
+            return;
+        }
+
+        if (hasCthulhuEyeSpawned)
+        {
+            Debug.Log("[EnemySpawner] This spawner already spawned a Cthulhu Eye");
+            return;
+        }
+
+        // Check dungeon level requirement
+        if (currentDungeonLevel < minDungeonLevelForCthulhuEye)
+        {
+            Debug.Log($"[EnemySpawner] Dungeon level {currentDungeonLevel} < {minDungeonLevelForCthulhuEye} - no Cthulhu Eye");
+            return;
+        }
+
+        // Check if another Cthulhu Eye is too close
+        if (IsCthulhuEyeTooClose())
+        {
+            Debug.Log($"[EnemySpawner] Another Cthulhu Eye too close (within {cthulhuEyeSpawnRadius}m)");
+            return;
+        }
+
+        // Random chance
+        if (Random.value > cthulhuEyeSpawnChance)
+        {
+            Debug.Log($"[EnemySpawner] Random roll failed ({cthulhuEyeSpawnChance * 100}% chance)");
+            return;
+        }
+
+    // ALL CHECKS PASSED - SPAWN IT!
+    SpawnCthulhuEye();
+    }
+
+    /// <summary>
+    /// Checks if any Cthulhu Eye spawn location is within the exclusion radius
+    /// </summary>
+    private bool IsCthulhuEyeTooClose()
+    {
+        foreach (Vector3 spawnPos in cthulhuEyeSpawnLocations)
+        {
+            float distance = Vector3.Distance(transform.position, spawnPos);
+            if (distance < cthulhuEyeSpawnRadius)
+            {
+                Debug.Log($"[EnemySpawner] Found nearby Cthulhu Eye at distance {distance}m");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Spawns a Cthulhu Eye at this spawner's position
+    /// </summary>
+    private void SpawnCthulhuEye()
+    {
+        GameObject eye = Instantiate(cthulhuEyePrefab, transform.position, Quaternion.identity);
+        
+        // Mark this spawner as having spawned one
+        hasCthulhuEyeSpawned = true;
+        
+        // Add to global tracking (PERMANENT - never removed)
+        cthulhuEyeSpawnLocations.Add(transform.position);
+        
+        Debug.Log($"[EnemySpawner] ✅ SPAWNED CTHULHU EYE at {transform.position}");
+        Debug.Log($"[EnemySpawner] Total Cthulhu Eye spawn locations: {cthulhuEyeSpawnLocations.Count}");
+    }
+
+    /// <summary>
+    /// Call this when a new dungeon is generated to clear Cthulhu Eye tracking
+    /// </summary>
+    public static void ResetCthulhuEyeTracking()
+    {
+        cthulhuEyeSpawnLocations.Clear();
+        Debug.Log("[EnemySpawner] Cthulhu Eye tracking reset for new dungeon");
     }
 
     private void OnDrawGizmosSelected()
@@ -847,7 +949,28 @@ public class EnemySpawner : MonoBehaviour, IDamageable
                 }
             }
         }
+            if (canSpawnCthulhuEye && cthulhuEyePrefab != null)
+        {
+            Gizmos.color = new Color(1f, 0f, 1f, 0.2f); // Magenta
+            Gizmos.DrawWireSphere(transform.position, cthulhuEyeSpawnRadius);
+            
+            // Show if this spawner has already spawned one
+            if (Application.isPlaying && hasCthulhuEyeSpawned)
+            {
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawSphere(transform.position + Vector3.up * 3f, 0.5f);
+            }
+        }
+        
+        // Visualize all Cthulhu Eye spawn locations
+        if (Application.isPlaying)
+        {
+            Gizmos.color = Color.magenta;
+            foreach (Vector3 pos in cthulhuEyeSpawnLocations)
+            {
+                Gizmos.DrawWireSphere(pos, cthulhuEyeSpawnRadius);
+            }
+        }
     }
-
     #endregion
 }

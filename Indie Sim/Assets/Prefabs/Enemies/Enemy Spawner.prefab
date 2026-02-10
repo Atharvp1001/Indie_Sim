@@ -75,6 +75,11 @@ MonoBehaviour:
   burstCooldown: 5
   maxActiveBursts: 3
   maxTotalEnemies: 20
+  cthulhuEyePrefab: {fileID: 6048784882248778353, guid: b8bc32b551b4ab545a865cdfecdef7c7, type: 3}
+  canSpawnCthulhuEye: 1
+  cthulhuEyeSpawnChance: 0.3
+  cthulhuEyeSpawnRadius: 25
+  minDungeonLevelForCthulhuEye: 1
 --- !u!212 &3399380655111319332
 SpriteRenderer:
   m_ObjectHideFlags: 0
