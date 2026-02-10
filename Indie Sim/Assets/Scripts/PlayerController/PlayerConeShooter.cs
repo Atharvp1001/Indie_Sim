@@ -1,8 +1,10 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
-using UnityEngine.InputSystem; // REQUIRED
+using UnityEngine.Rendering.Universal;
+
 
 public class PlayerConeShooter : MonoBehaviour
 {
@@ -57,6 +59,11 @@ public class PlayerConeShooter : MonoBehaviour
     [SerializeField] private float edgeLineWidth = 0.05f;
     [SerializeField] private float coneFlashDuration = 0.1f;
     private bool isShowingConeFlash = false;
+
+    [Header("Muzzle Flash Light")]
+    [SerializeField] private Light2D muzzleFlashLight; // The 2D light on player
+    [SerializeField] private float lightFlashDuration = 0.05f; // How long light stays on
+    private Coroutine currentLightFlash = null;
 
     private List<LineRenderer> trailPool = new List<LineRenderer>();
     private List<LineRenderer> activeTrails = new List<LineRenderer>();
@@ -142,6 +149,11 @@ public class PlayerConeShooter : MonoBehaviour
         else
         {
             //Debug.LogError("No weapons assigned to PlayerConeShooter!");
+        }
+
+        if (muzzleFlashLight != null)
+        {
+            muzzleFlashLight.enabled = false;
         }
     }
 
@@ -756,6 +768,7 @@ public class PlayerConeShooter : MonoBehaviour
         PlayMuzzleFlashParticles();
         PlayShellEjectionParticles();
         PlaySmokeParticles();
+        FlashMuzzleLight(); 
 
         if (currentWeapon.muzzleFlashEffect != null)
         {
@@ -768,6 +781,7 @@ public class PlayerConeShooter : MonoBehaviour
             audioSource.PlayOneShot(currentWeapon.shootSound);
         }
     }
+
 
     public void PlayMuzzleFlashParticles()
     {
@@ -823,6 +837,43 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Flashes the muzzle light briefly when shooting
+    /// </summary>
+    private void FlashMuzzleLight()
+    {
+        if (muzzleFlashLight == null) return;
+
+        // Stop existing flash if running
+        if (currentLightFlash != null)
+        {
+            StopCoroutine(currentLightFlash);
+        }
+
+        // Start new flash and store reference
+        currentLightFlash = StartCoroutine(MuzzleLightFlashCoroutine());
+    }
+
+    /// <summary>
+    /// Coroutine that handles the light flash timing
+    /// </summary>
+    private IEnumerator MuzzleLightFlashCoroutine()
+    {
+        // Turn light on
+        muzzleFlashLight.enabled = true;
+
+        // Wait for the flash duration
+        yield return new WaitForSeconds(lightFlashDuration);
+
+        // Turn light off
+        muzzleFlashLight.enabled = false;
+
+        // Clear the reference
+        currentLightFlash = null;
+    }
+
+
+
     public void StopAllParticles()
     {
         particlesPlaying = false;
@@ -832,7 +883,14 @@ public class PlayerConeShooter : MonoBehaviour
     {
         CameraZoomOnSpeed.Instance.StopFiring();
         StopAllParticles();
+
+       
+        if (muzzleFlashLight != null)
+        {
+            //muzzleFlashLight.enabled = false;
+        }
     }
+
 
     public WeaponData GetCurrentWeapon() { return currentWeapon; }
     public string GetCurrentWeaponName() { return currentWeapon?.weaponName ?? "None"; }
