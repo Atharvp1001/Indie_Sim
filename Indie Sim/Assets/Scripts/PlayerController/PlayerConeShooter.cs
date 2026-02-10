@@ -14,7 +14,7 @@ public class PlayerConeShooter : MonoBehaviour
     [Header("Weapon System")]
     [SerializeField] private WeaponData[] availableWeapons;
     [SerializeField] private int currentWeaponIndex = 0;
-    [SerializeField] private KeyCode weaponSwitchKey = KeyCode.Tab;
+  
 
     [Header("Weapon Lock/Unlock System")]
     [SerializeField] private bool[] weaponUnlockStatus;
@@ -93,6 +93,9 @@ public class PlayerConeShooter : MonoBehaviour
             isFiring = false;
             //Debug.Log("[PlayerConeShooter] ❌ FIRE STOPPED via Input System");
         };
+
+        inputActions.Player.SwitchWeapon.performed += ctx => SwitchToNextWeapon(); // weapon switching
+
 
         if (mainCamera == null) mainCamera = Camera.main;
 
@@ -411,19 +414,9 @@ public class PlayerConeShooter : MonoBehaviour
 
     private void HandleWeaponSwitching()
     {
-        if (Input.GetKeyDown(weaponSwitchKey))
-        {
-            SwitchToNextWeapon();
-        }
-
-        for (int i = 0; i < availableWeapons.Length && i < 9; i++)
-        {
-            if (Input.GetKeyDown(KeyCode.Alpha1 + i))
-            {
-                SwitchToWeapon(i);
-            }
-        }
+       
     }
+
 
     public void SwitchToWeapon(int weaponIndex)
     {
