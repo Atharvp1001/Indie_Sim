@@ -1,82 +1,113 @@
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement Settings")]
-    public float baseMoveSpeed = 5f; // Your default speed without upgrades
-
-    [Header("References")]
-    public FixedJoystick joystick; // Drag your joystick here in inspector
+    public float baseMoveSpeed = 10f;
 
     private Rigidbody2D rb;
     private float currentMoveSpeed;
+    private Vector2 moveInput;
+    private PlayerControls inputActions;
 
     [Header("Bulldozer")]
     [SerializeField] private float pushRadius = 2f;
     [SerializeField] private float pushStr = 5f;
     [SerializeField] private LayerMask enemyLayer;
-    private Collider2D[] pushResults = new Collider2D[40];
+    private ContactFilter2D enemyFilter;
+    private List<Collider2D> pushResults = new List<Collider2D>();
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        inputActions = new PlayerControls();
+
+        inputActions.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
+        inputActions.Player.Move.canceled += ctx => moveInput = Vector2.zero;
+    }
+
+    void OnEnable()
+    {
+        inputActions.Enable();
+    }
+
+    void OnDisable()
+    {
+        inputActions.Disable();
+    }
 
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-        currentMoveSpeed = baseMoveSpeed; // Initialize current speed
+        currentMoveSpeed = baseMoveSpeed;
+
+        // ✅ Unity 6: Configure Rigidbody for instant movement
+        rb.gravityScale = 0;
+        rb.linearDamping = 0;      // Was: drag
+        rb.angularDamping = 0;     // Was: angularDrag
+        rb.interpolation = RigidbodyInterpolation2D.None;
+
+        // ✅ IMPORTANT: Allow rotation (SimplePlayerRotation needs this)
+        //rb.constraints = RigidbodyConstraints2D.None;
+
+        // Setup contact filter for bulldozer
+        enemyFilter = new ContactFilter2D();
+        enemyFilter.SetLayerMask(enemyLayer);
+        enemyFilter.useLayerMask = true;
     }
 
-    /// <summary>
-    /// Set player movement speed
-    /// </summary>
     public void SetSpeed(float newSpeed)
     {
-        // If you have a speed variable, update it here
-        // Example: if your speed variable is called 'moveSpeed'
         currentMoveSpeed = newSpeed;
-
-        Debug.Log($"[PlayerMovement] Speed updated to: {newSpeed}");
     }
-
 
     void FixedUpdate()
     {
-    Vector2 moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-    rb.linearVelocity = new Vector2(joystick.Horizontal * currentMoveSpeed, joystick.Vertical * currentMoveSpeed);
+        // ✅ Unity 6: Use linearVelocity instead of velocity
+        rb.linearVelocity = moveInput * currentMoveSpeed;
 
-    if (moveInput.magnitude > 0.1f) 
-    {
-        int enemyCount = Physics2D.OverlapCircleNonAlloc(transform.position, pushRadius, pushResults, enemyLayer);
-
-        for (int i = 0; i < enemyCount; i++)
+        // Bulldozer
+        if (moveInput.magnitude > 0.1f)
         {
-            Rigidbody2D enemyRb = pushResults[i].attachedRigidbody;
+            HandleBulldozerPhysics();
+        }
+    }
+
+    private void HandleBulldozerPhysics()
+    {
+        pushResults.Clear();
+
+        // ✅ Unity 6: Use OverlapCircle with List instead of NonAlloc
+        Physics2D.OverlapCircle(transform.position, pushRadius, enemyFilter, pushResults);
+
+        foreach (Collider2D col in pushResults)
+        {
+            if (col == null) continue;
+
+            Rigidbody2D enemyRb = col.attachedRigidbody;
             if (enemyRb != null)
             {
-                // 1. Vector from player to enemy
-                Vector2 toEnemy = (Vector2)pushResults[i].transform.position - (Vector2)transform.position;
-                
-                // 2. The "Away" force (keeps them out of your skin)
+                Vector2 toEnemy = (Vector2)col.transform.position - (Vector2)transform.position;
                 Vector2 awayDir = toEnemy.normalized;
 
-                // 3. The "Side" force (The Marble Secret)
-                // We find the 'Right' vector of your movement to shove them sideways
                 Vector2 moveDir = moveInput.normalized;
-                Vector2 sideDir = new Vector2(-moveDir.y, moveDir.x); // Perpendicular to movement
+                Vector2 sideDir = new Vector2(-moveDir.y, moveDir.x);
 
-                // Determine if the enemy is on the left or right of our path
                 float dot = Vector2.Dot(sideDir, toEnemy);
-                if (dot < 0) sideDir = -sideDir; // Push them to the closest side
+                if (dot < 0) sideDir = -sideDir;
 
-                // 4. Combine: Push away slightly, but push sideways STRONGLY
                 Vector2 finalPush = (awayDir * 0.3f) + (sideDir * 0.7f);
-                
+
+                // ✅ Unity 6: Use linearVelocity
                 enemyRb.linearVelocity = finalPush.normalized * pushStr;
             }
         }
     }
-    }
+
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        // This draws a yellow circle in the Scene view so you can see the push range
         Gizmos.DrawWireSphere(transform.position, pushRadius);
     }
 }
