@@ -58,8 +58,8 @@ MonoBehaviour:
   prisonPentagramPrefab: {fileID: 9128153691166404863, guid: 10f86d3cc3e55cb48bd86183b0c96b7b, type: 3}
   attackCooldown: 5
   escapePentagramChance: 0.5
-  maxHealth: 100
-  currentHealth: 100
+  maxHealth: 800
+  currentHealth: 800
 --- !u!50 &1552801011318926664
 Rigidbody2D:
   serializedVersion: 5
