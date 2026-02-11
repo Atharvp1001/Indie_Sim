@@ -24,6 +24,12 @@ public class DamageIndicator : MonoBehaviour
     [SerializeField] private float hitstopDuration = 0.1f; // How long to freeze (seconds)
     [SerializeField] private float hitstopIntensity = 0f; // Time scale during hitstop (0 = full freeze)
 
+    [Header("Player Flicker Settings")]
+    [SerializeField] private GameObject playerSpriteObject; // Assign the sprite GameObject here
+    [SerializeField] private int flickerCount = 5;
+    [SerializeField] private float flickerInterval = 0.06f; // Time between ON/OFF
+
+
     private Vignette vignette;
     private bool isFlashing = false;
     private bool isHitstopped = false;
@@ -64,6 +70,12 @@ public class DamageIndicator : MonoBehaviour
         if (!isFlashing)
         {
             StartCoroutine(DamageFlashCoroutine());
+        }
+
+        // 🔥 Start player sprite flicker
+        if (playerSpriteObject != null)
+        {
+            StartCoroutine(PlayerFlickerCoroutine());
         }
     }
 
@@ -123,6 +135,31 @@ public class DamageIndicator : MonoBehaviour
         Time.timeScale = originalTimeScale;
         isHitstopped = false;
     }
+
+    private IEnumerator PlayerFlickerCoroutine()
+    {
+        // Safety check
+        if (playerSpriteObject == null)
+            yield break;
+
+        // Make sure it starts visible
+        playerSpriteObject.SetActive(true);
+
+        for (int i = 0; i < flickerCount; i++)
+        {
+            // Turn off
+            playerSpriteObject.SetActive(false);
+            yield return new WaitForSeconds(flickerInterval);
+
+            // Turn on
+            playerSpriteObject.SetActive(true);
+            yield return new WaitForSeconds(flickerInterval);
+        }
+
+        // Ensure it's ON at the end
+        playerSpriteObject.SetActive(true);
+    }
+
 
 
     /// <summary>
