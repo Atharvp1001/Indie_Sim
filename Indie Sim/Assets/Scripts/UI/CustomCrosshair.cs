@@ -16,6 +16,10 @@ public class CustomCrosshair : MonoBehaviour
     [Header("Hit Feedback Settings")]
     [SerializeField] private float hitFeedbackDuration = 0.15f;
 
+    [Header("Scale Feedback")]
+    [SerializeField] private float hitScaleMultiplier = 1.3f;
+    [SerializeField] private AnimationCurve scaleCurve = AnimationCurve.EaseInOut(0, 1, 1, 1);
+
     private bool isShowingHitFeedback = false;
 
     void Start()
@@ -62,17 +66,32 @@ public class CustomCrosshair : MonoBehaviour
     {
         isShowingHitFeedback = true;
 
-        // Change to hit color (green)
-        crosshairImage.color = hitColor;
+        Vector3 originalScale = crosshairRect.localScale;
+        Vector3 targetScale = originalScale * hitScaleMultiplier;
 
-        // Wait for the duration
-        yield return new WaitForSeconds(hitFeedbackDuration);
+        float elapsedTime = 0f;
 
-        // Change back to normal color
+        while (elapsedTime < hitFeedbackDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / hitFeedbackDuration;
+
+         
+             crosshairImage.color = hitColor;
+            // Animate scale using curve
+            float scaleValue = scaleCurve.Evaluate(t);
+            crosshairRect.localScale = Vector3.Lerp(targetScale, originalScale, t);
+
+            yield return null;
+        }
+
+        // Reset to original values
         crosshairImage.color = normalColor;
+        crosshairRect.localScale = originalScale;
 
         isShowingHitFeedback = false;
     }
+
 
     void OnDestroy()
     {
