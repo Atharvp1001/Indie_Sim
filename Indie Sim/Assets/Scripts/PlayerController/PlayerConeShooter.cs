@@ -811,6 +811,12 @@ public class PlayerConeShooter : MonoBehaviour
             Instantiate(currentWeapon.hitEffect, hitPosition, Quaternion.identity);
         }
 
+        CustomCrosshair crosshair = FindObjectOfType<CustomCrosshair>();
+        if (crosshair != null)
+        {
+            crosshair.ShowHitFeedback();
+        }
+
         Debug.Log($"Damaged {target.GetGameObject().name} for {damage} damage with {currentWeapon.weaponName}");
     }
 
