@@ -19,8 +19,14 @@ public class DamageIndicator : MonoBehaviour
     [Header("Normal Vignette Settings")]
     [SerializeField] private float normalIntensity = 0.3f; // Your normal vignette intensity
 
+    [Header("Hitstop Settings")]
+    [SerializeField] private bool enableHitstop = true; // Toggle hitstop on/off
+    [SerializeField] private float hitstopDuration = 0.1f; // How long to freeze (seconds)
+    [SerializeField] private float hitstopIntensity = 0f; // Time scale during hitstop (0 = full freeze)
+
     private Vignette vignette;
     private bool isFlashing = false;
+    private bool isHitstopped = false;
 
     private void Start()
     {
@@ -62,11 +68,17 @@ public class DamageIndicator : MonoBehaviour
     }
 
     /// <summary>
-    /// Coroutine that handles the flashing effect
+    /// Coroutine that handles the flashing effect with hitstop
     /// </summary>
     private IEnumerator DamageFlashCoroutine()
     {
         isFlashing = true;
+
+        // ✅ HITSTOP: Freeze the game at the moment of damage
+        if (enableHitstop && !isHitstopped)
+        {
+            yield return StartCoroutine(HitstopCoroutine());
+        }
 
         for (int i = 0; i < flashCount; i++)
         {
@@ -91,6 +103,27 @@ public class DamageIndicator : MonoBehaviour
 
         isFlashing = false;
     }
+
+    /// <summary>
+    /// Hitstop coroutine - freezes time briefly
+    /// </summary>
+    private IEnumerator HitstopCoroutine()
+    {
+        isHitstopped = true;
+
+        float originalTimeScale = Time.timeScale;
+        Time.timeScale = hitstopIntensity;
+
+        // ✅ Trigger camera shake using unscaled time
+        CameraShake.Instance?.ShakeCamera(3f, hitstopDuration);
+
+
+        yield return new WaitForSecondsRealtime(hitstopDuration);
+
+        Time.timeScale = originalTimeScale;
+        isHitstopped = false;
+    }
+
 
     /// <summary>
     /// Smoothly change vignette color and intensity
@@ -147,7 +180,9 @@ public class DamageIndicator : MonoBehaviour
             StopAllCoroutines();
             vignette.color.value = normalColor;
             vignette.intensity.value = normalIntensity;
+            Time.timeScale = 1f; // ✅ Reset time scale
             isFlashing = false;
+            isHitstopped = false;
         }
     }
 
@@ -156,11 +191,11 @@ public class DamageIndicator : MonoBehaviour
     /// </summary>
     private void Update()
     {
-        // Press 'H' to test damage flash
+        // Press 'H' to test damage flash with hitstop
         if (Input.GetKeyDown(KeyCode.H))
         {
             TriggerDamageFlash();
-            Debug.Log("[DamageIndicator] Test damage flash triggered!");
+            Debug.Log("[DamageIndicator] Test damage flash + hitstop triggered!");
         }
     }
 }
