@@ -65,6 +65,11 @@ public class PlayerConeShooter : MonoBehaviour
     [SerializeField] private float lightFlashDuration = 0.05f; // How long light stays on
     private Coroutine currentLightFlash = null;
 
+    [Header("Bullet Trail Collision Detection")]
+    [SerializeField] private LayerMask bulletTrailWallLayers; // Walls/obstacles that stop bullets
+    [SerializeField] private LayerMask bulletTrailEnemyLayers; // Enemies that bullets can hit
+
+
     private List<LineRenderer> trailPool = new List<LineRenderer>();
     private List<LineRenderer> activeTrails = new List<LineRenderer>();
 
@@ -605,12 +610,28 @@ public class PlayerConeShooter : MonoBehaviour
 
             if (closestTarget != null)
             {
-                StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPosition, closestTarget, currentWeapon.damagePerShot));
+                // Hit a target - check if there's a wall between player and target
+                Vector3 directionToTarget = (hitPosition - firePoint.position).normalized;
+                float distanceToTarget = Vector3.Distance(firePoint.position, hitPosition);
+
+                RaycastHit2D wallCheck = Physics2D.Raycast(firePoint.position, directionToTarget, distanceToTarget, bulletTrailWallLayers);
+
+                if (wallCheck.collider != null)
+                {
+                    // Wall blocks the shot - trail stops at wall, no damage
+                    StartCoroutine(BulletTrailCoroutine(firePoint.position, wallCheck.point, null, 0, Vector3.zero));
+                }
+                else
+                {
+                    // Clear shot - trail stops at enemy
+                    StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPosition, closestTarget, currentWeapon.damagePerShot, hitPosition));
+                }
             }
             else
             {
-                Vector3 endPosition = (Vector3)firePoint.position + new Vector3(direction.x, direction.y, 0) * currentWeapon.coneRange;
-                StartCoroutine(BulletTrailCoroutine(firePoint.position, endPosition, null, 0));
+                // No enemy hit - check for walls
+                Vector3 maxRangePosition = GetTrailEndPosition(firePoint.position, direction, currentWeapon.coneRange);
+                StartCoroutine(BulletTrailCoroutine(firePoint.position, maxRangePosition, null, 0, Vector3.zero));
             }
         }
         else if (currentWeapon.weaponType == WeaponData.WeaponType.Shotgun)
@@ -630,17 +651,53 @@ public class PlayerConeShooter : MonoBehaviour
                 if (hitEnemy != null)
                 {
                     GameObject targetGO = hitEnemy.GetGameObject();
-                    StartCoroutine(BulletTrailCoroutine(firePoint.position, targetGO.transform.position, hitEnemy, currentWeapon.damagePerShot));
-                    hitTargets.Add(hitEnemy);
+                    Vector3 hitPos = targetGO.transform.position;
+                    float distanceToEnemy = Vector3.Distance(firePoint.position, hitPos);
+
+                    // Check for walls between player and enemy
+                    RaycastHit2D wallCheck = Physics2D.Raycast(firePoint.position, pelletDirection, distanceToEnemy, bulletTrailWallLayers);
+
+                    if (wallCheck.collider != null)
+                    {
+                        // Wall blocks this pellet - trail stops at wall, no damage
+                        StartCoroutine(BulletTrailCoroutine(firePoint.position, wallCheck.point, null, 0, Vector3.zero));
+                    }
+                    else
+                    {
+                        // Clear shot - trail stops at enemy
+                        StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPos, hitEnemy, currentWeapon.damagePerShot, hitPos));
+                        hitTargets.Add(hitEnemy);
+                    }
                 }
                 else
                 {
-                    Vector3 endPosition = (Vector3)firePoint.position + new Vector3(pelletDirection.x, pelletDirection.y, 0) * currentWeapon.coneRange;
-                    StartCoroutine(BulletTrailCoroutine(firePoint.position, endPosition, null, 0));
+                    // No enemy hit - check for walls in this direction
+                    Vector3 maxRangePosition = GetTrailEndPosition(firePoint.position, pelletDirection, currentWeapon.coneRange);
+                    StartCoroutine(BulletTrailCoroutine(firePoint.position, maxRangePosition, null, 0, Vector3.zero));
                 }
             }
         }
     }
+
+    /// <summary>
+    /// Calculates where the bullet trail should end, checking for walls
+    /// Returns either the wall hit position or max range position
+    /// </summary>
+    private Vector3 GetTrailEndPosition(Vector3 startPos, Vector2 direction, float maxRange)
+    {
+        // First check for walls
+        RaycastHit2D wallHit = Physics2D.Raycast(startPos, direction, maxRange, bulletTrailWallLayers);
+
+        if (wallHit.collider != null)
+        {
+            // Hit a wall - trail stops at wall
+            return wallHit.point;
+        }
+
+        // No wall hit - trail travels full range
+        return startPos + new Vector3(direction.x, direction.y, 0) * maxRange;
+    }
+
 
     private IDamageable GetTargetInDirection(Vector2 direction, List<IDamageable> excludeTargets)
     {
@@ -683,22 +740,81 @@ public class PlayerConeShooter : MonoBehaviour
         );
     }
 
-    private IEnumerator BulletTrailCoroutine(Vector3 startPos, Vector3 endPos, IDamageable target, int damage)
+    private IEnumerator BulletTrailCoroutine(Vector3 startPos, Vector3 endPos, IDamageable target, int damage, Vector3 hitPosition)
     {
-        yield return new WaitForSeconds(damageDelay);
+        // Get a trail from the pool
+        LineRenderer trail = GetTrailFromPool();
 
-        if (target != null && !target.IsDead())
+        if (trail == null)
         {
-            target.TakeDamage(damage);
+            Debug.LogWarning("[PlayerConeShooter] No available trails in pool!");
+            yield break;
+        }
 
-            if (currentWeapon.hitEffect != null)
+        // Set up the trail positions
+        trail.SetPosition(0, startPos);
+        trail.SetPosition(1, startPos); // Start both points at origin
+
+        float distance = Vector3.Distance(startPos, endPos);
+        float travelTime = distance / bulletTrailSpeed;
+        float elapsedTime = 0f;
+
+        bool damageApplied = false;
+
+        // Animate the trail from start to end
+        while (elapsedTime < travelTime)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = elapsedTime / travelTime;
+
+            // Keep start point at origin, move end point toward final position
+            trail.SetPosition(0, startPos);
+            trail.SetPosition(1, Vector3.Lerp(startPos, endPos, t));
+
+            // Apply damage when trail reaches the hit position (about 80% of the way there for responsiveness)
+            if (!damageApplied && target != null && t >= 0.8f)
             {
-                Instantiate(currentWeapon.hitEffect, endPos, Quaternion.identity);
+                ApplyDamageToTarget(target, damage, hitPosition);
+                damageApplied = true;
             }
 
-            Debug.Log($"Damaged {target.GetGameObject().name} for {damage} damage with {currentWeapon.weaponName}");
+            yield return null;
         }
+
+        // Ensure trail reaches exact end position
+        trail.SetPosition(1, endPos);
+
+        // Apply damage if it wasn't applied during animation (safety check)
+        if (!damageApplied && target != null && !target.IsDead())
+        {
+            ApplyDamageToTarget(target, damage, hitPosition);
+        }
+
+        // Keep the trail visible for a moment before returning to pool
+        yield return new WaitForSeconds(bulletTrailDuration);
+
+        // Return trail to pool
+        ReturnTrailToPool(trail);
     }
+
+    /// <summary>
+    /// Helper method to apply damage and spawn hit effects
+    /// </summary>
+    private void ApplyDamageToTarget(IDamageable target, int damage, Vector3 hitPosition)
+    {
+        if (target == null || target.IsDead()) return;
+
+        target.TakeDamage(damage);
+
+        if (currentWeapon.hitEffect != null && hitPosition != Vector3.zero)
+        {
+            Instantiate(currentWeapon.hitEffect, hitPosition, Quaternion.identity);
+        }
+
+        Debug.Log($"Damaged {target.GetGameObject().name} for {damage} damage with {currentWeapon.weaponName}");
+    }
+
+   
 
     private IDamageable GetClosestTarget(out Vector3 hitPosition)
     {
@@ -760,6 +876,7 @@ public class PlayerConeShooter : MonoBehaviour
         return angleToTarget <= allowedAngle;
     }
 
+    
     public void PlayShootEffects()
     {
         CameraShake.Instance.ShakeCamera(1.5f, 0.15f);
