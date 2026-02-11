@@ -39,7 +39,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3455191515115314830}
-  - {fileID: 3369277470832594349}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2988419187499292438
@@ -263,6 +262,13 @@ MonoBehaviour:
   bloodSplatterPrefabs:
   - {fileID: 4632746306492434432, guid: 222607b62edaa0a44ba2a147cef90fc9, type: 3}
   bloodLifetime: 2
+  bloodChunkSprite: {fileID: 0}
+  chunkCount: 4
+  chunkLifetime: 0.5
+  chunkSpeed: 5
+  chunkSpreadAngle: 45
+  chunkSortingLayer: Default
+  chunkSortingOrder: 0
 --- !u!82 &6872814849207381837
 AudioSource:
   m_ObjectHideFlags: 0
@@ -496,81 +502,3 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!1001 &8917013868964461277
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 5567092838738821391}
-    m_Modifications:
-    - target: {fileID: 1414684362247989671, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_Name
-      value: BloodSplatterEffect
-      objectReference: {fileID: 0}
-    - target: {fileID: 1414684362247989671, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_Layer
-      value: 6
-      objectReference: {fileID: 0}
-    - target: {fileID: 2535280734505842108, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_SortingLayer
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2535280734505842108, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_SortingLayerID
-      value: -783603659
-      objectReference: {fileID: 0}
-    - target: {fileID: 5654014773513644217, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: InitialModule.gravitySource
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: -90
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
---- !u!4 &3369277470832594349 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6160234744961283952, guid: 45e8604ccadaee34f987ecee8d2ea622, type: 3}
-  m_PrefabInstance: {fileID: 8917013868964461277}
-  m_PrefabAsset: {fileID: 0}

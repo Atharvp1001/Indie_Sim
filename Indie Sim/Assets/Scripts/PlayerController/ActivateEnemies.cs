@@ -187,18 +187,18 @@ public class ActivateEnemies : MonoBehaviour
             if (pathfindingCount >= maxPathfindingEnemies)
                 break;
             
-            // Only give pathfinding to leaders or enemies without a flock
+            // CRITICAL: Only give pathfinding to LEADERS, not solo enemies
             if (enemy.IsPathfinding())
             {
                 // Already pathfinding
                 continue;
             }
             
-            // Check if enemy is within priority radius and is a leader or solo
+            // Check if enemy is within priority radius AND is a flock leader
             float distance = Vector2.Distance(transform.position, enemy.transform.position);
-            if (distance <= pathfindingPriorityRadius)
+            if (distance <= pathfindingPriorityRadius && enemy.IsLeader())
             {
-                // Try to enable pathfinding
+                // Try to enable pathfinding for this leader
                 TryEnablePathfinding(enemy);
                 pathfindingCount = pathfindingEnemies.Count;
             }
