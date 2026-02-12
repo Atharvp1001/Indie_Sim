@@ -12,7 +12,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
     [Header("Visual Feedback")]
     public float flashDuration = 0.1f;
-    public Color damageColor = Color.red;
+    public Color damageColor = Color.white;
 
     [Header("Blood Splatter Effect")]
     public BloodSplatterEffect bloodEffect; // Reference to blood effect manager
@@ -58,7 +58,7 @@ public class Enemy : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
 
         // Get components
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
         enemyMovement = GetComponent<EnemyMovement>();
 
@@ -150,6 +150,8 @@ public class Enemy : MonoBehaviour, IDamageable
             }
         }
 
+       
+
         // Flash red when hit
         if (spriteRenderer != null)
         {
@@ -158,7 +160,11 @@ public class Enemy : MonoBehaviour, IDamageable
                 StopCoroutine(flashCoroutine);
             }
             flashCoroutine = StartCoroutine(FlashDamage());
+
+           
+            StartCoroutine(SquishEffect());
         }
+
 
         // Play damage sound
         if (audioSource != null && damageSound != null)
@@ -345,6 +351,8 @@ public class Enemy : MonoBehaviour, IDamageable
 
     #region Visual Effects
 
+    #region Visual Effects
+
     IEnumerator FlashDamage()
     {
         if (spriteRenderer != null)
@@ -360,6 +368,69 @@ public class Enemy : MonoBehaviour, IDamageable
         }
         flashCoroutine = null;
     }
+
+    // NEW: Add this squish effect coroutine
+    IEnumerator SquishEffect()
+    {
+        Vector3 originalScale = transform.localScale;
+
+        // Squish parameters
+        float squishAmount = 0.4f; // How much to squish (0.3 = 30% compression)
+        float squishDuration = 0.2f; // How long the squish lasts
+        float bounceBackDuration = 0.1f; // How long to return to normal
+
+        // Phase 1: SQUISH (compress on Y, expand on X for conservation of mass)
+        Vector3 squishScale = new Vector3(
+            originalScale.x * (1 + squishAmount * 0.5f), // Widen a bit
+            originalScale.y * (1 - squishAmount),         // Compress vertically
+            originalScale.z
+        );
+
+        float elapsed = 0f;
+
+        // Animate TO squish
+        while (elapsed < squishDuration)
+        {
+            float t = elapsed / squishDuration;
+            transform.localScale = Vector3.Lerp(originalScale, squishScale, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.localScale = squishScale;
+
+        // Phase 2: BOUNCE BACK (with slight overshoot for more impact)
+        elapsed = 0f;
+        Vector3 overshootScale = new Vector3(
+            originalScale.x * 0.95f, // Slightly thinner
+            originalScale.y * 1.05f, // Slightly taller (overshoot)
+            originalScale.z
+        );
+
+        // Animate back with overshoot
+        while (elapsed < bounceBackDuration * 0.6f)
+        {
+            float t = elapsed / (bounceBackDuration * 0.6f);
+            transform.localScale = Vector3.Lerp(squishScale, overshootScale, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Phase 3: Settle back to original
+        elapsed = 0f;
+        while (elapsed < bounceBackDuration * 0.4f)
+        {
+            float t = elapsed / (bounceBackDuration * 0.4f);
+            transform.localScale = Vector3.Lerp(overshootScale, originalScale, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure we end at exactly original scale
+        transform.localScale = originalScale;
+    }
+
+    #endregion
 
     #endregion
 
