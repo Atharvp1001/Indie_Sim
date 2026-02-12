@@ -619,18 +619,22 @@ public class PlayerConeShooter : MonoBehaviour
                 if (wallCheck.collider != null)
                 {
                     // Wall blocks the shot - trail stops at wall, no damage
-                    StartCoroutine(BulletTrailCoroutine(firePoint.position, wallCheck.point, null, 0, Vector3.zero));
+                    // Add random spread since we didn't hit the target
+                    Vector2 randomDirection = AddRandomSpread(direction, 5f);
+                    Vector3 randomEndPos = GetTrailEndPosition(firePoint.position, randomDirection, currentWeapon.coneRange);
+                    StartCoroutine(BulletTrailCoroutine(firePoint.position, randomEndPos, null, 0, Vector3.zero));
                 }
                 else
                 {
-                    // Clear shot - trail stops at enemy
+                    // Clear shot - trail stops at enemy (NO random spread on hits)
                     StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPosition, closestTarget, currentWeapon.damagePerShot, hitPosition));
                 }
             }
             else
             {
-                // No enemy hit - check for walls
-                Vector3 maxRangePosition = GetTrailEndPosition(firePoint.position, direction, currentWeapon.coneRange);
+                // No enemy hit - ADD RANDOM SPREAD
+                Vector2 randomDirection = AddRandomSpread(direction, 5f);
+                Vector3 maxRangePosition = GetTrailEndPosition(firePoint.position, randomDirection, currentWeapon.coneRange);
                 StartCoroutine(BulletTrailCoroutine(firePoint.position, maxRangePosition, null, 0, Vector3.zero));
             }
         }
@@ -659,25 +663,44 @@ public class PlayerConeShooter : MonoBehaviour
 
                     if (wallCheck.collider != null)
                     {
-                        // Wall blocks this pellet - trail stops at wall, no damage
-                        StartCoroutine(BulletTrailCoroutine(firePoint.position, wallCheck.point, null, 0, Vector3.zero));
+                        // Wall blocks this pellet - ADD RANDOM SPREAD
+                        Vector2 randomDirection = AddRandomSpread(pelletDirection, 5f);
+                        Vector3 randomEndPos = GetTrailEndPosition(firePoint.position, randomDirection, currentWeapon.coneRange);
+                        StartCoroutine(BulletTrailCoroutine(firePoint.position, randomEndPos, null, 0, Vector3.zero));
                     }
                     else
                     {
-                        // Clear shot - trail stops at enemy
+                        // Clear shot - trail stops at enemy (NO random spread on hits)
                         StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPos, hitEnemy, currentWeapon.damagePerShot, hitPos));
                         hitTargets.Add(hitEnemy);
                     }
                 }
                 else
                 {
-                    // No enemy hit - check for walls in this direction
-                    Vector3 maxRangePosition = GetTrailEndPosition(firePoint.position, pelletDirection, currentWeapon.coneRange);
+                    // No enemy hit - ADD RANDOM SPREAD
+                    Vector2 randomDirection = AddRandomSpread(pelletDirection, 5f);
+                    Vector3 maxRangePosition = GetTrailEndPosition(firePoint.position, randomDirection, currentWeapon.coneRange);
                     StartCoroutine(BulletTrailCoroutine(firePoint.position, maxRangePosition, null, 0, Vector3.zero));
                 }
             }
         }
     }
+
+    /// <summary>
+    /// Adds random spread to a direction vector
+    /// </summary>
+    /// <param name="direction">Original direction</param>
+    /// <param name="maxSpreadDegrees">Maximum random spread in degrees (±)</param>
+    /// <returns>New direction with random spread applied</returns>
+    private Vector2 AddRandomSpread(Vector2 direction, float maxSpreadDegrees)
+    {
+        // Generate random angle between -maxSpreadDegrees and +maxSpreadDegrees
+        float randomAngle = Random.Range(-maxSpreadDegrees, maxSpreadDegrees);
+
+        // Rotate the direction by the random angle
+        return RotateVector(direction, randomAngle);
+    }
+
 
     /// <summary>
     /// Calculates where the bullet trail should end, checking for walls
