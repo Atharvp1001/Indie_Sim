@@ -103,6 +103,8 @@ public class PlayerConeShooter : MonoBehaviour
         inputActions.Player.Fire.canceled += ctx =>
         {
             isFiring = false;
+            
+
             //Debug.Log("[PlayerConeShooter] ❌ FIRE STOPPED via Input System");
         };
 
@@ -292,6 +294,7 @@ public class PlayerConeShooter : MonoBehaviour
         else
         {
             isFiring = false;
+           
         }
 
         HandleWeaponSwitching();
@@ -905,16 +908,26 @@ public class PlayerConeShooter : MonoBehaviour
         return angleToTarget <= allowedAngle;
     }
 
-    
+
     public void PlayShootEffects()
     {
-        CameraShake.Instance.ShakeCamera(1.5f, 0.15f);
-        CameraZoomOnSpeed.Instance.StartFiring();
+        // Calculate shooting direction
+        Vector2 shootDirection = GetShootingDirection();
 
+        // Apply directional camera recoil through the CursorLead script
+        if (CinemachineCursorLead.Instance != null)
+        {
+            CinemachineCursorLead.Instance.ApplyRecoil(shootDirection);
+            CinemachineCursorLead.Instance.StartFiring();
+        }
+        else
+        {
+            Debug.LogWarning("CinemachineCursorLead.Instance is null! Make sure the script is in the scene.");
+        }
         PlayMuzzleFlashParticles();
         PlayShellEjectionParticles();
         PlaySmokeParticles();
-        FlashMuzzleLight(); 
+        FlashMuzzleLight();
 
         if (currentWeapon.muzzleFlashEffect != null)
         {
@@ -927,6 +940,16 @@ public class PlayerConeShooter : MonoBehaviour
             audioSource.PlayOneShot(currentWeapon.shootSound);
         }
     }
+
+    // Helper method to get shooting direction
+    private Vector2 GetShootingDirection()
+    {
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorldPos.z = 0f;
+        Vector2 direction = (mouseWorldPos - firePoint.position).normalized;
+        return direction;
+    }
+
 
 
     public void PlayMuzzleFlashParticles()
@@ -1027,7 +1050,12 @@ public class PlayerConeShooter : MonoBehaviour
 
     private void OnStopShooting()
     {
-        CameraZoomOnSpeed.Instance.StopFiring();
+        // When player stops firing (e.g., Input.GetMouseButtonUp or similar)
+        if (CinemachineCursorLead.Instance != null)
+        {
+            CinemachineCursorLead.Instance.StopFiring();
+        }
+
         StopAllParticles();
 
        
@@ -1042,13 +1070,7 @@ public class PlayerConeShooter : MonoBehaviour
     public string GetCurrentWeaponName() { return currentWeapon?.weaponName ?? "None"; }
     public bool IsShooting() { return wasShooting; }
 
-    /// <summary>
-    /// Returns the direction from player to mouse (for rotation script compatibility)
-    /// </summary>
-    public Vector2 GetShootingDirection()
-    {
-        return GetMouseAimDirection();
-    }
+ 
 
     public int GetTargetsInCone() { return damageableTargets.Count; }
 }
