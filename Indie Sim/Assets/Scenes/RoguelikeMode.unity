@@ -2108,9 +2108,9 @@ MonoBehaviour:
   crosshairImage: {fileID: 1524447635}
   crosshairRect: {fileID: 1524447633}
   canvas: {fileID: 1751791170}
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
-  hitColor: {r: 0.48113203, g: 1, b: 0.48113203, a: 1}
-  hitFeedbackDuration: 0.15
+  hitmarkerObject: {fileID: 541747111}
+  hitmarkerDuration: 0.15
+  enableScaleFeedback: 1
   hitScaleMultiplier: 1.5
   scaleCurve:
     serializedVersion: 2
