@@ -34,8 +34,6 @@ public class PlayerConeShooter : MonoBehaviour
     [SerializeField] private Sprite[] weaponSprites;
     [SerializeField] private Button weaponButton;
 
-    [SerializeField] private LayerMask obstacleLayers;
-
     [Header("Particle Effects")]
     [SerializeField] private ParticleSystem muzzleFlashParticles;
     [SerializeField] private ParticleSystem shellEjectionParticles;
@@ -45,12 +43,12 @@ public class PlayerConeShooter : MonoBehaviour
     public Transform muzzlePoint;
     public Transform shellEjectionPoint;
 
-    [Header("Bullet Trail Settings")]
-    [SerializeField] private GameObject bulletTrailPrefab;
-    [SerializeField] private float bulletTrailSpeed = 50f;
-    [SerializeField] private float bulletTrailDuration = 0.2f;
-    [SerializeField] private float damageDelay = 0.05f;
-    [SerializeField] private int trailPoolSize = 20;
+   
+
+    [Header("Bullet Visuals")]
+    [SerializeField] private GameObject bulletProjectilePrefab; // Assign your prefab here
+    [SerializeField] private float bulletSpeed = 50f; // How fast the bullet travels
+    [SerializeField] private LayerMask obstacleLayers;
 
     [Header("Cone Edge Visualizer")]
     private LineRenderer leftEdgeLine;
@@ -70,8 +68,6 @@ public class PlayerConeShooter : MonoBehaviour
     [SerializeField] private LayerMask bulletTrailEnemyLayers; // Enemies that bullets can hit
 
 
-    private List<LineRenderer> trailPool = new List<LineRenderer>();
-    private List<LineRenderer> activeTrails = new List<LineRenderer>();
 
     private bool particlesPlaying = false;
     private WeaponData currentWeapon;
@@ -129,7 +125,7 @@ public class PlayerConeShooter : MonoBehaviour
     private void Start()
     {
         InitializeWeaponLockSystem();
-        InitializeBulletTrailPool();
+        
         InitializeConeEdgeLines();
 
         if (availableWeapons.Length > 0)
@@ -164,33 +160,7 @@ public class PlayerConeShooter : MonoBehaviour
         }
     }
 
-    private void InitializeBulletTrailPool()
-    {
-        if (bulletTrailPrefab == null)
-        {
-            //Debug.LogWarning("[PlayerConeShooter] No bullet trail prefab assigned! Bullet trails will not appear.");
-            return;
-        }
-
-        for (int i = 0; i < trailPoolSize; i++)
-        {
-            GameObject trailObj = Instantiate(bulletTrailPrefab, transform);
-            LineRenderer trail = trailObj.GetComponent<LineRenderer>();
-
-            if (trail == null)
-            {
-                // Debug.LogError("[PlayerConeShooter] Bullet trail prefab doesn't have a LineRenderer component!");
-                Destroy(trailObj);
-                continue;
-            }
-
-            trail.positionCount = 2;
-            trailObj.SetActive(false);
-            trailPool.Add(trail);
-        }
-
-        //Debug.Log($"[PlayerConeShooter] Bullet trail pool initialized with {trailPool.Count} trails");
-    }
+   
 
     private void InitializeConeEdgeLines()
     {
@@ -229,37 +199,9 @@ public class PlayerConeShooter : MonoBehaviour
         //Debug.Log("[PlayerConeShooter] Cone edge lines created programmatically");
     }
 
-    private LineRenderer GetTrailFromPool()
-    {
-        foreach (LineRenderer trail in trailPool)
-        {
-            if (!trail.gameObject.activeInHierarchy)
-            {
-                trail.gameObject.SetActive(true);
-                activeTrails.Add(trail);
-                return trail;
-            }
-        }
+    
 
-        if (activeTrails.Count > 0)
-        {
-            LineRenderer oldestTrail = activeTrails[0];
-            activeTrails.RemoveAt(0);
-            activeTrails.Add(oldestTrail);
-            return oldestTrail;
-        }
-
-        return null;
-    }
-
-    private void ReturnTrailToPool(LineRenderer trail)
-    {
-        if (trail != null)
-        {
-            trail.gameObject.SetActive(false);
-            activeTrails.Remove(trail);
-        }
-    }
+   
 
     private void InitializeWeaponLockSystem()
     {
@@ -766,62 +708,61 @@ public class PlayerConeShooter : MonoBehaviour
         );
     }
 
-    private IEnumerator BulletTrailCoroutine(Vector3 startPos, Vector3 endPos, IDamageable target, int damage, Vector3 hitPosition)
+    IEnumerator BulletTrailCoroutine(Vector3 startPos, Vector3 endPos, IDamageable target, int damage, Vector3 hitPosition)
     {
-        // Get a trail from the pool
-        LineRenderer trail = GetTrailFromPool();
-
-        if (trail == null)
+        // ✅ 1. APPLY DAMAGE INSTANTLY (when you shoot)
+        if (target != null && damage > 0)
         {
-            Debug.LogWarning("[PlayerConeShooter] No available trails in pool!");
+            target.TakeDamage(damage);
+
+            // Show hit effects immediately
+            if (hitPosition != Vector3.zero && currentWeapon.hitEffect != null)
+            {
+                Instantiate(currentWeapon.hitEffect, hitPosition, Quaternion.identity);
+            }
+
+            // Crosshair feedback
+            CustomCrosshair crosshair = FindObjectOfType<CustomCrosshair>();
+            if (crosshair != null)
+            {
+                crosshair.ShowHitFeedback();
+            }
+        }
+
+        // ✅ 2. SPAWN VISUAL PROJECTILE (just for show)
+        if (bulletProjectilePrefab == null)
+        {
+            Debug.LogError("❌ bulletProjectilePrefab is NULL!");
             yield break;
         }
 
-        // Set up the trail positions
-        trail.SetPosition(0, startPos);
-        trail.SetPosition(1, startPos); // Start both points at origin
+        GameObject bullet = Instantiate(bulletProjectilePrefab, startPos, Quaternion.identity);
 
+        // Calculate travel time
         float distance = Vector3.Distance(startPos, endPos);
-        float travelTime = distance / bulletTrailSpeed;
-        float elapsedTime = 0f;
+        float travelTime = distance / bulletSpeed;
+        float elapsed = 0f;
 
-        bool damageApplied = false;
-
-        // Animate the trail from start to end
-        while (elapsedTime < travelTime)
+        // ✅ 3. ANIMATE PROJECTILE TO TARGET (visual only)
+        while (elapsed < travelTime)
         {
-            elapsedTime += Time.deltaTime;
-            float t = elapsedTime / travelTime;
+            if (bullet == null) yield break;
 
-            // Keep start point at origin, move end point toward final position
-            trail.SetPosition(0, startPos);
-            trail.SetPosition(1, Vector3.Lerp(startPos, endPos, t));
-
-            // Apply damage when trail reaches the hit position (about 80% of the way there for responsiveness)
-            if (!damageApplied && target != null && t >= 0.8f)
-            {
-                ApplyDamageToTarget(target, damage, hitPosition);
-                damageApplied = true;
-            }
-
+            elapsed += Time.deltaTime;
+            float t = elapsed / travelTime;
+            bullet.transform.position = Vector3.Lerp(startPos, endPos, t);
             yield return null;
         }
 
-        // Ensure trail reaches exact end position
-        trail.SetPosition(1, endPos);
-
-        // Apply damage if it wasn't applied during animation (safety check)
-        if (!damageApplied && target != null && !target.IsDead())
+        // Ensure bullet reaches end
+        if (bullet != null)
         {
-            ApplyDamageToTarget(target, damage, hitPosition);
+            bullet.transform.position = endPos;
+            Destroy(bullet, 0.2f); // Let trail fade
         }
-
-        // Keep the trail visible for a moment before returning to pool
-        yield return new WaitForSeconds(bulletTrailDuration);
-
-        // Return trail to pool
-        ReturnTrailToPool(trail);
     }
+
+
 
     /// <summary>
     /// Helper method to apply damage and spawn hit effects
