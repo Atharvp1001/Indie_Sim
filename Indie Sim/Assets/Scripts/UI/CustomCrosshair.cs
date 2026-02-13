@@ -9,14 +9,12 @@ public class CustomCrosshair : MonoBehaviour
     [SerializeField] private RectTransform crosshairRect;
     [SerializeField] private Canvas canvas;
 
-    [Header("Color Settings")]
-    [SerializeField] private Color normalColor = Color.white;
-    [SerializeField] private Color hitColor = Color.green;
-
-    [Header("Hit Feedback Settings")]
-    [SerializeField] private float hitFeedbackDuration = 0.15f;
+    [Header("Hitmarker")]
+    [SerializeField] private GameObject hitmarkerObject; // The child hitmarker GameObject
+    [SerializeField] private float hitmarkerDuration = 0.15f;
 
     [Header("Scale Feedback")]
+    [SerializeField] private bool enableScaleFeedback = true;
     [SerializeField] private float hitScaleMultiplier = 1.3f;
     [SerializeField] private AnimationCurve scaleCurve = AnimationCurve.EaseInOut(0, 1, 1, 1);
 
@@ -27,10 +25,14 @@ public class CustomCrosshair : MonoBehaviour
         // Hide the system cursor
         Cursor.visible = false;
 
-        // Set initial color
-        if (crosshairImage != null)
+        // Make sure hitmarker starts disabled
+        if (hitmarkerObject != null)
         {
-            crosshairImage.color = normalColor;
+            hitmarkerObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("CustomCrosshair: Hitmarker GameObject not assigned! Drag the hitmarker child object into the Inspector.");
         }
     }
 
@@ -66,32 +68,47 @@ public class CustomCrosshair : MonoBehaviour
     {
         isShowingHitFeedback = true;
 
+        // Enable the hitmarker
+        if (hitmarkerObject != null)
+        {
+            hitmarkerObject.SetActive(true);
+        }
+
+        // Optional scale feedback
         Vector3 originalScale = crosshairRect.localScale;
         Vector3 targetScale = originalScale * hitScaleMultiplier;
 
         float elapsedTime = 0f;
 
-        while (elapsedTime < hitFeedbackDuration)
+        while (elapsedTime < hitmarkerDuration)
         {
             elapsedTime += Time.deltaTime;
-            float t = elapsedTime / hitFeedbackDuration;
+            float t = elapsedTime / hitmarkerDuration;
 
-         
-             crosshairImage.color = hitColor;
-            // Animate scale using curve
-            float scaleValue = scaleCurve.Evaluate(t);
-            crosshairRect.localScale = Vector3.Lerp(targetScale, originalScale, t);
+            // Animate scale using curve (if enabled)
+            if (enableScaleFeedback)
+            {
+                float scaleValue = scaleCurve.Evaluate(t);
+                crosshairRect.localScale = Vector3.Lerp(targetScale, originalScale, t);
+            }
 
             yield return null;
         }
 
-        // Reset to original values
-        crosshairImage.color = normalColor;
-        crosshairRect.localScale = originalScale;
+        // Hide the hitmarker
+        if (hitmarkerObject != null)
+        {
+            hitmarkerObject.SetActive(false);
+        }
+
+        // Reset scale to original
+        if (enableScaleFeedback)
+        {
+            crosshairRect.localScale = originalScale;
+        }
 
         isShowingHitFeedback = false;
     }
-
 
     void OnDestroy()
     {

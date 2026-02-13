@@ -12,7 +12,7 @@ public class Enemy : MonoBehaviour, IDamageable
 
     [Header("Visual Feedback")]
     public float flashDuration = 0.1f;
-    public Color damageColor = Color.red;
+    public Color damageColor = Color.white;
 
     [Header("Blood Splatter Effect")]
     public BloodSplatterEffect bloodEffect; // Reference to blood effect manager
@@ -34,6 +34,11 @@ public class Enemy : MonoBehaviour, IDamageable
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip damageSound;
     [SerializeField] private AudioClip deathSound;
+
+    [Header("Damage Flash Settings")]
+    [SerializeField] private Sprite damageSprite; // The sprite to show when damaged
+    private Sprite originalSprite; // Stores the normal sprite
+
 
     // Private variables
     private int currentHealth;
@@ -58,7 +63,7 @@ public class Enemy : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
 
         // Get components
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
         enemyMovement = GetComponent<EnemyMovement>();
 
@@ -150,6 +155,8 @@ public class Enemy : MonoBehaviour, IDamageable
             }
         }
 
+       
+
         // Flash red when hit
         if (spriteRenderer != null)
         {
@@ -158,7 +165,15 @@ public class Enemy : MonoBehaviour, IDamageable
                 StopCoroutine(flashCoroutine);
             }
             flashCoroutine = StartCoroutine(FlashDamage());
+
+
+            if (squishCoroutine != null)
+            {
+                StopCoroutine(squishCoroutine);
+            }
+            squishCoroutine = StartCoroutine(SquishEffect());
         }
+
 
         // Play damage sound
         if (audioSource != null && damageSound != null)
@@ -345,21 +360,113 @@ public class Enemy : MonoBehaviour, IDamageable
 
     #region Visual Effects
 
+    #region Visual Effects
+
     IEnumerator FlashDamage()
     {
         if (spriteRenderer != null)
         {
-            spriteRenderer.color = damageColor;
+            // Get the Animator component from the same GameObject as the sprite renderer
+            Animator animator = spriteRenderer.GetComponent<Animator>();
+
+            // Disable the animator to stop animation
+            if (animator != null)
+            {
+                animator.enabled = false;
+            }
+
+            // Store the original sprite
+            Sprite tempOriginalSprite = spriteRenderer.sprite;
+
+            // Change to damage sprite
+            spriteRenderer.sprite = damageSprite;
             yield return new WaitForSeconds(flashDuration);
 
-            // Only restore color if enemy is still alive
+            // Only restore sprite and re-enable animator if enemy is still alive
             if (!isDead)
             {
-                spriteRenderer.color = originalColor;
+                spriteRenderer.sprite = tempOriginalSprite;
+
+                // Re-enable the animator
+                if (animator != null)
+                {
+                    animator.enabled = true;
+                }
             }
         }
         flashCoroutine = null;
     }
+
+
+
+    // NEW: Add this squish effect coroutine
+    // Add this variable at the top of your class (with other variables)
+    private Coroutine squishCoroutine = null;
+
+    IEnumerator SquishEffect()
+    {
+        // Store the TRUE original scale at the START of this coroutine
+        Vector3 originalScale = transform.localScale;
+
+        // Squish parameters
+        float squishAmount = 0.4f;
+        float squishDuration = 0.2f;
+        float bounceBackDuration = 0.1f;
+
+        // Phase 1: SQUISH
+        Vector3 squishScale = new Vector3(
+            originalScale.x * (1 + squishAmount * 0.5f),
+            originalScale.y * (1 - squishAmount),
+            originalScale.z
+        );
+
+        float elapsed = 0f;
+
+        while (elapsed < squishDuration)
+        {
+            float t = elapsed / squishDuration;
+            transform.localScale = Vector3.Lerp(originalScale, squishScale, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.localScale = squishScale;
+
+        // Phase 2: BOUNCE BACK with overshoot
+        elapsed = 0f;
+        Vector3 overshootScale = new Vector3(
+            originalScale.x * 0.95f,
+            originalScale.y * 1.05f,
+            originalScale.z
+        );
+
+        while (elapsed < bounceBackDuration * 0.6f)
+        {
+            float t = elapsed / (bounceBackDuration * 0.6f);
+            transform.localScale = Vector3.Lerp(squishScale, overshootScale, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Phase 3: Settle back to original
+        elapsed = 0f;
+        while (elapsed < bounceBackDuration * 0.4f)
+        {
+            float t = elapsed / (bounceBackDuration * 0.4f);
+            transform.localScale = Vector3.Lerp(overshootScale, originalScale, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure we end at exactly original scale
+        transform.localScale = originalScale;
+
+        // Clear the coroutine reference
+        squishCoroutine = null;
+    }
+
+
+    #endregion
 
     #endregion
 

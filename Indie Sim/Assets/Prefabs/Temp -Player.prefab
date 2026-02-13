@@ -5539,7 +5539,6 @@ GameObject:
   - component: {fileID: 8749358991344554026}
   - component: {fileID: 6531144439329103242}
   - component: {fileID: 4326419580110792452}
-  - component: {fileID: 882940776345714267}
   - component: {fileID: 5970754329784749663}
   - component: {fileID: 2047155134849269702}
   - component: {fileID: 1658143020424988954}
@@ -5710,7 +5709,7 @@ MonoBehaviour:
   smokeParticles: {fileID: 4820169304688611113}
   muzzlePoint: {fileID: 8321412686837148396}
   shellEjectionPoint: {fileID: 105890739993654744}
-  bulletTrailPrefab: {fileID: 0}
+  bulletTrailPrefab: {fileID: 2475267044848316794, guid: 022ec939485f8a54c826ae042c1026f0, type: 3}
   bulletTrailSpeed: 30
   bulletTrailDuration: 0.05
   damageDelay: 0.05
@@ -5720,6 +5719,12 @@ MonoBehaviour:
   coneFlashDuration: 0.05
   muzzleFlashLight: {fileID: 7918973488368375494}
   lightFlashDuration: 0.05
+  bulletTrailWallLayers:
+    serializedVersion: 2
+    m_Bits: 256
+  bulletTrailEnemyLayers:
+    serializedVersion: 2
+    m_Bits: 128
 --- !u!120 &2168372277178147741
 LineRenderer:
   serializedVersion: 2
@@ -6016,29 +6021,6 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.3
---- !u!114 &882940776345714267
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8485655876686838044}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a259d02ae22ae1a4b8a3a48c7c20d460, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  firePoint: {fileID: 5624597609566509571}
-  enemyLayers:
-    serializedVersion: 2
-    m_Bits: 128
-  playerConeShooter: {fileID: 6900749776920343997}
-  autoAimRange: 6
-  fireRateMultiplier: 1
-  audioSource: {fileID: 441459428130447590}
-  obstacleLayers:
-    serializedVersion: 2
-    m_Bits: 256
 --- !u!114 &5970754329784749663
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6198,6 +6180,12 @@ MonoBehaviour:
   flashDuration: 0.1
   flashInterval: 0.05
   normalIntensity: 0.3
+  enableHitstop: 1
+  hitstopDuration: 0.2
+  hitstopIntensity: 0
+  playerSpriteObject: {fileID: 991513323957096442}
+  flickerCount: 5
+  flickerInterval: 0.06
 --- !u!114 &5360059026301571325
 MonoBehaviour:
   m_ObjectHideFlags: 0
