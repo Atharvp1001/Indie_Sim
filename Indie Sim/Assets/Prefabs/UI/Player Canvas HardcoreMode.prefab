@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1869993027208166225, guid: c7c7561f00316e848b74de9261037559, type: 3}
       propertyPath: m_Name
-      value: Player Canvas
+      value: Player Canvas HardcoreMode
       objectReference: {fileID: 0}
     - target: {fileID: 4669041933925150134, guid: c7c7561f00316e848b74de9261037559, type: 3}
       propertyPath: m_Pivot.x
@@ -90,6 +90,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4669041933925150134, guid: c7c7561f00316e848b74de9261037559, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7545553901810682929, guid: c7c7561f00316e848b74de9261037559, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8615539215581630279, guid: c7c7561f00316e848b74de9261037559, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
