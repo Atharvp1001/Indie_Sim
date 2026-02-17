@@ -43,7 +43,8 @@ public class PlayerConeShooter : MonoBehaviour
     public Transform muzzlePoint;
     public Transform shellEjectionPoint;
 
-   
+    [Header("Ammo Manager")]
+    [SerializeField] private WeaponAmmoManager ammoManager; // Reference to ammo manage
 
     [Header("Bullet Visuals")]
     [SerializeField] private GameObject bulletProjectilePrefab; // Assign your prefab here
@@ -248,7 +249,10 @@ public class PlayerConeShooter : MonoBehaviour
 
         // Calculate shooting direction from player to mouse
         Vector2 shootDirection = GetMouseAimDirection();
-        bool shouldShoot = isFiring && shootDirection.magnitude > 0.01f;
+
+        // ✅ CHECK AMMO before allowing shooting
+        bool hasAmmo = ammoManager != null ? ammoManager.CanShoot() : true;
+        bool shouldShoot = isFiring && shootDirection.magnitude > 0.01f && hasAmmo;
 
         if (shouldShoot)
         {
@@ -259,6 +263,12 @@ public class PlayerConeShooter : MonoBehaviour
                 FireCone(shootDirection);
                 ShowConeFlash(shootDirection);
                 nextFireTime = Time.time + (1f / currentWeapon.fireRate);
+
+                // ✅ CONSUME AMMO after shooting
+                if (ammoManager != null)
+                {
+                    ammoManager.ConsumeBullet();
+                }
             }
             wasShooting = true;
         }
@@ -396,6 +406,12 @@ public class PlayerConeShooter : MonoBehaviour
             Debug.Log($"[PlayerConeShooter] Switched to: {currentWeapon.weaponName}");
 
             OnWeaponSwitched();
+
+            // ✅ ADD THIS LINE - Notify ammo manager of weapon switch
+            if (ammoManager != null)
+            {
+                ammoManager.OnWeaponSwitched(currentWeapon);
+            }
         }
         else
         {

@@ -35,9 +35,11 @@ public class WeaponData : ScriptableObject
     public GameObject muzzleFlashEffect;
     public GameObject hitEffect;
 
-    [Header("Ammo (Optional for future)")]
-    public int maxAmmo = -1;
-    public float reloadTime = 2f;
+    [Header("Ammo Settings")]
+    public int magazineCapacity = 30; // How many bullets per magazine
+    public float reloadTime = 2f; // How long reload takes in seconds
+    public bool hasInfiniteReserve = true; // Infinite reserve ammo for now
+
 
     public enum WeaponType
     {

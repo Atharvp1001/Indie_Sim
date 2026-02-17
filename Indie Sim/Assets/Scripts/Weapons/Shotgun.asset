@@ -28,5 +28,6 @@ MonoBehaviour:
   reloadSound: {fileID: 0}
   muzzleFlashEffect: {fileID: 0}
   hitEffect: {fileID: 0}
-  maxAmmo: -1
+  magazineCapacity: 7
   reloadTime: 2
+  hasInfiniteReserve: 1
