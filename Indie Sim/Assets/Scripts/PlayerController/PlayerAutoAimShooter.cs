@@ -103,7 +103,7 @@ public class PlayerAutoAimShooter : MonoBehaviour
             // Call all the particle effects from PlayerConeShooter
             if (playerConeShooter != null)
             {
-                playerConeShooter.PlayShootEffects(); // This plays ALL effects including particles, camera shake, sounds
+                //playerConeShooter.PlayShootEffects(); // This plays ALL effects including particles, camera shake, sounds
             }
 
             // Spawn hit effect at target location

@@ -3,29 +3,34 @@
 public class UpgradeManager : MonoBehaviour
 {
     [Header("Player References")]
-    [SerializeField] private PlayerController playerMovement; // For speed upgrades
-    [SerializeField] private PlayerHealth playerHealth;     // For health upgrades
-    [SerializeField] private PlayerConeShooter playerShooter; // For gun damage upgrades
+    [SerializeField] private PlayerController playerMovement;
+    [SerializeField] private PlayerHealth playerHealth;
+    [SerializeField] private PlayerConeShooter playerShooter;
+    [SerializeField] private WeaponInventory weaponInventory;
 
     [Header("Speed Upgrade")]
     [SerializeField] private float basePlayerSpeed = 5f;
-    [SerializeField] private float speedUpgradeBonus = 1f; // How much speed to add per upgrade
+    [SerializeField] private float speedUpgradeBonus = 1f;
     private int speedUpgradeLevel = 0;
-
 
     [Header("Gun Damage Upgrade")]
     [SerializeField] private int basePistolDamage = 10;
     [SerializeField] private int baseShotgunDamage = 25;
     [SerializeField] private int baseMachineGunDamage = 8;
-    [SerializeField] private int damageUpgradeBonus = 2; // How much damage to add per upgrade
+    [SerializeField] private int damageUpgradeBonus = 2;
     private int pistolDamageLevel = 0;
     private int shotgunDamageLevel = 0;
     private int machineGunDamageLevel = 0;
 
     private void Start()
     {
+        if (weaponInventory == null)
+            weaponInventory = FindObjectOfType<WeaponInventory>();
+
         ValidateReferences();
-        Debug.Log("[UpgradeManager] Initialized successfully");
+        ResetAllWeaponDamages();
+
+        Debug.Log("[UpgradeManager] 🔄 RESET - All upgrades cleared for new run");
         PrintUpgradeStats();
     }
 
@@ -37,14 +42,39 @@ public class UpgradeManager : MonoBehaviour
             Debug.LogError("[UpgradeManager] PlayerHealth reference not assigned!");
         if (playerShooter == null)
             Debug.LogError("[UpgradeManager] PlayerConeShooter reference not assigned!");
+        if (weaponInventory == null)
+            Debug.LogError("[UpgradeManager] WeaponInventory reference not assigned!");
+    }
+
+    private void ResetAllWeaponDamages()
+    {
+        if (weaponInventory == null) return;
+
+        WeaponData[] weapons = weaponInventory.GetAllWeapons();
+
+        if (weapons.Length > 0)
+        {
+            weapons[0].SetDamage(basePistolDamage);
+            Debug.Log($"[UpgradeManager] Reset Pistol damage to {basePistolDamage}");
+        }
+
+        int shotgunIndex = FindWeaponIndexByType(WeaponData.WeaponType.Shotgun);
+        if (shotgunIndex != -1)
+        {
+            weapons[shotgunIndex].SetDamage(baseShotgunDamage);
+            Debug.Log($"[UpgradeManager] Reset Shotgun damage to {baseShotgunDamage}");
+        }
+
+        int mgIndex = FindWeaponIndexByName("Machine", "AK");
+        if (mgIndex != -1)
+        {
+            weapons[mgIndex].SetDamage(baseMachineGunDamage);
+            Debug.Log($"[UpgradeManager] Reset Machine Gun damage to {baseMachineGunDamage}");
+        }
     }
 
     // ===== SPEED UPGRADES =====
 
-    /// <summary>
-    /// Upgrade player movement speed
-    /// Formula: basePlayerSpeed + (speedUpgradeLevel * speedUpgradeBonus)
-    /// </summary>
     public void UpgradePlayerSpeed()
     {
         if (playerMovement == null)
@@ -58,120 +88,90 @@ public class UpgradeManager : MonoBehaviour
         playerMovement.SetSpeed(newSpeed);
 
         Debug.Log($"[UpgradeManager] ✅ SPEED UPGRADED! Level {speedUpgradeLevel}");
-        Debug.Log($"[UpgradeManager] New Speed: {newSpeed} (Base: {basePlayerSpeed} + Upgrades: {speedUpgradeLevel * speedUpgradeBonus})");
+        Debug.Log($"[UpgradeManager] New Speed: {newSpeed}");
     }
 
     public int GetSpeedUpgradeLevel() => speedUpgradeLevel;
     public float GetCurrentPlayerSpeed() => basePlayerSpeed + (speedUpgradeLevel * speedUpgradeBonus);
 
-    // ===== HEALTH UPGRADES =====
-
-    
-
-
-  
-    
-
     // ===== GUN DAMAGE UPGRADES =====
 
-    /// <summary>
-    /// Upgrade Pistol damage
-    /// Formula: basePistolDamage + (pistolDamageLevel * damageUpgradeBonus)
-    /// </summary>
     public void UpgradePistolDamage()
     {
-        if (playerShooter == null)
+        if (weaponInventory == null)
         {
-            Debug.LogError("[UpgradeManager] Cannot upgrade pistol - PlayerConeShooter not assigned!");
+            Debug.LogError("[UpgradeManager] Cannot upgrade pistol - WeaponInventory not assigned!");
             return;
         }
 
         pistolDamageLevel++;
         int newDamage = basePistolDamage + (pistolDamageLevel * damageUpgradeBonus);
-
-        // Update weapon damage in WeaponData (pistol is always index 0)
         UpdateWeaponDamage(0, newDamage);
 
         Debug.Log($"[UpgradeManager] ✅ PISTOL DAMAGE UPGRADED! Level {pistolDamageLevel}");
-        Debug.Log($"[UpgradeManager] New Pistol Damage: {newDamage} (Base: {basePistolDamage} + Upgrades: {pistolDamageLevel * damageUpgradeBonus})");
+        Debug.Log($"[UpgradeManager] New Pistol Damage: {newDamage}");
     }
 
-    /// <summary>
-    /// Upgrade Shotgun damage
-    /// Only works if Shotgun is UNLOCKED
-    /// Formula: baseShotgunDamage + (shotgunDamageLevel * damageUpgradeBonus)
-    /// </summary>
     public void UpgradeShotgunDamage()
     {
-        if (playerShooter == null)
+        if (weaponInventory == null)
         {
-            Debug.LogError("[UpgradeManager] Cannot upgrade shotgun - PlayerConeShooter not assigned!");
+            Debug.LogError("[UpgradeManager] Cannot upgrade shotgun - WeaponInventory not assigned!");
             return;
         }
 
-        // Find shotgun weapon index
         int shotgunIndex = FindWeaponIndexByType(WeaponData.WeaponType.Shotgun);
 
-        // Check if shotgun exists
         if (shotgunIndex == -1)
         {
             Debug.LogError("[UpgradeManager] Shotgun not found in weapons array!");
             return;
         }
 
-        // Check if shotgun is unlocked
-        if (!playerShooter.IsWeaponUnlocked(shotgunIndex))
+        WeaponData shotgun = weaponInventory.GetAllWeapons()[shotgunIndex];
+        if (!WeaponUnlockManager.Instance.IsWeaponUnlocked(shotgun))
         {
-            Debug.LogWarning("[UpgradeManager] ❌ Cannot upgrade Shotgun - Shotgun is LOCKED! Unlock it first.");
+            Debug.LogWarning("[UpgradeManager] ❌ Cannot upgrade Shotgun - Shotgun is LOCKED!");
             return;
         }
 
         shotgunDamageLevel++;
         int newDamage = baseShotgunDamage + (shotgunDamageLevel * damageUpgradeBonus);
-
         UpdateWeaponDamage(shotgunIndex, newDamage);
 
         Debug.Log($"[UpgradeManager] ✅ SHOTGUN DAMAGE UPGRADED! Level {shotgunDamageLevel}");
-        Debug.Log($"[UpgradeManager] New Shotgun Damage: {newDamage} (Base: {baseShotgunDamage} + Upgrades: {shotgunDamageLevel * damageUpgradeBonus})");
+        Debug.Log($"[UpgradeManager] New Shotgun Damage: {newDamage}");
     }
 
-    /// <summary>
-    /// Upgrade Machine Gun damage
-    /// Only works if Machine Gun is UNLOCKED
-    /// Formula: baseMachineGunDamage + (machineGunDamageLevel * damageUpgradeBonus)
-    /// </summary>
     public void UpgradeMachineGunDamage()
     {
-        if (playerShooter == null)
+        if (weaponInventory == null)
         {
-            Debug.LogError("[UpgradeManager] Cannot upgrade machine gun - PlayerConeShooter not assigned!");
+            Debug.LogError("[UpgradeManager] Cannot upgrade machine gun - WeaponInventory not assigned!");
             return;
         }
 
-        // Find machine gun weapon index (check by name)
         int machineGunIndex = FindWeaponIndexByName("Machine", "AK");
 
-        // Check if machine gun exists
         if (machineGunIndex == -1)
         {
             Debug.LogError("[UpgradeManager] Machine Gun not found in weapons array!");
             return;
         }
 
-        // Check if machine gun is unlocked
-        if (!playerShooter.IsWeaponUnlocked(machineGunIndex))
+        WeaponData machineGun = weaponInventory.GetAllWeapons()[machineGunIndex];
+        if (!WeaponUnlockManager.Instance.IsWeaponUnlocked(machineGun))
         {
-            Debug.LogWarning("[UpgradeManager] ❌ Cannot upgrade Machine Gun - Machine Gun is LOCKED! Unlock it first.");
+            Debug.LogWarning("[UpgradeManager] ❌ Cannot upgrade Machine Gun - Machine Gun is LOCKED!");
             return;
         }
 
         machineGunDamageLevel++;
         int newDamage = baseMachineGunDamage + (machineGunDamageLevel * damageUpgradeBonus);
-
         UpdateWeaponDamage(machineGunIndex, newDamage);
 
         Debug.Log($"[UpgradeManager] ✅ MACHINE GUN DAMAGE UPGRADED! Level {machineGunDamageLevel}");
-        Debug.Log($"[UpgradeManager] New Machine Gun Damage: {newDamage} (Base: {baseMachineGunDamage} + Upgrades: {machineGunDamageLevel * damageUpgradeBonus})");
+        Debug.Log($"[UpgradeManager] New Machine Gun Damage: {newDamage}");
     }
 
     public int GetPistolDamageLevel() => pistolDamageLevel;
@@ -185,47 +185,115 @@ public class UpgradeManager : MonoBehaviour
     // ===== WEAPON UNLOCK SYSTEM =====
 
     /// <summary>
-    /// Unlock Shotgun weapon
-    /// Delegates to PlayerConeShooter
+    /// ✅ IMPROVED: Finds shotgun and unlocks it.
+    /// This is the ONLY place unlock logic exists.
     /// </summary>
     public void UnlockShotgun()
     {
-        if (playerShooter == null)
+        if (WeaponUnlockManager.Instance == null)
         {
-            Debug.LogError("[UpgradeManager] Cannot unlock shotgun - PlayerConeShooter not assigned!");
+            Debug.LogError("[UpgradeManager] WeaponUnlockManager not found!");
             return;
         }
 
-        playerShooter.UnlockShotgun();
-        Debug.Log("[UpgradeManager] 🔓 Shotgun unlock request sent to PlayerConeShooter");
-        FindObjectOfType<StoreManager>()?.UnlockShotgunUpgrade();
+        if (weaponInventory == null)
+        {
+            Debug.LogError("[UpgradeManager] WeaponInventory not found!");
+            return;
+        }
+
+        // Find the shotgun weapon
+        int shotgunIndex = FindWeaponIndexByType(WeaponData.WeaponType.Shotgun);
+
+        if (shotgunIndex == -1)
+        {
+            Debug.LogError("[UpgradeManager] Shotgun not found in weapons array!");
+            return;
+        }
+
+        WeaponData shotgun = weaponInventory.GetAllWeapons()[shotgunIndex];
+
+        // Check if already unlocked
+        if (WeaponUnlockManager.Instance.IsWeaponUnlocked(shotgun))
+        {
+            Debug.LogWarning("[UpgradeManager] Shotgun is already unlocked!");
+            return;
+        }
+
+        // ✅ Unlock it in the manager
+        WeaponUnlockManager.Instance.UnlockWeapon(shotgun);
+
+        Debug.Log("[UpgradeManager] 🔓 Shotgun unlocked FOR THIS RUN ONLY");
+
+        // ✅ Notify store manager to add shotgun upgrade button to pool
+        StoreManager storeManager = FindObjectOfType<StoreManager>();
+        if (storeManager != null)
+        {
+            storeManager.UnlockShotgunUpgrade();
+        }
+
+        // ✅ Print current unlock status
+        WeaponUnlockManager.Instance.PrintUnlockStatus();
     }
 
     /// <summary>
-    /// Unlock Machine Gun weapon
-    /// Delegates to PlayerConeShooter
+    /// ✅ IMPROVED: Finds machine gun and unlocks it.
     /// </summary>
     public void UnlockMachineGun()
     {
-        if (playerShooter == null)
+        if (WeaponUnlockManager.Instance == null)
         {
-            Debug.LogError("[UpgradeManager] Cannot unlock machine gun - PlayerConeShooter not assigned!");
+            Debug.LogError("[UpgradeManager] WeaponUnlockManager not found!");
             return;
         }
 
-        playerShooter.UnlockMachineGun();
-        Debug.Log("[UpgradeManager] 🔓 Machine Gun unlock request sent to PlayerConeShooter");
-        FindObjectOfType<StoreManager>()?.UnlockMachineGunUpgrade();
+        if (weaponInventory == null)
+        {
+            Debug.LogError("[UpgradeManager] WeaponInventory not found!");
+            return;
+        }
+
+        // Find the machine gun weapon
+        int mgIndex = FindWeaponIndexByName("Machine", "AK");
+
+        if (mgIndex == -1)
+        {
+            Debug.LogError("[UpgradeManager] Machine Gun not found in weapons array!");
+            return;
+        }
+
+        WeaponData machineGun = weaponInventory.GetAllWeapons()[mgIndex];
+
+        // Check if already unlocked
+        if (WeaponUnlockManager.Instance.IsWeaponUnlocked(machineGun))
+        {
+            Debug.LogWarning("[UpgradeManager] Machine Gun is already unlocked!");
+            return;
+        }
+
+        // ✅ Unlock it in the manager
+        WeaponUnlockManager.Instance.UnlockWeapon(machineGun);
+
+        Debug.Log("[UpgradeManager] 🔓 Machine Gun unlocked FOR THIS RUN ONLY");
+
+        // ✅ Notify store manager to add machine gun upgrade button to pool
+        StoreManager storeManager = FindObjectOfType<StoreManager>();
+        if (storeManager != null)
+        {
+            storeManager.UnlockMachineGunUpgrade();
+        }
+
+        // ✅ Print current unlock status
+        WeaponUnlockManager.Instance.PrintUnlockStatus();
     }
 
     // ===== HELPER METHODS =====
 
-    /// <summary>
-    /// Find weapon index by type
-    /// </summary>
     private int FindWeaponIndexByType(WeaponData.WeaponType weaponType)
     {
-        WeaponData[] weapons = playerShooter.GetAllWeapons();
+        if (weaponInventory == null) return -1;
+
+        WeaponData[] weapons = weaponInventory.GetAllWeapons();
         for (int i = 0; i < weapons.Length; i++)
         {
             if (weapons[i].weaponType == weaponType)
@@ -234,12 +302,11 @@ public class UpgradeManager : MonoBehaviour
         return -1;
     }
 
-    /// <summary>
-    /// Find weapon index by name (partial match)
-    /// </summary>
     private int FindWeaponIndexByName(params string[] names)
     {
-        WeaponData[] weapons = playerShooter.GetAllWeapons();
+        if (weaponInventory == null) return -1;
+
+        WeaponData[] weapons = weaponInventory.GetAllWeapons();
         for (int i = 0; i < weapons.Length; i++)
         {
             foreach (string name in names)
@@ -251,12 +318,11 @@ public class UpgradeManager : MonoBehaviour
         return -1;
     }
 
-    /// <summary>
-    /// Update weapon damage in the weapon data
-    /// </summary>
     private void UpdateWeaponDamage(int weaponIndex, int newDamage)
     {
-        WeaponData weapon = playerShooter.GetAllWeapons()[weaponIndex];
+        if (weaponInventory == null) return;
+
+        WeaponData weapon = weaponInventory.GetAllWeapons()[weaponIndex];
         if (weapon != null)
         {
             weapon.SetDamage(newDamage);
@@ -265,57 +331,41 @@ public class UpgradeManager : MonoBehaviour
 
     // ===== DEBUG METHODS =====
 
-    /// <summary>
-    /// Print all current upgrade stats
-    /// </summary>
     public void PrintUpgradeStats()
     {
-        Debug.Log("========== UPGRADE STATS ==========");
+        Debug.Log("========== UPGRADE STATS (THIS RUN) ==========");
         Debug.Log("--- SPEED ---");
         Debug.Log($"Level: {GetSpeedUpgradeLevel()} | Current Speed: {GetCurrentPlayerSpeed()}");
-        Debug.Log("--- HEALTH ---");
-      
+        Debug.Log("--- GUN DAMAGE ---");
         Debug.Log($"Pistol: Level {GetPistolDamageLevel()} | Damage: {GetCurrentPistolDamage()}");
         Debug.Log($"Shotgun: Level {GetShotgunDamageLevel()} | Damage: {GetCurrentShotgunDamage()}");
         Debug.Log($"Machine Gun: Level {GetMachineGunDamageLevel()} | Damage: {GetCurrentMachineGunDamage()}");
-        Debug.Log("==================================");
+        Debug.Log("==============================================");
     }
 
-    /// <summary>
-    /// DEBUG: Reset all upgrades to level 0
-    /// </summary>
     [ContextMenu("DEBUG - Reset All Upgrades")]
     public void DEBUG_ResetAllUpgrades()
     {
         speedUpgradeLevel = 0;
-       
         pistolDamageLevel = 0;
         shotgunDamageLevel = 0;
         machineGunDamageLevel = 0;
+
+        ResetAllWeaponDamages();
 
         Debug.Log("[UpgradeManager] 🔄 All upgrades reset to level 0");
         PrintUpgradeStats();
     }
 
-    /// <summary>
-    /// DEBUG: Show weapon unlock status
-    /// </summary>
     [ContextMenu("DEBUG - Show Weapon Status")]
     public void DEBUG_ShowWeaponStatus()
     {
-        if (playerShooter != null)
+        if (WeaponUnlockManager.Instance != null)
         {
-            playerShooter.PrintWeaponLockStatus();
+            WeaponUnlockManager.Instance.PrintUnlockStatus();
         }
     }
 
-
-
-    /// <summary>
-    /// Get the upgrade bonus values (used by preview system)
-    /// </summary>
     public float GetSpeedUpgradeBonus() => speedUpgradeBonus;
- 
     public int GetDamageUpgradeBonus() => damageUpgradeBonus;
-
 }

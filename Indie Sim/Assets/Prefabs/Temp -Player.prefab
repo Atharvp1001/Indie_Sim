@@ -5426,7 +5426,7 @@ MonoBehaviour:
   IgnoreTimeScale: 0
   WorldUpOverride: {fileID: 0}
   ChannelMask: -1
-  UpdateMethod: 2
+  UpdateMethod: 1
   BlendUpdateMethod: 1
   LensModeOverride:
     Enabled: 0
@@ -5533,7 +5533,7 @@ GameObject:
   - component: {fileID: 6221989387875595873}
   - component: {fileID: 5045363974331740693}
   - component: {fileID: 6900749776920343997}
-  - component: {fileID: 2168372277178147741}
+  - component: {fileID: 2920833874844402058}
   - component: {fileID: 441459428130447590}
   - component: {fileID: 7934195939729618366}
   - component: {fileID: 8749358991344554026}
@@ -5546,6 +5546,9 @@ GameObject:
   - component: {fileID: 6598834033211393489}
   - component: {fileID: 5360059026301571325}
   - component: {fileID: 6351791454143980084}
+  - component: {fileID: 6482888848170968585}
+  - component: {fileID: 3378380655426888713}
+  - component: {fileID: 7322266951050164843}
   m_Layer: 0
   m_Name: Temp -Player
   m_TagString: Player
@@ -5591,11 +5594,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseMoveSpeed: 5
+  dashSpeed: 30
+  dashDuration: 0.2
+  dashCooldown: 1
+  invulnerableDuringDash: 0
   pushRadius: 0.3
   pushStr: 5
   enemyLayer:
     serializedVersion: 2
     m_Bits: 128
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 0
+  wallCheckDistance: 0.5
 --- !u!61 &6221989387875595873
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -5683,158 +5694,46 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   firePoint: {fileID: 5624597609566509571}
   mainCamera: {fileID: 3008973793089747527}
-  availableWeapons:
-  - {fileID: 11400000, guid: 8dfe85ede84364e4bbd47cc0fd9fd25c, type: 2}
-  - {fileID: 11400000, guid: 5827dbebab0bf6f4583880f757b6faaa, type: 2}
-  - {fileID: 11400000, guid: 56c3f4ef79cead346984d21b7544d9d8, type: 2}
-  currentWeaponIndex: 0
-  weaponUnlockStatus: 010000
   enemyLayers:
     serializedVersion: 2
     m_Bits: 4294967295
-  showConeGizmo: 1
-  coneGizmoColor: {r: 1, g: 0, b: 0, a: 0.3}
-  joystickDeadZone: 0.1
-  audioSource: {fileID: 441459428130447590}
-  weaponSprites:
-  - {fileID: 21300000, guid: b17863074b0f77d4ca2d76818acea886, type: 3}
-  - {fileID: 21300000, guid: f0e34442372218b4e9e9d46a9ea824c6, type: 3}
-  - {fileID: 21300000, guid: 2529dfcc6a94b0c48bb1c93a92589086, type: 3}
-  weaponButton: {fileID: 0}
   obstacleLayers:
     serializedVersion: 2
     m_Bits: 256
-  muzzleFlashParticles: {fileID: 3818639557781657095}
-  shellEjectionParticles: {fileID: 6589811386408084634}
-  smokeParticles: {fileID: 4820169304688611113}
-  muzzlePoint: {fileID: 8321412686837148396}
-  shellEjectionPoint: {fileID: 105890739993654744}
-  bulletTrailPrefab: {fileID: 2475267044848316794, guid: 022ec939485f8a54c826ae042c1026f0, type: 3}
-  bulletTrailSpeed: 30
-  bulletTrailDuration: 0.05
-  damageDelay: 0.05
-  trailPoolSize: 20
-  edgeLineColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  edgeLineWidth: 0.05
-  coneFlashDuration: 0.05
-  muzzleFlashLight: {fileID: 7918973488368375494}
-  lightFlashDuration: 0.05
   bulletTrailWallLayers:
     serializedVersion: 2
     m_Bits: 256
   bulletTrailEnemyLayers:
     serializedVersion: 2
     m_Bits: 128
---- !u!120 &2168372277178147741
-LineRenderer:
-  serializedVersion: 2
+  bulletProjectilePrefab: {fileID: 5407089440656442867, guid: 6ed4f88565758104d9da6c19879b19f7, type: 3}
+  bulletSpeed: 50
+  showConeGizmo: 1
+  coneGizmoColor: {r: 1, g: 0, b: 0, a: 0.3}
+  enableConeEdgeVisual: 1
+  edgeLineColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  edgeLineWidth: 0.05
+  coneFlashDuration: 0.05
+  aimDeadZone: 0.01
+  ammoManager: {fileID: 2920833874844402058}
+  vfxHandler: {fileID: 0}
+  weaponInventory: {fileID: 0}
+--- !u!114 &2920833874844402058
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8485655876686838044}
-  m_Enabled: 0
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 0
-  m_LightProbeUsage: 0
-  m_ReflectionProbeUsage: 0
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 06ab31fc72459524c8bbaa36b26f74ef, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: -1247100275
-  m_SortingLayer: 3
-  m_SortingOrder: 3
-  m_Positions:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 1}
-  m_Parameters:
-    serializedVersion: 3
-    widthMultiplier: 0.1
-    widthCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0.33333334
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    colorGradient:
-      serializedVersion: 2
-      key0: {r: 1, g: 0, b: 0, a: 0.101960786}
-      key1: {r: 1, g: 1, b: 1, a: 0}
-      key2: {r: 0, g: 0, b: 0, a: 0}
-      key3: {r: 0, g: 0, b: 0, a: 0}
-      key4: {r: 0, g: 0, b: 0, a: 0}
-      key5: {r: 0, g: 0, b: 0, a: 0}
-      key6: {r: 0, g: 0, b: 0, a: 0}
-      key7: {r: 0, g: 0, b: 0, a: 0}
-      ctime0: 0
-      ctime1: 65535
-      ctime2: 0
-      ctime3: 0
-      ctime4: 0
-      ctime5: 0
-      ctime6: 0
-      ctime7: 0
-      atime0: 0
-      atime1: 65535
-      atime2: 0
-      atime3: 0
-      atime4: 0
-      atime5: 0
-      atime6: 0
-      atime7: 0
-      m_Mode: 0
-      m_ColorSpace: 0
-      m_NumColorKeys: 2
-      m_NumAlphaKeys: 2
-    numCornerVertices: 0
-    numCapVertices: 0
-    alignment: 0
-    textureMode: 0
-    textureScale: {x: 1, y: 1}
-    shadowBias: 0.5
-    generateLightingData: 0
-  m_MaskInteraction: 0
-  m_UseWorldSpace: 1
-  m_Loop: 0
-  m_ApplyActiveColorSpace: 1
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4e69a34fdf05794b8ff046ee1c84bf0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponAmmoManager
+  playerShooter: {fileID: 6900749776920343997}
+  audioSource: {fileID: 441459428130447590}
+  currentAmmoInMagazine: 0
+  isReloading: 0
 --- !u!82 &441459428130447590
 AudioSource:
   m_ObjectHideFlags: 0
@@ -6220,6 +6119,68 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 512
   checkInterval: 0.1
+--- !u!114 &6482888848170968585
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b45ea3664c29cf4cb5efa2663cc1eec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponInventory
+  availableWeapons:
+  - {fileID: 11400000, guid: 8dfe85ede84364e4bbd47cc0fd9fd25c, type: 2}
+  - {fileID: 11400000, guid: 5827dbebab0bf6f4583880f757b6faaa, type: 2}
+  - {fileID: 11400000, guid: 56c3f4ef79cead346984d21b7544d9d8, type: 2}
+  currentWeaponIndex: 0
+--- !u!114 &3378380655426888713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 971f9af774356bc49a66eb5d1df85307, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponUnlockManager
+  allWeaponsInGame:
+  - {fileID: 11400000, guid: 5827dbebab0bf6f4583880f757b6faaa, type: 2}
+  - {fileID: 11400000, guid: 8dfe85ede84364e4bbd47cc0fd9fd25c, type: 2}
+  - {fileID: 11400000, guid: 56c3f4ef79cead346984d21b7544d9d8, type: 2}
+  unlockedWeaponNames:
+  - Pistol
+--- !u!114 &7322266951050164843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a78e0b484cde1344bb75bc0199ecf5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WeaponVFXHandler
+  weaponSprites:
+  - {fileID: 21300000, guid: b17863074b0f77d4ca2d76818acea886, type: 3}
+  - {fileID: 21300000, guid: f0e34442372218b4e9e9d46a9ea824c6, type: 3}
+  - {fileID: 21300000, guid: 2529dfcc6a94b0c48bb1c93a92589086, type: 3}
+  weaponButton: {fileID: 0}
+  muzzleFlashParticles: {fileID: 3818639557781657095}
+  shellEjectionParticles: {fileID: 6589811386408084634}
+  smokeParticles: {fileID: 4820169304688611113}
+  muzzlePoint: {fileID: 8321412686837148396}
+  shellEjectionPoint: {fileID: 105890739993654744}
+  firePoint: {fileID: 5624597609566509571}
+  muzzleFlashLight: {fileID: 7918973488368375494}
+  lightFlashDuration: 0.05
+  audioSource: {fileID: 441459428130447590}
+  enableCameraRecoil: 1
 --- !u!1001 &193800281715201901
 PrefabInstance:
   m_ObjectHideFlags: 0
