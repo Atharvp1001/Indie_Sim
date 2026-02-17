@@ -176,7 +176,8 @@ public class MapData
 
 public class DungeonMapGenerator : MonoBehaviour
 {
-    [SerializeField] private MapParameters parameters;
+    [Header("Map Configuration")]
+    [SerializeField] private MapParametersSO mapParametersSO;
     [SerializeField] public bool showGizmos = true;
     [SerializeField] public bool showRoomIds = true;
 
@@ -251,8 +252,12 @@ public class DungeonMapGenerator : MonoBehaviour
     [ContextMenu("Generate New Map")]
     public void GenerateNewMap()
     {
-        // Use the nodeCount from existing parameters
-        GenerateNewMap(parameters.nodeCount);
+        if (mapParametersSO == null)
+        {
+            Debug.LogError("MapParametersSO is not assigned!");
+            return;
+        }
+        GenerateNewMap(mapParametersSO.nodeCount);
     }
 
     // Called by RoguelikeManager with single int
@@ -261,7 +266,7 @@ public class DungeonMapGenerator : MonoBehaviour
         rng = new System.Random();
 
         EnemySpawner.ResetCthulhuEyeTracking();
-        
+
         // Reset ID counters
         mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
         leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
@@ -271,10 +276,10 @@ public class DungeonMapGenerator : MonoBehaviour
         ResetKeySpawnStatus();
 
         // Set the nodeCount in parameters based on the single int value
-        parameters.nodeCount = dungeonSize;
+        MapParameters runtimeParams = mapParametersSO.ToMapParameters();
+        runtimeParams.nodeCount = dungeonSize;
 
-        // Now use the parameters to generate
-        currentMapData = GenerateDungeon(parameters);
+        currentMapData = GenerateDungeon(runtimeParams);
         Debug.Log($"Generated dungeon with {currentMapData.rooms.Count} rooms");
         Debug.Log($"Start Room ID: {currentMapData.startRoomId}, End Room ID: {currentMapData.endRoomId}");
         Debug.Log($"Last Main Room ID: {currentMapData.lastMainRoomId} (Teleporter spawn location)");
@@ -829,9 +834,9 @@ public class DungeonMapGenerator : MonoBehaviour
         // Adjust spawn rate (optional - make larger rooms spawn faster/slower)
         spawner.spawnInterval = UnityEngine.Random.Range(1f, 3f); // Random spawn rate per room
 
-        spawner.SetDungeonLevel(parameters.nodeCount); // Using nodeCount as dungeon level
+        spawner.SetDungeonLevel(mapParametersSO.nodeCount);
 
-        Debug.Log($"Configured spawner in room {room.uniqueId}: radius={spawner.spawnRadius}, maxEnemies={spawner.maxEnemies}, dungeonLevel={parameters.nodeCount}");
+        Debug.Log($"Configured spawner in room {room.uniqueId}: radius={spawner.spawnRadius}, maxEnemies={spawner.maxEnemies}, dungeonLevel={mapParametersSO.nodeCount}");
     }
 
     /// <summary>
@@ -1507,5 +1512,5 @@ public class DungeonMapGenerator : MonoBehaviour
     
 
     public MapData GetCurrentMapData() => currentMapData;
-    public MapParameters GetParameters() => parameters;
+    public MapParameters GetParameters() => mapParametersSO?.ToMapParameters();
 }

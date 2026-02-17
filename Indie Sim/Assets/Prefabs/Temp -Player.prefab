@@ -6214,8 +6214,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8d35554b51011f4abe85376099d4f6b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerCoinCollector
-  magnetRange: 2.64
-  magnetStrength: 10
+  magnetRange: 2.6
+  magnetStrength: 20
   coinLayer:
     serializedVersion: 2
     m_Bits: 512

@@ -82,13 +82,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 535400de790268346bc279cf957ece64, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 3
+  speed: 4
   rotationSpeed: 5
   normalDrag: 1
   knockbackDrag: 25
   detectionRadius: 5
   separationRadius: 1.5
-  leaderRadius: 3
+  leaderRadius: 5
   minFlockSize: 6
   alignmentWeight: 1
   cohesionWeight: 1
