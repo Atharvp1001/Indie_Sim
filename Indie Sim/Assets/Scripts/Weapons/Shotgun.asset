@@ -15,10 +15,10 @@ MonoBehaviour:
   weaponName: Shotgun
   weaponIcon: {fileID: 0}
   weaponType: 1
-  coneAngle: 45
-  coneRange: 4
+  coneAngle: 30
+  coneRange: 6
   fireRate: 1.6
-  baseDamagePerShot: 40
+  baseDamagePerShot: 50
   baseWidthMultiplier: 1
   topWidthMultiplier: 0.535
   baseDistanceRatio: 0.08
@@ -31,3 +31,4 @@ MonoBehaviour:
   magazineCapacity: 7
   reloadTime: 2
   hasInfiniteReserve: 1
+  maxPierceCount: 3

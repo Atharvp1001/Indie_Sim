@@ -13,6 +13,11 @@ public class WeaponUnlockManager : MonoBehaviour
     [Header("Unlock Status (Per-Run)")]
     [SerializeField] private List<string> unlockedWeaponNames = new List<string>();
 
+    [Header("⚠️ DEBUG / TESTING OPTIONS")]
+    [SerializeField] private bool unlockAllWeaponsOnStart = false;
+    [Tooltip("Check specific weapons to unlock at start (for testing)")]
+    [SerializeField] private List<WeaponData> debugUnlockedWeapons = new List<WeaponData>();
+
     public static WeaponUnlockManager Instance { get; private set; }
 
     private void Awake()
@@ -36,8 +41,37 @@ public class WeaponUnlockManager : MonoBehaviour
             return;
         }
 
-        // Always unlock the first weapon (starter weapon) on scene load
+        // Clear previous unlocks
         unlockedWeaponNames.Clear();
+
+        // ✅ OPTION 1: Unlock all weapons (testing mode)
+        if (unlockAllWeaponsOnStart)
+        {
+            Debug.Log("[WeaponUnlockManager] 🔧 DEBUG MODE: Unlocking ALL weapons");
+            foreach (WeaponData weapon in allWeaponsInGame)
+            {
+                UnlockWeapon(weapon);
+            }
+            PrintUnlockStatus();
+            return;
+        }
+
+        // ✅ OPTION 2: Unlock specific weapons from debug list
+        if (debugUnlockedWeapons != null && debugUnlockedWeapons.Count > 0)
+        {
+            Debug.Log($"[WeaponUnlockManager] 🔧 DEBUG MODE: Unlocking {debugUnlockedWeapons.Count} specific weapons");
+            foreach (WeaponData weapon in debugUnlockedWeapons)
+            {
+                if (weapon != null)
+                {
+                    UnlockWeapon(weapon);
+                }
+            }
+            PrintUnlockStatus();
+            return;
+        }
+
+        // ✅ NORMAL MODE: Only unlock starter weapon
         UnlockWeapon(allWeaponsInGame[0]);
         Debug.Log($"[WeaponUnlockManager] 🔄 RESET - Starter weapon unlocked: {allWeaponsInGame[0].weaponName}");
 
@@ -58,7 +92,11 @@ public class WeaponUnlockManager : MonoBehaviour
 
         if (unlockedWeaponNames.Contains(weapon.weaponName))
         {
-            Debug.LogWarning($"[WeaponUnlockManager] {weapon.weaponName} is already unlocked!");
+            // Don't spam warnings during debug unlock
+            if (!unlockAllWeaponsOnStart && !debugUnlockedWeapons.Contains(weapon))
+            {
+                Debug.LogWarning($"[WeaponUnlockManager] {weapon.weaponName} is already unlocked!");
+            }
             return;
         }
 
@@ -100,5 +138,56 @@ public class WeaponUnlockManager : MonoBehaviour
         }
         Debug.Log($"Total Unlocked: {GetUnlockedWeaponCount()}/{GetTotalWeaponCount()}");
         Debug.Log("====================================================");
+    }
+
+    // ===== DEBUG METHODS =====
+
+    /// <summary>
+    /// Runtime method to unlock all weapons (can be called from console or debug menu)
+    /// </summary>
+    [ContextMenu("DEBUG - Unlock All Weapons")]
+    public void DEBUG_UnlockAllWeapons()
+    {
+        Debug.Log("[WeaponUnlockManager] 🔧 DEBUG: Unlocking all weapons at runtime");
+        foreach (WeaponData weapon in allWeaponsInGame)
+        {
+            UnlockWeapon(weapon);
+        }
+        PrintUnlockStatus();
+
+        // Notify store manager to update available upgrades
+        StoreManager storeManager = FindObjectOfType<StoreManager>();
+        if (storeManager != null)
+        {
+            storeManager.UnlockShotgunUpgrade();
+            storeManager.UnlockMachineGunUpgrade();
+        }
+    }
+
+    /// <summary>
+    /// Runtime method to unlock a specific weapon by name
+    /// </summary>
+    [ContextMenu("DEBUG - Unlock Shotgun")]
+    public void DEBUG_UnlockShotgun()
+    {
+        WeaponData shotgun = System.Array.Find(allWeaponsInGame, w => w.weaponType == WeaponData.WeaponType.Shotgun);
+        if (shotgun != null)
+        {
+            UnlockWeapon(shotgun);
+            FindObjectOfType<StoreManager>()?.UnlockShotgunUpgrade();
+        }
+    }
+
+    [ContextMenu("DEBUG - Unlock Machine Gun")]
+    public void DEBUG_UnlockMachineGun()
+    {
+        WeaponData mg = System.Array.Find(allWeaponsInGame, w =>
+            w.weaponName.ToLower().Contains("machine") ||
+            w.weaponName.ToLower().Contains("ak"));
+        if (mg != null)
+        {
+            UnlockWeapon(mg);
+            FindObjectOfType<StoreManager>()?.UnlockMachineGunUpgrade();
+        }
     }
 }

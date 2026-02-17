@@ -40,11 +40,15 @@ public class WeaponData : ScriptableObject
     public float reloadTime = 2f; // How long reload takes in seconds
     public bool hasInfiniteReserve = true; // Infinite reserve ammo for now
 
+    [Header("Piercing Settings (Piercer only)")]
+    [Tooltip("How many enemies the bullet can pierce through (0 = standard behavior)")]
+    public int maxPierceCount = 3;
 
     public enum WeaponType
     {
         Standard,  // Pistol, AK - damages closest enemy only
-        Shotgun    // Shotgun - damages all enemies in cone
+        Shotgun,  // Shotgun - fires in a cone
+        Piercer // shots go thru enemies 
     }
 
     public enum TrapeziumProfile

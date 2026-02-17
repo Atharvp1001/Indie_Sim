@@ -20,6 +20,8 @@ public class CoinManager : MonoBehaviour
 
     private void Awake()
     {
+        currentCoins = 100; // Start with 100 coins for testing
+
         // Singleton pattern
         if (Instance == null)
         {

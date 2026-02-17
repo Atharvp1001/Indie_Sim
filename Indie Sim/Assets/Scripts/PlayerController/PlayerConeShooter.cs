@@ -265,6 +265,10 @@ public class PlayerConeShooter : MonoBehaviour
         {
             FireShotgun(direction);
         }
+        else if (currentWeapon.weaponType == WeaponData.WeaponType.Piercer)  // ✅ NEW
+        {
+            FirePiercer(direction);
+        }
     }
 
     /// <summary>
@@ -311,7 +315,7 @@ public class PlayerConeShooter : MonoBehaviour
     /// </summary>
     private void FireShotgun(Vector2 direction)
     {
-        int pelletsPerShot = 5;
+        int pelletsPerShot = 6;
         float spreadAngle = currentWeapon.GetAngleAtDistance(currentWeapon.coneRange);
 
         List<IDamageable> hitTargets = new List<IDamageable>();
@@ -355,6 +359,172 @@ public class PlayerConeShooter : MonoBehaviour
                 StartCoroutine(BulletTrailCoroutine(firePoint.position, maxRangePosition, null, 0, Vector3.zero));
             }
         }
+    }
+
+    /// <summary>
+    /// Fires a piercing bullet that penetrates multiple enemies.
+    /// Bullet travels through enemies until it hits maxPierceCount or a wall.
+    /// </summary>
+    private void FirePiercer(Vector2 direction)
+    {
+        List<IDamageable> piercedEnemies = new List<IDamageable>();
+        Vector3 currentPosition = firePoint.position;
+        Vector2 bulletDirection = direction;
+        int enemiesHit = 0;
+        int maxPierces = currentWeapon.maxPierceCount;
+
+        // Keep searching for enemies until we hit max pierce count or max range
+        while (enemiesHit < maxPierces)
+        {
+            // Find next enemy in line
+            IDamageable nextTarget = GetNextPiercingTarget(currentPosition, bulletDirection, piercedEnemies, out Vector3 hitPosition, out float distanceToTarget);
+
+            if (nextTarget != null)
+            {
+                // Check if wall blocks shot before reaching this enemy
+                RaycastHit2D wallCheck = Physics2D.Raycast(currentPosition, bulletDirection, distanceToTarget, bulletTrailWallLayers);
+
+                if (wallCheck.collider != null)
+                {
+                    // Wall blocks - bullet stops at wall
+                    Vector3 wallHitPos = wallCheck.point;
+                    StartCoroutine(PiercingBulletTrailCoroutine(currentPosition, wallHitPos, piercedEnemies, currentWeapon.damagePerShot));
+                    return; // Bullet stopped by wall
+                }
+
+                // Hit this enemy
+                piercedEnemies.Add(nextTarget);
+                enemiesHit++;
+
+                // Move bullet position to this enemy
+                currentPosition = hitPosition;
+
+                // If we've hit max pierces, stop here
+                if (enemiesHit >= maxPierces)
+                {
+                    StartCoroutine(PiercingBulletTrailCoroutine(firePoint.position, hitPosition, piercedEnemies, currentWeapon.damagePerShot));
+                    return;
+                }
+            }
+            else
+            {
+                // No more enemies in line - bullet travels to max range
+                Vector3 maxRangePos = GetTrailEndPosition(currentPosition, bulletDirection, currentWeapon.coneRange);
+                StartCoroutine(PiercingBulletTrailCoroutine(firePoint.position, maxRangePos, piercedEnemies, currentWeapon.damagePerShot));
+                return;
+            }
+        }
+
+        // Should never reach here, but just in case
+        Vector3 fallbackEndPos = currentPosition + (Vector3)bulletDirection * currentWeapon.coneRange;
+        StartCoroutine(PiercingBulletTrailCoroutine(firePoint.position, fallbackEndPos, piercedEnemies, currentWeapon.damagePerShot));
+    }
+
+    /// <summary>
+    /// Coroutine for piercing bullets - damages all enemies in the list when fired.
+    /// </summary>
+    private IEnumerator PiercingBulletTrailCoroutine(Vector3 startPos, Vector3 endPos, List<IDamageable> targetsHit, int damagePerTarget)
+    {
+        // 1. APPLY DAMAGE INSTANTLY to all pierced enemies
+        foreach (IDamageable target in targetsHit)
+        {
+            if (target != null && !target.IsDead())
+            {
+                target.TakeDamage(damagePerTarget);
+
+                // Show hit effects at each enemy
+                GameObject targetGO = target.GetGameObject();
+                if (targetGO != null && currentWeapon.hitEffect != null)
+                {
+                    Instantiate(currentWeapon.hitEffect, targetGO.transform.position, Quaternion.identity);
+                }
+            }
+        }
+
+        // Crosshair feedback if we hit anything
+        if (targetsHit.Count > 0)
+        {
+            CustomCrosshair crosshair = FindObjectOfType<CustomCrosshair>();
+            if (crosshair != null)
+            {
+                crosshair.ShowHitFeedback();
+            }
+        }
+
+        // 2. SPAWN VISUAL PROJECTILE
+        if (bulletProjectilePrefab == null) yield break;
+
+        GameObject bullet = Instantiate(bulletProjectilePrefab, startPos, Quaternion.identity);
+
+        // Calculate travel time
+        float distance = Vector3.Distance(startPos, endPos);
+        float travelTime = distance / bulletSpeed;
+        float elapsed = 0f;
+
+        // 3. ANIMATE PROJECTILE TO END (visual only)
+        while (elapsed < travelTime)
+        {
+            if (bullet == null) yield break;
+
+            elapsed += Time.deltaTime;
+            float t = elapsed / travelTime;
+            bullet.transform.position = Vector3.Lerp(startPos, endPos, t);
+            yield return null;
+        }
+
+        // Ensure bullet reaches end
+        if (bullet != null)
+        {
+            bullet.transform.position = endPos;
+            Destroy(bullet, 0.2f);
+        }
+    }
+
+    /// <summary>
+    /// Finds the next enemy in the piercing bullet's path.
+    /// Excludes enemies already hit by this bullet.
+    /// </summary>
+    private IDamageable GetNextPiercingTarget(Vector3 startPos, Vector2 direction, List<IDamageable> excludeTargets, out Vector3 hitPosition, out float distance)
+    {
+        hitPosition = Vector3.zero;
+        distance = 0f;
+
+        if (damageableTargets.Count == 0) return null;
+
+        IDamageable closestTarget = null;
+        float closestDistance = Mathf.Infinity;
+
+        foreach (IDamageable target in damageableTargets)
+        {
+            if (target == null || target.IsDead()) continue;
+
+            // ✅ Skip enemies already hit by this bullet
+            if (excludeTargets.Contains(target)) continue;
+
+            GameObject targetGO = target.GetGameObject();
+            Vector3 targetPos = targetGO.transform.position;
+            Vector2 directionToTarget = (targetPos - startPos).normalized;
+            float distanceToTarget = Vector3.Distance(startPos, targetPos);
+
+            // Check if target is in the bullet's direction (within 5° tolerance)
+            float angleToTarget = Vector2.Angle(direction, directionToTarget);
+            if (angleToTarget > 5f) continue;
+
+            // Check if wall blocks
+            RaycastHit2D hit = Physics2D.Raycast(startPos, directionToTarget, distanceToTarget, obstacleLayers);
+            if (hit.collider != null) continue;
+
+            // Found valid target
+            if (distanceToTarget < closestDistance)
+            {
+                closestDistance = distanceToTarget;
+                closestTarget = target;
+                hitPosition = targetPos;
+                distance = distanceToTarget;
+            }
+        }
+
+        return closestTarget;
     }
 
     /// <summary>
