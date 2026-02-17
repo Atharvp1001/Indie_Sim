@@ -22,6 +22,11 @@ public class UpgradeManager : MonoBehaviour
     private int shotgunDamageLevel = 0;
     private int machineGunDamageLevel = 0;
 
+    [Header("Piercer Upgrade (Pistol)")]
+    [SerializeField] private int basePistolPierceCount = 2; // Starting pierce count
+    [SerializeField] private int maxPistolPierceCount = 5;   // Maximum pierce count
+    [SerializeField] private int pierceIncreasePerUpgrade = 1; // How much to increase per upgrade
+
     private void Start()
     {
         if (weaponInventory == null)
@@ -46,18 +51,24 @@ public class UpgradeManager : MonoBehaviour
             Debug.LogError("[UpgradeManager] WeaponInventory reference not assigned!");
     }
 
+    /// <summary>
+    /// ✅ UPDATED: Resets weapon damages AND pierce counts on scene load.
+    /// </summary>
     private void ResetAllWeaponDamages()
     {
         if (weaponInventory == null) return;
 
         WeaponData[] weapons = weaponInventory.GetAllWeapons();
 
+        // Reset Pistol (index 0)
         if (weapons.Length > 0)
         {
             weapons[0].SetDamage(basePistolDamage);
-            Debug.Log($"[UpgradeManager] Reset Pistol damage to {basePistolDamage}");
+            weapons[0].maxPierceCount = basePistolPierceCount; 
+            Debug.Log($"[UpgradeManager] Reset Pistol damage to {basePistolDamage}, pierce to {basePistolPierceCount}");
         }
 
+        // Reset Shotgun
         int shotgunIndex = FindWeaponIndexByType(WeaponData.WeaponType.Shotgun);
         if (shotgunIndex != -1)
         {
@@ -65,6 +76,7 @@ public class UpgradeManager : MonoBehaviour
             Debug.Log($"[UpgradeManager] Reset Shotgun damage to {baseShotgunDamage}");
         }
 
+        // Reset Machine Gun
         int mgIndex = FindWeaponIndexByName("Machine", "AK");
         if (mgIndex != -1)
         {
@@ -72,6 +84,7 @@ public class UpgradeManager : MonoBehaviour
             Debug.Log($"[UpgradeManager] Reset Machine Gun damage to {baseMachineGunDamage}");
         }
     }
+
 
     // ===== SPEED UPGRADES =====
 
@@ -96,6 +109,12 @@ public class UpgradeManager : MonoBehaviour
 
     // ===== GUN DAMAGE UPGRADES =====
 
+    /// <summary>
+    /// Upgrades pistol damage AND pierce count (since pistol is a piercer weapon).
+    /// Each upgrade increases:
+    /// - Damage by damageUpgradeBonus
+    /// - Pierce count by pierceIncreasePerUpgrade (up to max)
+    /// </summary>
     public void UpgradePistolDamage()
     {
         if (weaponInventory == null)
@@ -105,12 +124,20 @@ public class UpgradeManager : MonoBehaviour
         }
 
         pistolDamageLevel++;
+
+        // ✅ UPGRADE DAMAGE
         int newDamage = basePistolDamage + (pistolDamageLevel * damageUpgradeBonus);
         UpdateWeaponDamage(0, newDamage);
 
-        Debug.Log($"[UpgradeManager] ✅ PISTOL DAMAGE UPGRADED! Level {pistolDamageLevel}");
-        Debug.Log($"[UpgradeManager] New Pistol Damage: {newDamage}");
+        // ✅ UPGRADE PIERCE COUNT
+        int newPierceCount = basePistolPierceCount + (pistolDamageLevel * pierceIncreasePerUpgrade);
+        newPierceCount = Mathf.Min(newPierceCount, maxPistolPierceCount); // Cap at max
+        UpdateWeaponPierceCount(0, newPierceCount);
+
+        Debug.Log($"[UpgradeManager] ✅ PISTOL UPGRADED! Level {pistolDamageLevel}");
+        Debug.Log($"[UpgradeManager] New Damage: {newDamage} | Pierce Count: {newPierceCount}");
     }
+
 
     public void UpgradeShotgunDamage()
     {
@@ -178,7 +205,28 @@ public class UpgradeManager : MonoBehaviour
     public int GetShotgunDamageLevel() => shotgunDamageLevel;
     public int GetMachineGunDamageLevel() => machineGunDamageLevel;
 
+    // ✅ NEW: Helper to update pierce count
+    /// <summary>
+    /// Updates a weapon's max pierce count (for piercer weapons).
+    /// </summary>
+    private void UpdateWeaponPierceCount(int weaponIndex, int newPierceCount)
+    {
+        if (weaponInventory == null) return;
+
+        WeaponData weapon = weaponInventory.GetAllWeapons()[weaponIndex];
+        if (weapon != null)
+        {
+            weapon.maxPierceCount = newPierceCount;
+            Debug.Log($"[UpgradeManager] {weapon.weaponName} pierce count updated to {newPierceCount}");
+        }
+    }
+
     public int GetCurrentPistolDamage() => basePistolDamage + (pistolDamageLevel * damageUpgradeBonus);
+    public int GetCurrentPistolPierceCount()
+    {
+        int pierceCount = basePistolPierceCount + (pistolDamageLevel * pierceIncreasePerUpgrade);
+        return Mathf.Min(pierceCount, maxPistolPierceCount);
+    }
     public int GetCurrentShotgunDamage() => baseShotgunDamage + (shotgunDamageLevel * damageUpgradeBonus);
     public int GetCurrentMachineGunDamage() => baseMachineGunDamage + (machineGunDamageLevel * damageUpgradeBonus);
 
