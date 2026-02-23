@@ -35,6 +35,18 @@ public class WeaponAmmoManager : MonoBehaviour
 
     private void Update()
     {
+        //  FIX: Re-initialize if weapon wasn't ready during Start() (fixes execution order race)
+        if (currentWeapon == null && playerShooter != null)
+        {
+            currentWeapon = playerShooter.GetCurrentWeapon();
+            if (currentWeapon != null)
+            {
+                currentAmmoInMagazine = currentWeapon.magazineCapacity;
+                Debug.Log($"[AmmoManager] Late-initialized weapon: {currentWeapon.weaponName} - Ammo: {currentAmmoInMagazine}");
+            }
+            return; // Wait until next frame to proceed — weapon is now set
+        }
+
         // Listen for reload input (R key)
         if (Input.GetKeyDown(KeyCode.R) && !isReloading)
         {
@@ -47,6 +59,7 @@ public class WeaponAmmoManager : MonoBehaviour
             TryReload();
         }
     }
+
 
     /// <summary>
     /// Check if player can shoot (has ammo and not reloading)
@@ -70,11 +83,15 @@ public class WeaponAmmoManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Attempt to reload the weapon
-    /// </summary>
     public void TryReload()
     {
+        // ✅ NEW: Guard against null weapon (this was causing the crash)
+        if (currentWeapon == null)
+        {
+            Debug.LogWarning("[AmmoManager] TryReload called but currentWeapon is null! Is playerShooter assigned?");
+            return;
+        }
+
         // Don't reload if already reloading
         if (isReloading)
         {
@@ -96,6 +113,7 @@ public class WeaponAmmoManager : MonoBehaviour
         }
         reloadCoroutine = StartCoroutine(ReloadCoroutine());
     }
+    
 
     /// <summary>
     /// Handles the reload process

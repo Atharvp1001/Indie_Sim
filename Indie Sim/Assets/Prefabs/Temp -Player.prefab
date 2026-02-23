@@ -5529,6 +5529,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2693588683566327872}
+  - component: {fileID: 4981732382420169629}
   - component: {fileID: 256087201219941255}
   - component: {fileID: 6221989387875595873}
   - component: {fileID: 5045363974331740693}
@@ -5581,6 +5582,34 @@ Transform:
   - {fileID: 7847435125369733911}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4981732382420169629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8485655876686838044}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 310eac3b526c7e1488eda56afaa0d03e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStompController
+  stompRadius: 5
+  stompDamage: 25
+  stompPushBeyondRadius: 1.5
+  stompCooldown: 2
+  stompCostCoins: 0
+  stompCoinCost: 10
+  stompEnemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  stompWallLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  stompBulletLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  stompVFXPrefab: {fileID: 0}
 --- !u!114 &256087201219941255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5598,7 +5627,7 @@ MonoBehaviour:
   dashDuration: 0.2
   dashCooldown: 1
   invulnerableDuringDash: 0
-  pushRadius: 0.3
+  pushRadius: 0.25
   pushStr: 5
   enemyLayer:
     serializedVersion: 2

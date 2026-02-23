@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI; // ✅ NEW — needed for Image
 using System.Collections;
 using System.Collections.Generic;
 
@@ -18,25 +19,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float dashDuration = 0.2f;
     [SerializeField] private float dashCooldown = 1f;
     [SerializeField] private bool invulnerableDuringDash = false;
-    
+
+    // ✅ NEW — drag your dash light icon Image here in Inspector
+    [Header("Dash Cooldown UI")]
+    [SerializeField] private Image dashLightIcon; // Image Type: Filled, Radial360, Top
+
     private bool isDashing = false;
     private bool canDash = true;
     private Vector2 dashDirection;
     private float dashTimeRemaining;
-
-    [Header("Stomp Settings")]
-    [SerializeField] private float stompRadius = 5f;
-    [SerializeField] private int stompDamage = 25;
-    [SerializeField] private float stompPushBeyondRadius = 1.5f; // How far beyond radius to push enemies
-    [SerializeField] private float stompCooldown = 2f;
-    [SerializeField] private bool stompCostCoins = false;
-    [SerializeField] private int stompCoinCost = 10;
-    [SerializeField] private LayerMask stompEnemyLayer;
-    [SerializeField] private LayerMask stompWallLayer;
-    [SerializeField] private LayerMask stompBulletLayer;
-    [SerializeField] private GameObject stompVFXPrefab; // Assign the StompShockwave prefab
-    
-    private bool canStomp = true;
 
     [Header("Bulldozer")]
     [SerializeField] private float pushRadius = 2f;
@@ -56,23 +47,12 @@ public class PlayerController : MonoBehaviour
 
         inputActions.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         inputActions.Player.Move.canceled += ctx => moveInput = Vector2.zero;
-        
-        // Bind dash input
+
         inputActions.Player.Dash.performed += ctx => TryDash();
-        
-        // Bind stomp input
-        inputActions.Player.Stomp.performed += ctx => TryStomp();
     }
 
-    void OnEnable()
-    {
-        inputActions.Enable();
-    }
-
-    void OnDisable()
-    {
-        inputActions.Disable();
-    }
+    void OnEnable() => inputActions.Enable();
+    void OnDisable() => inputActions.Disable();
 
     void Start()
     {
@@ -86,12 +66,12 @@ public class PlayerController : MonoBehaviour
         enemyFilter = new ContactFilter2D();
         enemyFilter.SetLayerMask(enemyLayer);
         enemyFilter.useLayerMask = true;
+
+        // ✅ NEW — start fully ready
+        SetDashFill(1f);
     }
 
-    public void SetSpeed(float newSpeed)
-    {
-        currentMoveSpeed = newSpeed;
-    }
+    public void SetSpeed(float newSpeed) => currentMoveSpeed = newSpeed;
 
     #region Dash System
 
@@ -102,9 +82,9 @@ public class PlayerController : MonoBehaviour
 
         dashDirection = moveInput.normalized;
         RaycastHit2D hit = Physics2D.Raycast(
-            transform.position, 
-            dashDirection, 
-            dashSpeed * dashDuration, 
+            transform.position,
+            dashDirection,
+            dashSpeed * dashDuration,
             collisionMask
         );
 
@@ -112,9 +92,7 @@ public class PlayerController : MonoBehaviour
         if (hit.collider != null)
         {
             safeDashDistance = Mathf.Max(0, hit.distance - wallCheckDistance);
-            
-            if (safeDashDistance < 1f)
-                return;
+            if (safeDashDistance < 1f) return;
         }
 
         StartCoroutine(DashCoroutine(safeDashDistance));
@@ -126,24 +104,18 @@ public class PlayerController : MonoBehaviour
         canDash = false;
         dashTimeRemaining = dashDuration;
 
-        Vector2 startPos = transform.position;
-        float distanceTraveled = 0f;
+        // ✅ NEW — instantly empty the icon when dash starts
+        SetDashFill(0f);
 
-        if (invulnerableDuringDash)
-        {
-            // Implement invulnerability if needed
-        }
+        float distanceTraveled = 0f;
 
         while (dashTimeRemaining > 0 && distanceTraveled < maxDistance)
         {
             dashTimeRemaining -= Time.fixedDeltaTime;
-            
+
             float frameDistance = dashSpeed * Time.fixedDeltaTime;
-            
             if (distanceTraveled + frameDistance > maxDistance)
-            {
                 frameDistance = maxDistance - distanceTraveled;
-            }
 
             RaycastHit2D immediateHit = Physics2D.Raycast(
                 transform.position,
@@ -152,10 +124,7 @@ public class PlayerController : MonoBehaviour
                 collisionMask
             );
 
-            if (immediateHit.collider != null)
-            {
-                break;
-            }
+            if (immediateHit.collider != null) break;
 
             rb.linearVelocity = dashDirection * dashSpeed;
             distanceTraveled += frameDistance;
@@ -166,178 +135,32 @@ public class PlayerController : MonoBehaviour
         isDashing = false;
         rb.linearVelocity = Vector2.zero;
 
-        if (invulnerableDuringDash)
+        // ✅ NEW — refill the icon smoothly over dashCooldown duration
+        float elapsed = 0f;
+        while (elapsed < dashCooldown)
         {
-            // Restore normal layer
+            elapsed += Time.deltaTime;
+            SetDashFill(Mathf.Clamp01(elapsed / dashCooldown));
+            yield return null;
         }
 
-        yield return new WaitForSeconds(dashCooldown);
+        // ✅ NEW — ensure perfect fill at end
+        SetDashFill(1f);
         canDash = true;
     }
 
     #endregion
 
-    #region Stomp System
-
-    private void TryStomp()
+    // ✅ NEW — sets fill on the dash light icon
+    private void SetDashFill(float amount)
     {
-        // Cannot stomp while dashing or on cooldown
-        if (!canStomp || isDashing)
-        {
-            Debug.Log("Cannot stomp: on cooldown or dashing");
-            return;
-        }
-
-        // Check coin cost
-        if (stompCostCoins)
-        {
-            if (CoinManager.Instance == null || !CoinManager.Instance.HasEnoughCoins(stompCoinCost))
-            {
-                Debug.Log($"Not enough coins for stomp! Need: {stompCoinCost}");
-                return;
-            }
-
-            // Spend coins
-            CoinManager.Instance.SpendCoins(stompCoinCost);
-            Debug.Log($"Spent {stompCoinCost} coins for stomp");
-        }
-
-        // Execute stomp
-        PerformStomp();
-
-        // Start cooldown
-        StartCoroutine(StompCooldown());
+        if (dashLightIcon != null)
+            dashLightIcon.fillAmount = amount;
     }
-
-    private void PerformStomp()
-    {
-        Debug.Log($"STOMP! Radius: {stompRadius}, Damage: {stompDamage}");
-
-        Vector2 playerPos = transform.position;
-
-        // Spawn VFX
-        if (stompVFXPrefab != null)
-        {
-            GameObject vfx = Instantiate(stompVFXPrefab, transform.position, Quaternion.identity);
-            StompShockwave shockwave = vfx.GetComponent<StompShockwave>();
-            if (shockwave != null)
-            {
-                shockwave.Initialize(stompRadius);
-            }
-        }
-
-        // 1. Destroy bullets in range
-        DestroyBulletsInRange(playerPos);
-
-        // 2. Damage and push enemies
-        DamageAndPushEnemies(playerPos);
-    }
-
-    private void DestroyBulletsInRange(Vector2 playerPos)
-    {
-        Collider2D[] bullets = Physics2D.OverlapCircleAll(playerPos, stompRadius, stompBulletLayer);
-
-        foreach (Collider2D bulletCol in bullets)
-        {
-            // Check line of sight (no walls blocking)
-            Vector2 toTarget = (Vector2)bulletCol.transform.position - playerPos;
-            RaycastHit2D wallCheck = Physics2D.Raycast(playerPos, toTarget.normalized, toTarget.magnitude, stompWallLayer);
-
-            if (wallCheck.collider == null) // No wall blocking
-            {
-                // Get bullet component and return to pool
-                Bullet bullet = bulletCol.GetComponent<Bullet>();
-                if (bullet != null)
-                {
-                    // Bullet script has pool management, just destroy it
-                    Destroy(bulletCol.gameObject);
-                    Debug.Log("Destroyed bullet with stomp");
-                }
-                else
-                {
-                    // Fallback for bullets without Bullet script
-                    Destroy(bulletCol.gameObject);
-                }
-            }
-        }
-    }
-
-    private void DamageAndPushEnemies(Vector2 playerPos)
-    {
-        Collider2D[] enemies = Physics2D.OverlapCircleAll(playerPos, stompRadius, stompEnemyLayer);
-
-        foreach (Collider2D enemyCol in enemies)
-        {
-            // Check line of sight (no walls blocking)
-            Vector2 toEnemy = (Vector2)enemyCol.transform.position - playerPos;
-            float distanceToEnemy = toEnemy.magnitude;
-            
-            RaycastHit2D wallCheck = Physics2D.Raycast(playerPos, toEnemy.normalized, distanceToEnemy, stompWallLayer);
-
-            if (wallCheck.collider != null) // Wall blocking
-            {
-                Debug.Log($"Enemy {enemyCol.name} blocked by wall, skipping");
-                continue;
-            }
-
-            // Deal damage
-            IDamageable damageable = enemyCol.GetComponent<IDamageable>();
-            if (damageable != null && !damageable.IsDead())
-            {
-                damageable.TakeDamage(stompDamage);
-                Debug.Log($"Stomped {enemyCol.name} for {stompDamage} damage");
-            }
-
-            // Calculate push position (beyond radius)
-            Vector2 pushDirection = toEnemy.normalized;
-            float targetDistance = stompRadius + stompPushBeyondRadius;
-            Vector2 targetPosition = playerPos + (pushDirection * targetDistance);
-
-            // Check if target position hits a wall
-            RaycastHit2D pushWallCheck = Physics2D.Raycast(
-                enemyCol.transform.position,
-                pushDirection,
-                Vector2.Distance(enemyCol.transform.position, targetPosition),
-                stompWallLayer
-            );
-
-            if (pushWallCheck.collider != null)
-            {
-                // Wall in the way - push only to just before wall
-                float safeDistance = pushWallCheck.distance - 0.5f; // Leave small gap
-                targetPosition = (Vector2)enemyCol.transform.position + (pushDirection * safeDistance);
-                Debug.Log($"Wall detected, pushed {enemyCol.name} to safe distance");
-            }
-
-            // INSTANT push - teleport enemy to target position
-            enemyCol.transform.position = targetPosition;
-            
-            // Optional: Reset enemy velocity to prevent sliding
-            Rigidbody2D enemyRb = enemyCol.GetComponent<Rigidbody2D>();
-            if (enemyRb != null)
-            {
-                enemyRb.linearVelocity = Vector2.zero;
-            }
-
-            Debug.Log($"Pushed {enemyCol.name} to position {targetPosition}");
-        }
-    }
-
-    private IEnumerator StompCooldown()
-    {
-        canStomp = false;
-        Debug.Log($"Stomp on cooldown for {stompCooldown} seconds");
-        yield return new WaitForSeconds(stompCooldown);
-        canStomp = true;
-        Debug.Log("Stomp ready!");
-    }
-
-    #endregion
 
     void FixedUpdate()
     {
-        if (isDashing)
-            return;
+        if (isDashing) return;
 
         rb.linearVelocity = moveInput * currentMoveSpeed;
 
@@ -373,36 +196,17 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public bool IsDashing()
-    {
-        return isDashing;
-    }
-
-    public bool CanStomp()
-    {
-        return canStomp && !isDashing;
-    }
+    public bool IsDashing() => isDashing;
 
     void OnDrawGizmosSelected()
     {
-        // Bulldozer radius
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, pushRadius);
 
-        // Stomp radius
-        Gizmos.color = canStomp ? Color.cyan : Color.gray;
-        Gizmos.DrawWireSphere(transform.position, stompRadius);
-
-        // Stomp push target distance
-        Gizmos.color = Color.magenta;
-        Gizmos.DrawWireSphere(transform.position, stompRadius + stompPushBeyondRadius);
-
-        // Dash direction
         if (moveInput.magnitude > 0.1f)
         {
             Gizmos.color = canDash ? Color.green : Color.red;
-            Vector2 dashDir = moveInput.normalized;
-            Gizmos.DrawRay(transform.position, dashDir * dashSpeed * dashDuration);
+            Gizmos.DrawRay(transform.position, moveInput.normalized * dashSpeed * dashDuration);
         }
     }
 }
