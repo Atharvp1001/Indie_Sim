@@ -145,6 +145,15 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Stomp"",
+                    ""type"": ""Button"",
+                    ""id"": ""0134e9d2-4432-4a90-a709-eb596881ac55"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -257,6 +266,28 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
                     ""action"": ""SwitchWeaponScroll"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""164d6524-8310-4b6a-b1a8-0b6bdcad606d"",
+                    ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Stomp"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""deabcbf7-febf-4eba-9b2b-7f65c38aaed8"",
+                    ""path"": """",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Stomp"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -271,6 +302,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         m_Player_SwitchWeapon = m_Player.FindAction("SwitchWeapon", throwIfNotFound: true);
         m_Player_Dash = m_Player.FindAction("Dash", throwIfNotFound: true);
         m_Player_SwitchWeaponScroll = m_Player.FindAction("SwitchWeaponScroll", throwIfNotFound: true);
+        m_Player_Stomp = m_Player.FindAction("Stomp", throwIfNotFound: true);
     }
 
     ~@PlayerControls()
@@ -357,6 +389,7 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_SwitchWeapon;
     private readonly InputAction m_Player_Dash;
     private readonly InputAction m_Player_SwitchWeaponScroll;
+    private readonly InputAction m_Player_Stomp;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -392,6 +425,10 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/SwitchWeaponScroll".
         /// </summary>
         public InputAction @SwitchWeaponScroll => m_Wrapper.m_Player_SwitchWeaponScroll;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/Stomp".
+        /// </summary>
+        public InputAction @Stomp => m_Wrapper.m_Player_Stomp;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -436,6 +473,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @SwitchWeaponScroll.started += instance.OnSwitchWeaponScroll;
             @SwitchWeaponScroll.performed += instance.OnSwitchWeaponScroll;
             @SwitchWeaponScroll.canceled += instance.OnSwitchWeaponScroll;
+            @Stomp.started += instance.OnStomp;
+            @Stomp.performed += instance.OnStomp;
+            @Stomp.canceled += instance.OnStomp;
         }
 
         /// <summary>
@@ -465,6 +505,9 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
             @SwitchWeaponScroll.started -= instance.OnSwitchWeaponScroll;
             @SwitchWeaponScroll.performed -= instance.OnSwitchWeaponScroll;
             @SwitchWeaponScroll.canceled -= instance.OnSwitchWeaponScroll;
+            @Stomp.started -= instance.OnStomp;
+            @Stomp.performed -= instance.OnStomp;
+            @Stomp.canceled -= instance.OnStomp;
         }
 
         /// <summary>
@@ -547,5 +590,12 @@ public partial class @PlayerControls: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnSwitchWeaponScroll(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Stomp" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnStomp(InputAction.CallbackContext context);
     }
 }
