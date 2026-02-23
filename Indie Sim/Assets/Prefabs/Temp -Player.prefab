@@ -5706,7 +5706,7 @@ MonoBehaviour:
   bulletTrailEnemyLayers:
     serializedVersion: 2
     m_Bits: 128
-  bulletProjectilePrefab: {fileID: 5407089440656442867, guid: 6ed4f88565758104d9da6c19879b19f7, type: 3}
+  bulletProjectilePrefab: {fileID: 5343213082621212145, guid: 50a601399cdda9d4e94fea4d17920a3b, type: 3}
   bulletSpeed: 50
   showConeGizmo: 1
   coneGizmoColor: {r: 1, g: 0, b: 0, a: 0.3}
@@ -5716,8 +5716,8 @@ MonoBehaviour:
   coneFlashDuration: 0.05
   aimDeadZone: 0.01
   ammoManager: {fileID: 2920833874844402058}
-  vfxHandler: {fileID: 0}
-  weaponInventory: {fileID: 0}
+  vfxHandler: {fileID: 7322266951050164843}
+  weaponInventory: {fileID: 6482888848170968585}
 --- !u!114 &2920833874844402058
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6136,6 +6136,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5827dbebab0bf6f4583880f757b6faaa, type: 2}
   - {fileID: 11400000, guid: 56c3f4ef79cead346984d21b7544d9d8, type: 2}
   currentWeaponIndex: 0
+  scrollThreshold: 0.1
 --- !u!114 &3378380655426888713
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6149,11 +6150,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WeaponUnlockManager
   allWeaponsInGame:
-  - {fileID: 11400000, guid: 5827dbebab0bf6f4583880f757b6faaa, type: 2}
   - {fileID: 11400000, guid: 8dfe85ede84364e4bbd47cc0fd9fd25c, type: 2}
+  - {fileID: 11400000, guid: 5827dbebab0bf6f4583880f757b6faaa, type: 2}
   - {fileID: 11400000, guid: 56c3f4ef79cead346984d21b7544d9d8, type: 2}
-  unlockedWeaponNames:
-  - Pistol
+  unlockedWeaponNames: []
+  unlockAllWeaponsOnStart: 1
+  debugUnlockedWeapons: []
 --- !u!114 &7322266951050164843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6178,7 +6180,7 @@ MonoBehaviour:
   shellEjectionPoint: {fileID: 105890739993654744}
   firePoint: {fileID: 5624597609566509571}
   muzzleFlashLight: {fileID: 7918973488368375494}
-  lightFlashDuration: 0.05
+  lightFlashDuration: 0.1
   audioSource: {fileID: 441459428130447590}
   enableCameraRecoil: 1
 --- !u!1001 &193800281715201901
