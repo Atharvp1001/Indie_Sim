@@ -1,41 +1,55 @@
 using System.Collections;
 using UnityEngine;
+using TMPro;
 
 public class WeaponAmmoManager : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private PlayerConeShooter playerShooter; // Reference to your shooting script
-    [SerializeField] private AudioSource audioSource; // For reload sound
+    [SerializeField] private PlayerConeShooter playerShooter;
+    [SerializeField] private AudioSource audioSource;
+
+    [Header("Ammo UI")]
+    [SerializeField] private TMP_Text ammoText;
 
     [Header("Debug Info")]
-    [SerializeField] private int currentAmmoInMagazine; // Current bullets in magazine
-    [SerializeField] private bool isReloading = false; // Is currently reloading?
+    [SerializeField] private int currentAmmoInMagazine;
+    [SerializeField] private bool isReloading = false;
 
     private WeaponData currentWeapon;
     private Coroutine reloadCoroutine;
 
+    // ✅ NEW — subscribe to the weapon changed event
+    private void OnEnable()
+    {
+        WeaponInventory.OnWeaponChanged += OnWeaponSwitched;
+    }
+
+    // ✅ NEW — always unsubscribe to prevent memory leaks
+    private void OnDisable()
+    {
+        WeaponInventory.OnWeaponChanged -= OnWeaponSwitched;
+    }
+
     private void Start()
     {
-        // Get shooting script reference if not assigned
         if (playerShooter == null)
         {
             playerShooter = GetComponent<PlayerConeShooter>();
         }
 
-        // Initialize ammo for starting weapon
         if (playerShooter != null)
         {
             currentWeapon = playerShooter.GetCurrentWeapon();
             if (currentWeapon != null)
             {
                 currentAmmoInMagazine = currentWeapon.magazineCapacity;
+                UpdateAmmoUI();
             }
         }
     }
 
     private void Update()
     {
-        //  FIX: Re-initialize if weapon wasn't ready during Start() (fixes execution order race)
         if (currentWeapon == null && playerShooter != null)
         {
             currentWeapon = playerShooter.GetCurrentWeapon();
@@ -43,111 +57,88 @@ public class WeaponAmmoManager : MonoBehaviour
             {
                 currentAmmoInMagazine = currentWeapon.magazineCapacity;
                 Debug.Log($"[AmmoManager] Late-initialized weapon: {currentWeapon.weaponName} - Ammo: {currentAmmoInMagazine}");
+                UpdateAmmoUI();
             }
-            return; // Wait until next frame to proceed — weapon is now set
+            return;
         }
 
-        // Listen for reload input (R key)
         if (Input.GetKeyDown(KeyCode.R) && !isReloading)
         {
             TryReload();
         }
 
-        // Auto-reload if magazine is empty and not already reloading
         if (currentAmmoInMagazine <= 0 && !isReloading)
         {
             TryReload();
         }
     }
 
-
-    /// <summary>
-    /// Check if player can shoot (has ammo and not reloading)
-    /// Call this from your shooting script before firing
-    /// </summary>
     public bool CanShoot()
     {
         return currentAmmoInMagazine > 0 && !isReloading;
     }
 
-    /// <summary>
-    /// Consume one bullet from magazine
-    /// Call this from your shooting script when you fire
-    /// </summary>
     public void ConsumeBullet()
     {
         if (currentAmmoInMagazine > 0)
         {
             currentAmmoInMagazine--;
             Debug.Log($"[AmmoManager] Ammo: {currentAmmoInMagazine}/{currentWeapon.magazineCapacity}");
+            UpdateAmmoUI();
         }
     }
 
     public void TryReload()
     {
-        // ✅ NEW: Guard against null weapon (this was causing the crash)
         if (currentWeapon == null)
         {
-            Debug.LogWarning("[AmmoManager] TryReload called but currentWeapon is null! Is playerShooter assigned?");
+            Debug.LogWarning("[AmmoManager] TryReload called but currentWeapon is null!");
             return;
         }
 
-        // Don't reload if already reloading
         if (isReloading)
         {
             Debug.Log("[AmmoManager] Already reloading!");
             return;
         }
 
-        // Don't reload if magazine is already full
         if (currentAmmoInMagazine >= currentWeapon.magazineCapacity)
         {
             Debug.Log("[AmmoManager] Magazine already full!");
             return;
         }
 
-        // Start reload coroutine
-        if (reloadCoroutine != null)
-        {
-            StopCoroutine(reloadCoroutine);
-        }
+        if (reloadCoroutine != null) StopCoroutine(reloadCoroutine);
         reloadCoroutine = StartCoroutine(ReloadCoroutine());
     }
-    
 
-    /// <summary>
-    /// Handles the reload process
-    /// </summary>
     private IEnumerator ReloadCoroutine()
     {
         isReloading = true;
         Debug.Log($"[AmmoManager] Reloading {currentWeapon.weaponName}...");
 
-        // Play reload sound
+        if (ammoText != null)
+            ammoText.text = "...";
+
         if (audioSource != null && currentWeapon.reloadSound != null)
         {
             audioSource.PlayOneShot(currentWeapon.reloadSound);
         }
 
-        // Wait for reload time
         yield return new WaitForSeconds(currentWeapon.reloadTime);
 
-        // Refill magazine (infinite reserve for now)
         currentAmmoInMagazine = currentWeapon.magazineCapacity;
         isReloading = false;
 
         Debug.Log($"[AmmoManager] Reload complete! Ammo: {currentAmmoInMagazine}/{currentWeapon.magazineCapacity}");
 
+        UpdateAmmoUI();
         reloadCoroutine = null;
     }
 
-    /// <summary>
-    /// Called when player switches weapons
-    /// Resets ammo to full magazine for new weapon
-    /// </summary>
+    // ✅ Now automatically called by WeaponInventory.OnWeaponChanged event
     public void OnWeaponSwitched(WeaponData newWeapon)
     {
-        // Stop any active reload
         if (reloadCoroutine != null)
         {
             StopCoroutine(reloadCoroutine);
@@ -156,16 +147,13 @@ public class WeaponAmmoManager : MonoBehaviour
 
         isReloading = false;
         currentWeapon = newWeapon;
-
-        // Start with full magazine
         currentAmmoInMagazine = currentWeapon.magazineCapacity;
 
         Debug.Log($"[AmmoManager] Switched to {currentWeapon.weaponName} - Ammo: {currentAmmoInMagazine}/{currentWeapon.magazineCapacity}");
+
+        UpdateAmmoUI();
     }
 
-    /// <summary>
-    /// Force cancel reload (e.g., if player gets stunned)
-    /// </summary>
     public void CancelReload()
     {
         if (reloadCoroutine != null)
@@ -174,16 +162,19 @@ public class WeaponAmmoManager : MonoBehaviour
             reloadCoroutine = null;
         }
         isReloading = false;
+        UpdateAmmoUI();
         Debug.Log("[AmmoManager] Reload cancelled!");
     }
 
-    // Getters for UI or other systems
+    private void UpdateAmmoUI()
+    {
+        if (ammoText == null) return;
+        int capacity = currentWeapon != null ? currentWeapon.magazineCapacity : 0;
+        ammoText.text = $"{currentAmmoInMagazine} / {capacity}";
+    }
+
     public int GetCurrentAmmo() => currentAmmoInMagazine;
     public int GetMagazineCapacity() => currentWeapon != null ? currentWeapon.magazineCapacity : 0;
     public bool IsReloading() => isReloading;
-    public float GetReloadProgress()
-    {
-        // You can implement this if you want a reload progress bar
-        return 0f;
-    }
+    public float GetReloadProgress() => 0f;
 }
