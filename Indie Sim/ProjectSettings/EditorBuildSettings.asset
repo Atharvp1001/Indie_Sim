@@ -17,9 +17,6 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Test Scenes/ShootTest.unity
     guid: f5f51c171ceebd3459b07b2fd39ffd97
-  - enabled: 1
-    path: Assets/Scenes/Main menu.unity
-    guid: 432064d2246b9134da5944b6680c3926
   - enabled: 0
     path: Assets/Scenes/CasualModeMenu.unity
     guid: b1fffd4dd89a25d47b6d114e653eb5af
@@ -36,8 +33,14 @@ EditorBuildSettings:
     path: Assets/Scenes/HardcoreMode.unity
     guid: 6da243c7b5c32f74e9431094393b3ef8
   - enabled: 1
+    path: Assets/Scenes/Main menu.unity
+    guid: 432064d2246b9134da5944b6680c3926
+  - enabled: 1
     path: Assets/Scenes/RoguelikeMode.unity
     guid: e54316b0996ef294d833ea8edc8bf38f
+  - enabled: 1
+    path: Assets/Scenes/BossRoom1Scene.unity
+    guid: d990140c25ac42e4e86fca39dc49b16f
   m_configObjects:
     com.unity.adaptiveperformance.google.android.provider_settings: {fileID: 11400000, guid: 83ce9056178cf2849b146fce0665d566, type: 2}
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 3257b4a80cb28494eae1fac225750df8, type: 2}

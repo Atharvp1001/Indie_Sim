@@ -62,6 +62,8 @@ MonoBehaviour:
   - Coin
   - Relic
   requiresKey: 0
+  leadsToBossLevel: 1
+  bossSceneName: BossRoom1Scene
 --- !u!212 &6780643147178771248
 SpriteRenderer:
   m_ObjectHideFlags: 0

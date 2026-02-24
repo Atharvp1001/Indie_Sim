@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement; // ✅ NEW — needed for boss scene loading
 
 public class Teleporter : MonoBehaviour
 {
@@ -22,12 +23,19 @@ public class Teleporter : MonoBehaviour
 
     [Header("Teleporter Settings")]
     [Tooltip("Does the player need a key to use this teleporter?")]
-    public bool requiresKey = true; // Check/uncheck this in the Inspector
+    public bool requiresKey = true;
 
+    // ✅ NEW — toggle between next dungeon or boss level
+    [Header("Destination Settings")]
+    [Tooltip("If true, loads the Boss Level scene instead of generating a new dungeon.")]
+    [SerializeField] private bool leadsToBossLevel = false;
+
+    [Tooltip("Exact name of the Boss Level scene (must match Build Settings).")]
+    [SerializeField] private string bossSceneName = "BossLevel";
 
     // Core dependencies
     private DungeonMapGenerator mapGenerator;
-    private RoguelikeManager roguelikeManager;  // NEW: Reference to RoguelikeManager
+    private RoguelikeManager roguelikeManager;
     private GameObject player;
     private SpriteRenderer spriteRenderer;
     private Animator animator;
@@ -56,34 +64,25 @@ public class Teleporter : MonoBehaviour
     #region Initialization
     private void InitializeTeleporter()
     {
-        // Cache required components
         spriteRenderer = GetComponent<SpriteRenderer>();
         animator = GetComponent<Animator>();
 
-        // Find map generator
         mapGenerator = FindFirstObjectByType<DungeonMapGenerator>();
         if (mapGenerator == null)
-        {
             Debug.LogError($"Teleporter '{gameObject.name}': DungeonMapGenerator not found!");
-        }
 
-        // NEW: Find RoguelikeManager
         roguelikeManager = FindFirstObjectByType<RoguelikeManager>();
         if (roguelikeManager == null)
-        {
             Debug.LogError($"Teleporter '{gameObject.name}': RoguelikeManager not found!");
-        }
 
-        // Setup collider for trigger detection
         SetupTriggerCollider();
 
-        // Initialize visual settings
         if (spriteRenderer != null)
-        {
             spriteRenderer.color = teleporterColor;
-        }
 
-        Debug.Log($"Teleporter '{gameObject.name}' initialized successfully");
+        // ✅ NEW — log destination type on start so you can confirm in Console
+        Debug.Log($"Teleporter '{gameObject.name}' initialized. Destination: " +
+                  (leadsToBossLevel ? $"Boss Level ({bossSceneName})" : "Next Dungeon"));
     }
 
     private void SetupTriggerCollider()
@@ -105,16 +104,13 @@ public class Teleporter : MonoBehaviour
     {
         if (spriteRenderer == null) return;
 
-        // Create pulsing glow effect
         float pulse = (Mathf.Sin(Time.time * 2f) + 1f) * 0.5f;
         float intensity = glowIntensity * (0.5f + pulse * 0.5f);
 
-        // Apply color with pulsing alpha
         Color currentColor = teleporterColor;
         currentColor.a = intensity;
         spriteRenderer.color = currentColor;
 
-        // Subtle scale pulsing
         float scale = 1f + pulse * 0.1f;
         transform.localScale = Vector3.one * scale;
     }
@@ -138,56 +134,65 @@ public class Teleporter : MonoBehaviour
         OnTeleportStarted?.Invoke();
 
         PlayTeleportEffects();
-
-        // Start teleport animation
         StartCoroutine(AnimateTeleporter());
 
-        // Wait for teleport delay
         yield return new WaitForSeconds(teleportDelay);
 
-        // NEW: Call RoguelikeManager to complete the dungeon
-        if (roguelikeManager != null)
+        ClearEnemiesAndSpawners();
+
+        // ✅ NEW — branch based on the toggle
+        if (leadsToBossLevel)
         {
-            Debug.Log("<color=lime>Dungeon completed! Completing roguelike run...</color>");
-
-            // Clear enemies before transition
-            ClearEnemiesAndSpawners();
-
-            // Tell RoguelikeManager the dungeon is complete
-            // This will handle: difficulty scaling, player reset, dungeon cleanup, and new dungeon generation
-            roguelikeManager.CompleteDungeon();
+            LoadBossLevel();
         }
         else
         {
-            Debug.LogError("RoguelikeManager not found - cannot complete dungeon!");
+            LoadNextDungeon();
         }
 
-        // Complete teleportation
         OnTeleportCompleted?.Invoke();
         isTeleporting = false;
 
         Debug.Log("Teleportation completed successfully");
     }
 
+    // ✅ NEW — loads the boss scene by name
+    private void LoadBossLevel()
+    {
+        if (string.IsNullOrEmpty(bossSceneName))
+        {
+            Debug.LogError("[Teleporter] Boss Level scene name is empty! Set it in the Inspector.");
+            return;
+        }
+
+        Debug.Log($"<color=red>Loading Boss Level: {bossSceneName}</color>");
+        SceneManager.LoadScene(bossSceneName);
+    }
+
+    // ✅ NEW — existing dungeon completion logic, extracted into its own method
+    private void LoadNextDungeon()
+    {
+        if (roguelikeManager != null)
+        {
+            Debug.Log("<color=lime>Dungeon completed! Proceeding to next dungeon...</color>");
+            roguelikeManager.CompleteDungeon();
+        }
+        else
+        {
+            Debug.LogError("[Teleporter] RoguelikeManager not found - cannot complete dungeon!");
+        }
+    }
+
     private void PlayTeleportEffects()
     {
-        // Play sound effect
         if (audioSource != null && teleportSound != null)
-        {
             audioSource.PlayOneShot(teleportSound);
-        }
 
-        // Spawn visual effect
         if (teleportEffect != null)
-        {
             Instantiate(teleportEffect, transform.position, transform.rotation);
-        }
 
-        // Emit particles
         if (particles != null)
-        {
             particles.Emit(50);
-        }
     }
 
     private IEnumerator AnimateTeleporter()
@@ -202,14 +207,11 @@ public class Teleporter : MonoBehaviour
             elapsed += Time.deltaTime;
             float progress = elapsed / duration;
 
-            // Rotation animation
             transform.Rotate(0, 0, 360 * Time.deltaTime);
 
-            // Scale animation
             float scaleMultiplier = 1f + progress * 2f;
             transform.localScale = originalScale * scaleMultiplier;
 
-            // Color intensity animation
             if (spriteRenderer != null)
             {
                 Color animColor = teleporterColor;
@@ -220,30 +222,23 @@ public class Teleporter : MonoBehaviour
             yield return null;
         }
 
-        // Reset visual properties
         transform.localScale = originalScale;
         if (spriteRenderer != null)
-        {
             spriteRenderer.color = originalColor;
-        }
     }
     #endregion
 
     #region Enemy Cleanup
     private void ClearEnemiesAndSpawners()
     {
-        // Clear all enemies
         ClearGameObjectsByTags(enemyTags);
-
         Debug.Log("Cleared all enemies, spawners, and projectiles from current level");
     }
 
     private void ClearGameObjectsByTags(string[] tags)
     {
         foreach (string tag in tags)
-        {
             ClearGameObjectsByTag(tag);
-        }
     }
 
     private void ClearGameObjectsByTag(string tag)
@@ -252,7 +247,6 @@ public class Teleporter : MonoBehaviour
 
         foreach (GameObject obj in objectsToDestroy)
         {
-            // Disable object first to prevent any ongoing behavior
             obj.SetActive(false);
             Destroy(obj);
         }
@@ -269,32 +263,26 @@ public class Teleporter : MonoBehaviour
             player = other.gameObject;
             playerInRange = true;
 
-            // Check if key is required
             if (requiresKey)
             {
-                // Key is required - check if player has key
                 PlayerKeyManagement keyManager = other.GetComponent<PlayerKeyManagement>();
                 if (keyManager != null && keyManager.HasKey)
                 {
-                    // Player has key - teleport
                     ActivateTeleporter();
                     Debug.Log("Player has key - Teleporting!");
                 }
                 else
                 {
-                    // Player doesn't have key - do nothing
                     Debug.Log("Player needs a key to use this teleporter!");
                 }
             }
             else
             {
-                // No key required - teleport immediately
                 ActivateTeleporter();
                 Debug.Log("No key required - Teleporting!");
             }
         }
     }
-
 
     private void OnTriggerExit2D(Collider2D other)
     {
@@ -307,21 +295,11 @@ public class Teleporter : MonoBehaviour
     #endregion
 
     #region Public API
-    public void SetMapGenerator(DungeonMapGenerator generator)
-    {
-        mapGenerator = generator;
-    }
-
-    // NEW: Set RoguelikeManager reference
-    public void SetRoguelikeManager(RoguelikeManager manager)
-    {
-        roguelikeManager = manager;
-    }
-
+    public void SetMapGenerator(DungeonMapGenerator generator) => mapGenerator = generator;
+    public void SetRoguelikeManager(RoguelikeManager manager) => roguelikeManager = manager;
     public bool IsPlayerInRange() => playerInRange;
     public bool IsTeleporting() => isTeleporting;
 
-    // Called by map generator when spawning teleporter
     public void SpawnInRoom(Room room)
     {
         if (room == null) return;
@@ -333,7 +311,6 @@ public class Teleporter : MonoBehaviour
         );
 
         transform.position = spawnPosition;
-
         Debug.Log($"Teleporter spawned in room {room.uniqueId} at {spawnPosition}");
     }
     #endregion
@@ -341,14 +318,13 @@ public class Teleporter : MonoBehaviour
     #region Debug Visualization
     private void OnDrawGizmos()
     {
-        // Draw activation radius
-        Gizmos.color = playerInRange ? Color.green : Color.cyan;
+        // ✅ NEW — color changes based on destination type too
+        Gizmos.color = leadsToBossLevel ? Color.red : (playerInRange ? Color.green : Color.cyan);
         Gizmos.DrawWireSphere(transform.position, activationRadius);
     }
 
     private void OnDrawGizmosSelected()
     {
-        // Highlight when selected
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, activationRadius);
         Gizmos.DrawWireCube(transform.position, Vector3.one * 0.5f);
