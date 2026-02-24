@@ -50,6 +50,7 @@ public class BossEnemy : MonoBehaviour, IDamageable
     [SerializeField] private float flashDuration = 0.1f;
     [SerializeField] private Color damageColor = Color.red;
     [SerializeField] private Color stuckColor = Color.yellow;
+    [SerializeField] private SpriteRenderer whiteSpriteRenderer;
 
     [Header("Loot Drop")]
     [SerializeField] private GameObject coinPrefab;
@@ -697,27 +698,33 @@ public class BossEnemy : MonoBehaviour, IDamageable
 
     private IEnumerator FlashDamage()
     {
-        if (spriteRenderer != null)
+        // How many times to flash and how long each flash lasts
+        int flashCount = 3;
+        float flashOnDuration = 0.07f;
+        float flashOffDuration = 0.07f;
+
+        // Safety — make sure white sprite starts hidden
+        if (whiteSpriteRenderer != null)
+            whiteSpriteRenderer.enabled = false;
+
+        for (int i = 0; i < flashCount; i++)
         {
-            spriteRenderer.color = damageColor;
-            yield return new WaitForSeconds(flashDuration);
-            if (!isDead)
-            {
-                if (hasShield)
-                {
-                    spriteRenderer.color = Color.Lerp(originalColor, shieldColor, 0.3f);
-                }
-                else if (!isStuckToWall)
-                {
-                    spriteRenderer.color = originalColor;
-                }
-                else
-                {
-                    spriteRenderer.color = stuckColor;
-                }
-            }
+            // Hide normal sprite, show white sprite
+            if (spriteRenderer != null) spriteRenderer.enabled = false;
+            if (whiteSpriteRenderer != null) whiteSpriteRenderer.enabled = true;
+
+            yield return new WaitForSeconds(flashOnDuration);
+
+            // Show normal sprite, hide white sprite
+            if (spriteRenderer != null) spriteRenderer.enabled = true;
+            if (whiteSpriteRenderer != null) whiteSpriteRenderer.enabled = false;
+
+            yield return new WaitForSeconds(flashOffDuration);
         }
-        flashCoroutine = null;
+
+        // Guarantee clean state at the end
+        if (spriteRenderer != null) spriteRenderer.enabled = true;
+        if (whiteSpriteRenderer != null) whiteSpriteRenderer.enabled = false;
     }
 
     public int GetCurrentHealth() => currentHealth;
