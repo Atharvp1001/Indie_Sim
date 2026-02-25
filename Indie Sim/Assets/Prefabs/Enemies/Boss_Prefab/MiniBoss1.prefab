@@ -128,7 +128,7 @@ MonoBehaviour:
   moveSpeed: 4
   maxSpeed: 15
   speedIncreasePerBounce: 0.5
-  directionChangeInterval: 2
+  directionChangeInterval: 100
   shieldHealth: 1
   shieldColor: {r: 0, g: 0.8, b: 1, a: 0.5}
   shieldVisualPrefab: {fileID: 0}
@@ -145,6 +145,7 @@ MonoBehaviour:
   flashDuration: 0.1
   damageColor: {r: 1, g: 0, b: 0, a: 1}
   stuckColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  whiteSpriteRenderer: {fileID: 0}
   coinPrefab: {fileID: 5576711845111610058, guid: 6507a99d4a98a9e4a91ab2d3fd43d539, type: 3}
   minCoins: 10
   maxCoins: 20

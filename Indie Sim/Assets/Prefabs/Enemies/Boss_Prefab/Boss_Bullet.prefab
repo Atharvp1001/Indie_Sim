@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6599761734512334317}
   - component: {fileID: 520692658930171933}
   - component: {fileID: 8685875421127551996}
-  m_Layer: 7
+  m_Layer: 11
   m_Name: Boss_Bullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -126,7 +126,7 @@ GameObject:
   m_Component:
   - component: {fileID: 996987924506865068}
   - component: {fileID: 8715888373692076822}
-  m_Layer: 7
+  m_Layer: 11
   m_Name: Bullet
   m_TagString: Untagged
   m_Icon: {fileID: 0}

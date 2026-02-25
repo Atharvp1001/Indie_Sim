@@ -14,6 +14,8 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     [Tooltip("Level 3 Enemy (hardest)")]
     public GameObject enemyLevel3Prefab;
 
+    
+
     [Header("Spawner Settings")]
     public float spawnRadius = 5f; // Radius within which enemies will spawn
     public float spawnInterval = 1.5f; // Time between spawns

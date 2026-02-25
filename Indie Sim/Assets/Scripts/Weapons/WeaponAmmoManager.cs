@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class WeaponAmmoManager : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class WeaponAmmoManager : MonoBehaviour
 
     [Header("Ammo UI")]
     [SerializeField] private TMP_Text ammoText;
+    [SerializeField] private Image reloadIcon;
 
     [Header("Debug Info")]
     [SerializeField] private int currentAmmoInMagazine;
@@ -121,11 +123,22 @@ public class WeaponAmmoManager : MonoBehaviour
             ammoText.text = "...";
 
         if (audioSource != null && currentWeapon.reloadSound != null)
-        {
             audioSource.PlayOneShot(currentWeapon.reloadSound);
+
+        // ✅ NEW — instantly empty the reload icon
+        SetReloadFill(0f);
+
+        // ✅ NEW — fill up over reload time
+        float elapsed = 0f;
+        while (elapsed < currentWeapon.reloadTime)
+        {
+            elapsed += Time.deltaTime;
+            SetReloadFill(Mathf.Clamp01(elapsed / currentWeapon.reloadTime));
+            yield return null;
         }
 
-        yield return new WaitForSeconds(currentWeapon.reloadTime);
+        // ✅ NEW — ensure perfect fill at end
+        SetReloadFill(1f);
 
         currentAmmoInMagazine = currentWeapon.magazineCapacity;
         isReloading = false;
@@ -134,6 +147,13 @@ public class WeaponAmmoManager : MonoBehaviour
 
         UpdateAmmoUI();
         reloadCoroutine = null;
+    }
+
+    // ✅ NEW
+    private void SetReloadFill(float amount)
+    {
+        if (reloadIcon != null)
+            reloadIcon.fillAmount = amount;
     }
 
     // ✅ Now automatically called by WeaponInventory.OnWeaponChanged event
@@ -162,9 +182,11 @@ public class WeaponAmmoManager : MonoBehaviour
             reloadCoroutine = null;
         }
         isReloading = false;
+        SetReloadFill(1f); // ✅ NEW — reset icon on cancel
         UpdateAmmoUI();
         Debug.Log("[AmmoManager] Reload cancelled!");
     }
+
 
     private void UpdateAmmoUI()
     {

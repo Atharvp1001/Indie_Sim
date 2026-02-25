@@ -35,7 +35,7 @@ public class SceneTransitionHandler : MonoBehaviour
             playerCam.transform.SetParent(null);
 
             // Fix to boss room position — adjust X,Y to your boss room centre
-            playerCam.transform.position = new Vector3(0f, 0f, -15.8f);
+            playerCam.transform.position = new Vector3(0f, 0f, -11.6f);
 
             Debug.Log("[SceneTransitionHandler] Main camera detached and fixed for boss scene");
         }

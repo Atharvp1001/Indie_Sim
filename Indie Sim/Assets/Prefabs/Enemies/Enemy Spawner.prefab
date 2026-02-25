@@ -71,8 +71,8 @@ MonoBehaviour:
   isActivated: 0
   activationSound: {fileID: 0}
   useBurstMode: 1
-  minEnemiesPerBurst: 3
-  maxEnemiesPerBurst: 5
+  minEnemiesPerBurst: 4
+  maxEnemiesPerBurst: 6
   burstCooldown: 5
   maxActiveBursts: 3
   maxTotalEnemies: 20
