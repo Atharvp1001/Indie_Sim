@@ -7,13 +7,16 @@ public class CoinManager : MonoBehaviour
     public static CoinManager Instance;
 
     [Header("Coin Tracking")]
-    private int currentCoins = 0; // Coins for current run only
+    private int currentCoins = 0;
+    private int coinsCollectedThisRun = 0;
 
     // PlayerPrefs key for storing total coins
     private const string TOTAL_COINS_KEY = "TotalCoinsEverCollected";
 
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
+
+    
 
     // Event for UI updates (other scripts can subscribe to this)
     public System.Action<int> OnCoinsChanged;
@@ -34,33 +37,35 @@ public class CoinManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Add coins to current run AND to total coins ever collected
-    /// </summary>
     public void AddCoins(int amount)
     {
-        // Add to current run
         currentCoins += amount;
+        coinsCollectedThisRun += amount; // ✅ NEW — track collected separately
 
-        // Add to total coins ever collected (PlayerPrefs)
         int totalCoins = PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
         totalCoins += amount;
         PlayerPrefs.SetInt(TOTAL_COINS_KEY, totalCoins);
-        PlayerPrefs.Save(); // Save to disk
+        PlayerPrefs.Save();
 
-        // Notify subscribers (like UI) that coins changed
         OnCoinsChanged?.Invoke(currentCoins);
 
         if (showDebugLogs)
-        {
-            Debug.Log($"Coins added: {amount} | Current Run: {currentCoins} | Total Ever: {totalCoins}");
-        }
+            Debug.Log($"Coins added: {amount} | Collected this run: {coinsCollectedThisRun} | Current: {currentCoins}");
 
-        // ** ACHIEVEMENT INTEGRATION **
         if (AchievementManager.Instance != null)
-        {
             AchievementManager.Instance.CheckCoinAchievements();
-        }
+    }
+
+    // ✅ NEW — getter for stat display
+    public int GetCoinsCollectedThisRun() => coinsCollectedThisRun;
+
+    // ✅ NEW — call this on retry/new run
+    public void ResetRunCoins()
+    {
+        currentCoins = 0;
+        coinsCollectedThisRun = 0;
+        OnCoinsChanged?.Invoke(currentCoins);
+        Debug.Log("[CoinManager] Run coins reset");
     }
 
     /// <summary>

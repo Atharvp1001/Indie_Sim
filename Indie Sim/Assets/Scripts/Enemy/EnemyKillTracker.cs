@@ -5,8 +5,11 @@ public class EnemyKillTracker : MonoBehaviour
     // Singleton instance - allows access from anywhere using EnemyKillTracker.Instance
     public static EnemyKillTracker Instance { get; private set; }
 
+    
+
     [Header("Kill Statistics")]
-    [SerializeField] private int totalEnemiesKilled = 0;
+    [SerializeField] private int totalEnemiesKilled = 0; // across all runs (saved)
+    [SerializeField] private int killsThisRun = 0;
 
     // Key used to save/load data from PlayerPrefs
     private const string KILL_COUNT_KEY = "TotalEnemiesKilled";
@@ -36,25 +39,25 @@ public class EnemyKillTracker : MonoBehaviour
     public void RegisterEnemyKill()
     {
         totalEnemiesKilled++;
+        killsThisRun++; // ✅ NEW
 
         if (showDebugLogs)
-        {
-            Debug.Log($"Enemy killed! Total kills: {totalEnemiesKilled}");
-        }
+            Debug.Log($"Enemy killed! Run kills: {killsThisRun} | Total: {totalEnemiesKilled}");
 
-        // Save immediately after each kill
         SaveKillCount();
 
-        // ** ACHIEVEMENT INTEGRATION **
-        // Notify achievement manager to check if any kill achievements were unlocked
         if (AchievementManager.Instance != null)
-        {
             AchievementManager.Instance.CheckKillAchievements();
-        }
-        else
-        {
-            Debug.LogWarning("[EnemyKillTracker] AchievementManager not found. Achievement checks skipped.");
-        }
+    }
+
+    // ✅ NEW — getter for this run only
+    public int GetKillsThisRun() => killsThisRun;
+
+    // ✅ NEW — call this on retry/new run
+    public void ResetRunKills()
+    {
+        killsThisRun = 0;
+        Debug.Log("[EnemyKillTracker] Run kills reset");
     }
 
     /// <summary>
@@ -64,6 +67,9 @@ public class EnemyKillTracker : MonoBehaviour
     {
         return totalEnemiesKilled;
     }
+
+   
+
 
     /// <summary>
     /// Manually save kill count to persistent storage

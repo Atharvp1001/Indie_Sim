@@ -326,6 +326,10 @@ public class PlayerHealth : MonoBehaviour
             playerCollider.enabled = false;
         }
 
+        StatTracker statTracker = FindObjectOfType<StatTracker>();
+        if (statTracker != null)
+            statTracker.ShowDeathStats();
+
         // Wait then show death UI
         StartCoroutine(ShowDeathUI());
     }
@@ -342,94 +346,11 @@ public class PlayerHealth : MonoBehaviour
             deathUIPanel.SetActive(true);
             Time.timeScale = 0f; // Pause the game
             Debug.Log("Death UI shown");
+
         }
     }
 
-    /// <summary>
-    /// Retry button - reload current level
-    /// </summary>
-    public void Retry()
-    {
-        // Close the death UI panel
-        if (deathUIPanel != null)
-        {
-            deathUIPanel.SetActive(false);
-        }
-
-        // Reposition player to (0, 0, 0)
-        transform.position = Vector3.zero;
-        Debug.Log("Player repositioned to (0, 0, 0)");
-
-        // Reset player state
-        ResetPlayerStateForRetry();
-
-        // Unpause the game
-        Time.timeScale = 1f;
-
-        // Restart the tutorial
-        TutorialManager tutorialManager = FindObjectOfType<TutorialManager>();
-        if (tutorialManager != null)
-        {
-            Debug.Log("Restarting tutorial");
-            tutorialManager.StartTutorial();
-        }
-
-        // Keep auto aim shooter disabled (tutorial will enable if needed)
-        if (playerAutoAimShooter != null)
-        {
-            playerAutoAimShooter.enabled = false;
-            Debug.Log("Auto-aim shooter kept disabled for tutorial");
-        }
-    }
-
-    /// <summary>
-    /// Reset player state for retry
-    /// </summary>
-    private void ResetPlayerStateForRetry()
-    {
-        // Reset death state
-        isDead = false;
-
-        // Reset visuals
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.color = originalColor;
-            spriteRenderer.sprite = aliveSprite;
-        }
-
-        // Enable collider
-        if (playerCollider != null)
-        {
-            playerCollider.enabled = true;
-        }
-
-        // Enable player controller (movement)
-        if (playerController != null)
-        {
-            playerController.enabled = true;
-        }
-
-        // Enable rotation
-        if (playerRotation != null)
-        {
-            playerRotation.enabled = true;
-        }
-
-        // Enable cone shooter
-        if (playerConeShooter != null)
-        {
-            playerConeShooter.enabled = true;
-        }
-
-        // Reset rigidbody to dynamic
-        if (rb != null)
-        {
-            rb.bodyType = RigidbodyType2D.Dynamic;
-            rb.linearVelocity = Vector2.zero;
-        }
-
-        Debug.Log("Player state reset for retry");
-    }
+    
 
     /// <summary>
     /// Main menu button - load main menu scene
