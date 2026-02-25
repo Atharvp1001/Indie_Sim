@@ -709,6 +709,14 @@ public class PlayerConeShooter : MonoBehaviour
         return direction;
     }
 
+   
+    public void SetCamera(Camera newCamera)
+    {
+        mainCamera = newCamera;
+        Debug.Log($"[PlayerConeShooter] Camera reassigned to: {newCamera.name}");
+    }
+
+
     /// <summary>
     /// Called when player stops shooting.
     /// </summary>

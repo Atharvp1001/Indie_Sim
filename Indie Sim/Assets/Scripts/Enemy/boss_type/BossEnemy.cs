@@ -104,7 +104,7 @@ public class BossEnemy : MonoBehaviour, IDamageable
         currentSpeed = moveSpeed;
 
         rb = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
 
         rb.linearDamping = 0f;
@@ -668,6 +668,10 @@ public class BossEnemy : MonoBehaviour, IDamageable
         Debug.Log("Boss defeated!");
 
         Destroy(gameObject, 2f);
+
+        BossSceneManager bossManager = FindObjectOfType<BossSceneManager>();
+        if (bossManager != null)
+            bossManager.OnBossDefeated();
     }
 
     private void DropCoins()

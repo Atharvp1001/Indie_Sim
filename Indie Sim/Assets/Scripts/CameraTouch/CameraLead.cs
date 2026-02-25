@@ -103,6 +103,12 @@ public class CinemachineCursorLead : MonoBehaviour
         Debug.Log($"Main Camera found: {mainCamera != null}");
 
         if (player == null)
+            player = GameObject.FindGameObjectWithTag("Player").transform;
+
+        if (player == null)
+            Debug.LogError("PLAYER NOT ASSIGNED!");
+
+        if (player == null)
         {
             Debug.LogError("PLAYER NOT ASSIGNED!");
             return;

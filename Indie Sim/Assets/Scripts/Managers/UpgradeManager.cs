@@ -33,11 +33,22 @@ public class UpgradeManager : MonoBehaviour
             weaponInventory = FindObjectOfType<WeaponInventory>();
 
         ValidateReferences();
-        ResetAllWeaponDamages();
 
-        Debug.Log("[UpgradeManager] 🔄 RESET - All upgrades cleared for new run");
+        // ✅ Only reset on first load, not when persisted into boss scene
+        if (speedUpgradeLevel == 0 && pistolDamageLevel == 0 &&
+            shotgunDamageLevel == 0 && machineGunDamageLevel == 0)
+        {
+            ResetAllWeaponDamages();
+            Debug.Log("[UpgradeManager] Fresh run — damages reset to base");
+        }
+        else
+        {
+            Debug.Log("[UpgradeManager] Carried over from dungeon — keeping upgrades");
+        }
+
         PrintUpgradeStats();
     }
+
 
     private void ValidateReferences()
     {
