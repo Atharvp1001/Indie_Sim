@@ -18,7 +18,7 @@ MonoBehaviour:
   coneAngle: 25
   coneRange: 8
   fireRate: 10
-  baseDamagePerShot: 75
+  baseDamagePerShot: 25
   baseWidthMultiplier: 1
   topWidthMultiplier: 0.45
   baseDistanceRatio: 0.08
@@ -28,5 +28,7 @@ MonoBehaviour:
   reloadSound: {fileID: 0}
   muzzleFlashEffect: {fileID: 0}
   hitEffect: {fileID: 0}
-  maxAmmo: -1
-  reloadTime: 2
+  magazineCapacity: 30
+  reloadTime: 5
+  hasInfiniteReserve: 1
+  maxPierceCount: 3

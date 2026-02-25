@@ -72,7 +72,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 56
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -150,12 +150,12 @@ TextureImporter:
       name: Playersprites_0
       rect:
         serializedVersion: 2
-        x: 2
-        y: 2
-        width: 38
-        height: 66
+        x: 3
+        y: 3
+        width: 36
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -172,12 +172,12 @@ TextureImporter:
       name: Playersprites_1
       rect:
         serializedVersion: 2
-        x: 49
-        y: 6
-        width: 38
-        height: 62
+        x: 50
+        y: 7
+        width: 36
+        height: 60
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -194,12 +194,12 @@ TextureImporter:
       name: Playersprites_2
       rect:
         serializedVersion: 2
-        x: 96
-        y: 8
-        width: 38
-        height: 60
+        x: 97
+        y: 9
+        width: 36
+        height: 58
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -216,12 +216,12 @@ TextureImporter:
       name: Playersprites_3
       rect:
         serializedVersion: 2
-        x: 143
-        y: 6
-        width: 38
-        height: 62
+        x: 144
+        y: 7
+        width: 36
+        height: 60
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -238,12 +238,12 @@ TextureImporter:
       name: Playersprites_4
       rect:
         serializedVersion: 2
-        x: 190
-        y: 2
-        width: 38
-        height: 66
+        x: 191
+        y: 3
+        width: 36
+        height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -260,12 +260,12 @@ TextureImporter:
       name: Playersprites_5
       rect:
         serializedVersion: 2
-        x: 237
-        y: 5
-        width: 38
-        height: 63
+        x: 238
+        y: 6
+        width: 36
+        height: 61
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -282,12 +282,12 @@ TextureImporter:
       name: Playersprites_6
       rect:
         serializedVersion: 2
-        x: 284
-        y: 8
-        width: 38
-        height: 60
+        x: 285
+        y: 9
+        width: 36
+        height: 58
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -304,12 +304,12 @@ TextureImporter:
       name: Playersprites_7
       rect:
         serializedVersion: 2
-        x: 331
-        y: 6
-        width: 38
-        height: 62
+        x: 332
+        y: 7
+        width: 36
+        height: 60
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -326,7 +326,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 3f3fd9b08206f9e4faeb14ca18473e0a
     internalID: 0
     vertices: []
     indices: 
@@ -334,7 +334,9 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":8.0,"y":1.0},"gridSpriteSize":{"x":46.0,"y":70.0},"gridSpriteOffset":{"x":1.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       Playersprites_0: -3866746020986241682
       Playersprites_1: -8156371586856136889
