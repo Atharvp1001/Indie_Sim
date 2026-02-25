@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b08ceb78e3b2495b8d808a5860e66794, type: 3}
-  m_Name: New Auto Tile
+  m_Name: pl_y
   m_EditorClassIdentifier: Unity.2D.Tilemap.Extras::UnityEngine.Tilemaps.AutoTile
-  m_DefaultSprite: {fileID: 21300000, guid: 03340aa74da2ce744a0924ec3df48dd3, type: 3}
+  m_DefaultSprite: {fileID: 21300000, guid: 757e8c1c9ce27544d9b90038a57f444e, type: 3}
   m_DefaultGameObject: {fileID: 0}
   m_DefaultColliderType: 1
   m_MaskType: 0
