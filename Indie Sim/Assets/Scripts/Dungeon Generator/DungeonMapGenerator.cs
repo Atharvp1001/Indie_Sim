@@ -189,7 +189,7 @@ public class DungeonMapGenerator : MonoBehaviour
     [SerializeField] private Tilemap wallTilemap;
     [SerializeField] private Tilemap foliageTilemap;
     [SerializeField] private TileBase[] floorTiles;
-    [SerializeField] private TileBase wallTile;
+    [SerializeField] private TileBase[] wallTiles;
     [SerializeField] private TileBase[] foliageTiles;
 
     [Header("Foliage Settings")]
@@ -428,13 +428,13 @@ public class DungeonMapGenerator : MonoBehaviour
             return;
         }
 
-        if (floorTiles == null || floorTiles.Length == 0 || wallTile == null)
+        if (floorTiles == null || floorTiles.Length == 0 || wallTiles == null || wallTiles.Length < 16)
         {
-            Debug.LogError("Tiles not assigned!");
+            Debug.LogError("Tiles not assigned! Wall tiles array must have 16 entries.");
             return;
         }
 
-        // Clear both tilemaps
+        // Clear all tilemaps
         floorTilemap.ClearAllTiles();
         wallTilemap.ClearAllTiles();
         foliageTilemap.ClearAllTiles();
@@ -446,19 +446,102 @@ public class DungeonMapGenerator : MonoBehaviour
         {
             floorTilemap.SetTile((Vector3Int)floorPos, GetRandomFloorTile());
 
-            if (foliageTilemap != null && ShouldSpawnFoliage(floorPos,mapData))
+            if (foliageTilemap != null && ShouldSpawnFoliage(floorPos, mapData))
             {
                 foliageTilemap.SetTile((Vector3Int)floorPos, GetRandomFoliageTile());
             }
         }
 
-        // Paint wall tiles
+        // Paint wall tiles with autotiling logic
         foreach (var wallPos in mapData.wallTiles)
         {
-            wallTilemap.SetTile((Vector3Int)wallPos, wallTile);
+            TileBase selectedWallTile = GetWallTileForPosition(wallPos, mapData.floorTiles, mapData.wallTiles);
+            wallTilemap.SetTile((Vector3Int)wallPos, selectedWallTile);
         }
 
         Debug.Log("Tile painting complete");
+    }
+
+    private TileBase GetWallTileForPosition(Vector2Int pos, HashSet<Vector2Int> floorTiles, HashSet<Vector2Int> wallTiles)
+    {
+        if (this.wallTiles == null || this.wallTiles.Length < 16)
+            return null;
+        
+        // Check floor neighbors (cardinal directions)
+        bool floorN = floorTiles.Contains(new Vector2Int(pos.x, pos.y + 1));
+        bool floorS = floorTiles.Contains(new Vector2Int(pos.x, pos.y - 1));
+        bool floorE = floorTiles.Contains(new Vector2Int(pos.x + 1, pos.y));
+        bool floorW = floorTiles.Contains(new Vector2Int(pos.x - 1, pos.y));
+        
+        // Check wall neighbors (cardinal directions)
+        bool wallN = wallTiles.Contains(new Vector2Int(pos.x, pos.y + 1));
+        bool wallS = wallTiles.Contains(new Vector2Int(pos.x, pos.y - 1));
+        bool wallE = wallTiles.Contains(new Vector2Int(pos.x + 1, pos.y));
+        bool wallW = wallTiles.Contains(new Vector2Int(pos.x - 1, pos.y));
+        
+        int floorCount = (floorN ? 1 : 0) + (floorS ? 1 : 0) + (floorE ? 1 : 0) + (floorW ? 1 : 0);
+        int wallCount = (wallN ? 1 : 0) + (wallS ? 1 : 0) + (wallE ? 1 : 0) + (wallW ? 1 : 0);
+        
+        // --- NEW: Two opposite floors (straight corridor walls) ---
+        if (floorCount == 2)
+        {
+            if (floorN && floorS && !floorE && !floorW) return this.wallTiles[0]; // Horizontal bar
+            if (floorE && floorW && !floorN && !floorS) return this.wallTiles[1]; // Vertical bar
+        }
+        
+        // --- PRIORITY 1: Single floor neighbor (edge tiles) ---
+        if (floorCount == 1)
+        {
+            if (floorN || floorS) return this.wallTiles[0]; // Horizontal bar
+            if (floorE || floorW) return this.wallTiles[1]; // Vertical bar
+        }
+        
+        // --- PRIORITY 2: Four walls (cross junction) ---
+        if (wallCount == 4)
+        {
+            return this.wallTiles[14]; // Cross junction
+        }
+        
+        // --- PRIORITY 3: Three walls (T-junctions) ---
+        if (wallCount == 3)
+        {
+            if (!wallN) return this.wallTiles[6]; // T-junction up (missing north wall)
+            if (!wallS) return this.wallTiles[7]; // T-junction down (missing south wall)
+            if (!wallW) return this.wallTiles[8]; // T-junction left (missing west wall)
+            if (!wallE) return this.wallTiles[9]; // T-junction right (missing east wall)
+        }
+        
+        // --- PRIORITY 4: Two walls (corners) ---
+        if (wallCount == 2)
+        {
+            if (wallS && wallE) return this.wallTiles[2]; // Top-left corner
+            if (wallS && wallW) return this.wallTiles[3]; // Top-right corner
+            if (wallN && wallE) return this.wallTiles[4]; // Bottom-left corner
+            if (wallN && wallW) return this.wallTiles[5]; // Bottom-right corner
+            
+            // Opposite walls (straight corridors) — treat as edges
+            if (wallN && wallS) return this.wallTiles[0]; // Horizontal bar
+            if (wallE && wallW) return this.wallTiles[1]; // Vertical bar
+        }
+        
+        // --- PRIORITY 5: Three floor neighbors + one wall (end caps) ---
+        if (floorCount == 3)
+        {
+            if (wallS) return this.wallTiles[10]; // Cap facing up
+            if (wallN) return this.wallTiles[11]; // Cap facing down
+            if (wallE) return this.wallTiles[12]; // Cap facing left
+            if (wallW) return this.wallTiles[13]; // Cap facing right
+        }
+        
+        // --- PRIORITY 6: One wall (use edge logic) ---
+        if (wallCount == 1)
+        {
+            if (wallN || wallS) return this.wallTiles[0]; // Horizontal bar
+            if (wallE || wallW) return this.wallTiles[1]; // Vertical bar
+        }
+        
+        // --- FALLBACK: Isolated tile ---
+        return this.wallTiles[15];
     }
 
     private bool ShouldSpawnFoliage(Vector2Int position, MapData mapData)
