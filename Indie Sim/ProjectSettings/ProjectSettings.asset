@@ -145,7 +145,7 @@ PlayerSettings:
   bundleVersion: 0.2.1
   preloadedAssets:
   - {fileID: 0}
-  - {fileID: -944628639613478452, guid: ca395cef374c4f14a833c456d8d6fd81, type: 3}
+  - {fileID: 0}
   - {fileID: 11400000, guid: 5803f949dfc30ae45acaf8986592a9bb, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
@@ -502,6 +502,9 @@ PlayerSettings:
     m_DynamicBatching: 0
   - m_BuildTarget: WebGL
     m_StaticBatching: 0
+    m_DynamicBatching: 0
+  - m_BuildTarget: Standalone
+    m_StaticBatching: 1
     m_DynamicBatching: 0
   m_BuildTargetShaderSettings: []
   m_BuildTargetGraphicsJobs:

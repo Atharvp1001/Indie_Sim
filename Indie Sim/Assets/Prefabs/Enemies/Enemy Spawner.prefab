@@ -49,7 +49,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyLevel1Prefab: {fileID: 1773204433277557146, guid: 56da4d5d08d2d3046b2ab1d007b5174e, type: 3}
   enemyLevel2Prefab: {fileID: 1773204433277557146, guid: 4ab6385bfb62248479107c25efb7f6d7, type: 3}
-  enemyLevel3Prefab: {fileID: 1773204433277557146, guid: 92ef062a7f4a47144a2169c2d4f4746c, type: 3}
+  enemyLevel3Prefab: {fileID: 1595180837359364782, guid: 996caeec860be5148bb93d18dff4fc61, type: 3}
   spawnRadius: 5
   spawnInterval: 3
   maxEnemies: 0
@@ -78,9 +78,9 @@ MonoBehaviour:
   maxTotalEnemies: 20
   cthulhuEyePrefab: {fileID: 6048784882248778353, guid: b8bc32b551b4ab545a865cdfecdef7c7, type: 3}
   canSpawnCthulhuEye: 1
-  cthulhuEyeSpawnChance: 0.3
+  cthulhuEyeSpawnChance: 0.5
   cthulhuEyeSpawnRadius: 15
-  minDungeonLevelForCthulhuEye: 3
+  minDungeonLevelForCthulhuEye: 2
 --- !u!212 &3399380655111319332
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -191,8 +191,8 @@ MonoBehaviour:
   m_LightType: 3
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.785
-  m_Color: {r: 1, g: 0.39811313, b: 0.39811313, a: 1}
-  m_Intensity: 1.4
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Intensity: 0.6
   m_LightVolumeIntensity: 0.2
   m_LightVolumeEnabled: 1
   m_ApplyToSortingLayers: 0000000035284bd1c3bb6c7e8dc2aab5bf945d6b

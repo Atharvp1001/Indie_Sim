@@ -323,9 +323,9 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         dungeonNumber = Mathf.Clamp(dungeonNumber, 1, 9);
 
         // Apply formulas
-        spawnRate_Level1 = 80f - 10f * (dungeonNumber - 1);
+        spawnRate_Level1 = 85f - 10f * (dungeonNumber - 1);
         spawnRate_Level2 = 15f + 5f * (dungeonNumber - 1);
-        spawnRate_Level3 = 5f + 5f * (dungeonNumber - 1);
+        spawnRate_Level3 = 0f + 5f * (dungeonNumber - 1);
 
         // Clamp rates to valid ranges
         spawnRate_Level1 = Mathf.Max(spawnRate_Level1, 0f);

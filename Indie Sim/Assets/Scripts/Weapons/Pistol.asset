@@ -31,4 +31,4 @@ MonoBehaviour:
   magazineCapacity: 12
   reloadTime: 1
   hasInfiniteReserve: 1
-  maxPierceCount: 2
+  maxPierceCount: 3
