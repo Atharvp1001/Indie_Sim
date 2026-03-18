@@ -21,6 +21,8 @@ public class PlayerStompController : MonoBehaviour
     [SerializeField] private LayerMask stompWallLayer;
     [SerializeField] private LayerMask stompBulletLayer;
     [SerializeField] private GameObject stompVFXPrefab;
+    [SerializeField] private float stompScreenShakeDuration = 0.1f;
+    [SerializeField] private float stompScreenShakeAmp = 10.0f;
 
     // ✅ UI Reference — drag your light icon Image here in Inspector
     [Header("Cooldown UI")]
@@ -85,6 +87,9 @@ public class PlayerStompController : MonoBehaviour
             StompShockwave shockwave = vfx.GetComponent<StompShockwave>();
             if (shockwave != null) shockwave.Initialize(stompRadius);
         }
+
+        // Violent stomp shake — high amplitude (8), short duration (0.15s)
+        CameraShake.Instance?.ShakeCamera(stompScreenShakeAmp, stompScreenShakeDuration);
 
         DestroyBulletsInRange(playerPos);
         DamageAndPushEnemies(playerPos);

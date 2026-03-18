@@ -3,6 +3,9 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI; // ✅ NEW — needed for Image
 using System.Collections;
 using System.Collections.Generic;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+
 
 public class PlayerController : MonoBehaviour
 {
@@ -23,6 +26,7 @@ public class PlayerController : MonoBehaviour
     // ✅ NEW — drag your dash light icon Image here in Inspector
     [Header("Dash Cooldown UI")]
     [SerializeField] private Image dashLightIcon; // Image Type: Filled, Radial360, Top
+    [SerializeField] private Volume dashBlurVolume; // Drag DashBlurVolume GameObject here
 
     private bool isDashing = false;
     private bool canDash = true;
@@ -104,8 +108,10 @@ public class PlayerController : MonoBehaviour
         canDash = false;
         dashTimeRemaining = dashDuration;
 
-        // ✅ NEW — instantly empty the icon when dash starts
         SetDashFill(0f);
+
+        // Enable blur when dash starts
+        if (dashBlurVolume != null) dashBlurVolume.weight = 1f;
 
         float distanceTraveled = 0f;
 
@@ -135,7 +141,9 @@ public class PlayerController : MonoBehaviour
         isDashing = false;
         rb.linearVelocity = Vector2.zero;
 
-        // ✅ NEW — refill the icon smoothly over dashCooldown duration
+        // Disable blur when dash ends
+        if (dashBlurVolume != null) dashBlurVolume.weight = 0f;
+
         float elapsed = 0f;
         while (elapsed < dashCooldown)
         {
@@ -144,10 +152,10 @@ public class PlayerController : MonoBehaviour
             yield return null;
         }
 
-        // ✅ NEW — ensure perfect fill at end
         SetDashFill(1f);
         canDash = true;
     }
+
 
     #endregion
 
