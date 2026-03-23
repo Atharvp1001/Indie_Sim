@@ -1,26 +1,37 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// Attach this to the Player GameObject.
-/// Handles all setup needed after transitioning to the boss scene.
-/// </summary>
 public class SceneTransitionHandler : MonoBehaviour
 {
+    [SerializeField] private string bossSceneName = "BossLevel";
+
+    private Camera playerCam;
+
     public void HandleBossSceneLoad()
     {
-        SceneManager.sceneLoaded += OnBossSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
-    private void OnBossSceneLoaded(Scene scene, LoadSceneMode mode)
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        SceneManager.sceneLoaded -= OnBossSceneLoaded;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
 
-        // ✅ Find the main camera specifically by tag, not just any camera child
-        Camera playerCam = null;
-        Camera[] allCams = GetComponentsInChildren<Camera>();
+        if (scene.name == bossSceneName)
+        {
+            SetupBossScene();
+        }
+        else
+        {
+            // ✅ Returning to roguelike scene — reattach camera to player
+            SetupRoguelikeScene();
+        }
+    }
 
-        foreach (Camera cam in allCams)
+    private void SetupBossScene()
+    {
+        // Find and detach player camera
+        playerCam = null;
+        foreach (Camera cam in GetComponentsInChildren<Camera>())
         {
             if (cam.CompareTag("MainCamera"))
             {
@@ -31,23 +42,16 @@ public class SceneTransitionHandler : MonoBehaviour
 
         if (playerCam != null)
         {
-            // Detach from player so it stops following
             playerCam.transform.SetParent(null);
-
-            // Fix to boss room position — adjust X,Y to your boss room centre
             playerCam.transform.position = new Vector3(0f, 0f, -11.6f);
-
-            Debug.Log("[SceneTransitionHandler] Main camera detached and fixed for boss scene");
+            Debug.Log("[SceneTransitionHandler] Camera detached and fixed for boss scene");
         }
         else
-        {
             Debug.LogWarning("[SceneTransitionHandler] No MainCamera found in player children!");
-        }
 
-        // Reassign camera to PlayerConeShooter
+        // Reassign camera to shooter
         PlayerConeShooter shooter = GetComponent<PlayerConeShooter>();
-        if (shooter != null)
-            shooter.SetCamera(Camera.main);
+        if (shooter != null) shooter.SetCamera(Camera.main);
 
         // Move player to spawn point
         GameObject spawnPoint = GameObject.FindGameObjectWithTag("PlayerSpawnPoint");
@@ -56,5 +60,42 @@ public class SceneTransitionHandler : MonoBehaviour
         Debug.Log("[SceneTransitionHandler] Boss scene setup complete");
     }
 
+    private void SetupRoguelikeScene()
+    {
+        // ✅ Reattach camera back to player
+        if (playerCam != null)
+        {
+            playerCam.transform.SetParent(transform);
+            playerCam.transform.localPosition = new Vector3(0f, 0f, -11.6f);
+            Debug.Log("[SceneTransitionHandler] Camera reattached to player");
+        }
+        else
+        {
+            // Camera was never detached — find it as child
+            foreach (Camera cam in GetComponentsInChildren<Camera>())
+            {
+                if (cam.CompareTag("MainCamera"))
+                {
+                    playerCam = cam;
+                    break;
+                }
+            }
+            Debug.Log("[SceneTransitionHandler] Camera already attached to player");
+        }
 
+        // Reassign camera to shooter
+        PlayerConeShooter shooter = GetComponent<PlayerConeShooter>();
+        if (shooter != null) shooter.SetCamera(Camera.main);
+
+        // Move player to spawn point
+        GameObject spawnPoint = GameObject.FindGameObjectWithTag("PlayerSpawnPoint");
+        transform.position = spawnPoint != null ? spawnPoint.transform.position : Vector3.zero;
+
+        Debug.Log("[SceneTransitionHandler] Roguelike scene setup complete");
+    }
+
+    public void HandleRoguelikeSceneLoad()
+    {
+        SetupRoguelikeScene();
+    }
 }

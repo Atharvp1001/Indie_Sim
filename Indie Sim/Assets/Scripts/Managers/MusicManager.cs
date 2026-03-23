@@ -3,6 +3,9 @@ using System.Collections;
 
 public class MusicManager : MonoBehaviour
 {
+
+    public static MusicManager Instance;
+
     [Header("Player Reference")]
     [SerializeField] private Transform player;
     
@@ -57,6 +60,22 @@ public class MusicManager : MonoBehaviour
     private bool isPlayerDead = false;
     private bool isTeleporting = false;
     
+
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
+
     void Start()
     {
         InitializeAudioSources();

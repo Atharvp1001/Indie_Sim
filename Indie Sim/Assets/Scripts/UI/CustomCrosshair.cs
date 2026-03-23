@@ -4,6 +4,8 @@ using System.Collections;
 
 public class CustomCrosshair : MonoBehaviour
 {
+    public static CustomCrosshair Instance;
+
     [Header("Crosshair UI")]
     [SerializeField] private Image crosshairImage;
     [SerializeField] private RectTransform crosshairRect;
@@ -20,6 +22,20 @@ public class CustomCrosshair : MonoBehaviour
 
     private bool isShowingHitFeedback = false;
 
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
     void Start()
     {
         // Hide the system cursor

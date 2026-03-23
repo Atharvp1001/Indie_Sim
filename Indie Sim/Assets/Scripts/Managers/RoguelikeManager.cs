@@ -1,8 +1,11 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class RoguelikeManager : MonoBehaviour
 {
+    public static RoguelikeManager Instance;
+
     [Header("Store Reference")]
     public StoreManager storeManager;
 
@@ -13,14 +16,7 @@ public class RoguelikeManager : MonoBehaviour
     [Header("Demo Settings")]
     [SerializeField] private int roomsTillBoss = 3;
     [SerializeField] private string bossSceneName = "BossLevel";
-
-    [Header("Persistent Managers")]
-    [SerializeField] private GameObject persistentCanvas;
-    [SerializeField] private GameObject upgradeManager;
-    [SerializeField] private GameObject enemyKillTracker;
-    [SerializeField] private GameObject coinManager;
-    [SerializeField] private GameObject musicManager;
-    [SerializeField] private GameObject crosshairController;
+    [SerializeField] private string roguelikeScene2Name = "RoguelikeModeEmpty"; // ✅ NEW
 
     private int dungeonsClearedCount = 0;
     private int dungeonSizeIncrement = 0;
@@ -28,6 +24,74 @@ public class RoguelikeManager : MonoBehaviour
     private const float SIZE_INCREASE_CHANCE = 0.5f;
     private int currentLevel = 1;
 
+    // ✅ NEW — singleton + persist
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
+
+    // ✅ NEW — subscribe to scene load events
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == roguelikeScene2Name)
+        {
+            Debug.Log("[RoguelikeManager] RoguelikeScene_2 detected — waiting for scene init...");
+            StartCoroutine(InitRoguelikeScene2());
+        }
+    }
+
+    private IEnumerator InitRoguelikeScene2()
+    {
+       
+
+        dungeonGenerator = FindFirstObjectByType<DungeonMapGenerator>();
+        teleporter = FindFirstObjectByType<Teleporter>();
+        storeManager = FindFirstObjectByType<StoreManager>();
+        playerTransform = FindFirstObjectByType<PlayerController>()?.transform;
+
+        // ✅ Debug every ref so we know exactly what's null
+        Debug.Log($"[RoguelikeManager] dungeonGenerator: {dungeonGenerator}");
+        Debug.Log($"[RoguelikeManager] teleporter: {teleporter}");
+        Debug.Log($"[RoguelikeManager] storeManager: {storeManager}");
+        Debug.Log($"[RoguelikeManager] playerTransform: {playerTransform}");
+
+        if (dungeonGenerator == null)
+        {
+            Debug.LogError("[RoguelikeManager] DungeonMapGenerator not found! Is it in RoguelikeScene_2?");
+            yield break;
+        }
+
+        GenerateNewDungeon();
+        UpdateSpawnerDifficulty();
+
+        // ✅ Directly call roguelike setup — don't reuse HandleBossSceneLoad
+        SceneTransitionHandler handler = playerTransform?.GetComponent<SceneTransitionHandler>();
+        if (handler != null)
+            handler.HandleRoguelikeSceneLoad(); // ✅ new dedicated method
+        else
+            Debug.LogWarning("[RoguelikeManager] SceneTransitionHandler not found on player!");
+
+        Debug.Log("[RoguelikeManager] RoguelikeScene_2 fully initialized!");
+    }
     private void Start()
     {
         GenerateNewDungeon();
@@ -69,41 +133,15 @@ public class RoguelikeManager : MonoBehaviour
 
     private void LoadBossLevel()
     {
-        if (playerTransform != null)
-        {
-            DontDestroyOnLoad(playerTransform.gameObject);
+        // ✅ Player and Canvas persist themselves — no manual DontDestroyOnLoad needed here
+        SceneTransitionHandler handler = playerTransform?.GetComponent<SceneTransitionHandler>();
+        if (handler != null)
+            handler.HandleBossSceneLoad();
+        else
+            Debug.LogWarning("[RoguelikeManager] SceneTransitionHandler not found on Player!");
 
-            // ✅ SceneTransitionHandler on the Player handles post-load setup
-            SceneTransitionHandler handler = playerTransform.GetComponent<SceneTransitionHandler>();
-            if (handler != null)
-                handler.HandleBossSceneLoad();
-            else
-                Debug.LogWarning("[RoguelikeManager] SceneTransitionHandler not found on Player!");
-        }
-
-        if (persistentCanvas != null)
-            DontDestroyOnLoad(persistentCanvas);
-
-        PersistIfNotNull(upgradeManager);
-        PersistIfNotNull(enemyKillTracker);
-        PersistIfNotNull(coinManager);
-        PersistIfNotNull(musicManager);
-        PersistIfNotNull(crosshairController);
-
-        // ✅ RoguelikeManager does NOT persist — it dies here, that's intentional
         SceneManager.LoadScene(bossSceneName);
     }
-
-    private void PersistIfNotNull(GameObject obj)
-    {
-        if (obj != null)
-            DontDestroyOnLoad(obj);
-        else
-            Debug.LogWarning("[RoguelikeManager] A manager reference is null — check Inspector assignments!");
-    }
-
-    // ✅ REMOVED — OnBossSceneLoaded() no longer lives here
-    // It now lives in SceneTransitionHandler.cs on the Player GameObject
 
     private void ClearCurrentDungeon()
     {
@@ -175,7 +213,7 @@ public class RoguelikeManager : MonoBehaviour
         UpdateSpawnerDifficulty();
         DEBUG_PrintStats();
     }
-
+   
     public int GetDungeonsClearedCount() => dungeonsClearedCount;
     public int GetDungeonSizeIncrement() => dungeonSizeIncrement;
     public int GetCurrentDungeonNodeCount() => GetCurrentDungeonSize();

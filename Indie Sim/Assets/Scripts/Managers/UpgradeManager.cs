@@ -2,6 +2,9 @@
 
 public class UpgradeManager : MonoBehaviour
 {
+
+    public static UpgradeManager Instance;
+
     [Header("Player References")]
     [SerializeField] private PlayerController playerMovement;
     [SerializeField] private PlayerHealth playerHealth;
@@ -27,6 +30,21 @@ public class UpgradeManager : MonoBehaviour
     [SerializeField] private int maxPistolPierceCount = 5;   // Maximum pierce count
     [SerializeField] private int pierceIncreasePerUpgrade = 1; // How much to increase per upgrade
 
+
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
     private void Start()
     {
         if (weaponInventory == null)

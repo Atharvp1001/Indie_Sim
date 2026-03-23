@@ -1,14 +1,13 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI; // ✅ needed for Button
 
-/// <summary>
-/// Lives in the Boss scene. Handles all boss scene specific logic —
-/// victory screen, boss death, game over, etc.
-/// </summary>
 public class BossSceneManager : MonoBehaviour
 {
     [Header("Victory Settings")]
-    [SerializeField] private string victoryPanelName = "VictoryPanel"; // Must match name in Canvas
+    [SerializeField] private string victoryPanelName = "VictoryPanel";
+    [SerializeField] private string continueButtonName = "nextscene"; // ✅ must match button's GameObject name
+    [SerializeField] private string nextSceneName = "RoguelikeScene_2";
 
     private GameObject victoryPanel;
     private Canvas persistedCanvas;
@@ -20,7 +19,6 @@ public class BossSceneManager : MonoBehaviour
 
     private void FindPersistedCanvas()
     {
-        // Canvas came from DontDestroyOnLoad — FindObjectOfType finds it fine
         persistedCanvas = FindObjectOfType<Canvas>();
 
         if (persistedCanvas != null)
@@ -30,29 +28,57 @@ public class BossSceneManager : MonoBehaviour
             {
                 victoryPanel = panel.gameObject;
                 victoryPanel.SetActive(false);
+
+                // ✅ Find the button inside the panel and wire it in code
+                Transform buttonTransform = panel.Find(continueButtonName);
+                if (buttonTransform != null)
+                {
+                    Button continueButton = buttonTransform.GetComponent<Button>();
+                    if (continueButton != null)
+                    {
+                        continueButton.onClick.RemoveAllListeners(); // clear any stale listeners
+                        continueButton.onClick.AddListener(OnContinueButtonPressed);
+                        Debug.Log("[BossSceneManager] Continue button wired successfully");
+                    }
+                    else
+                        Debug.LogWarning("[BossSceneManager] No Button component on ContinueButton!");
+                }
+                else
+                    Debug.LogWarning($"[BossSceneManager] '{continueButtonName}' not found inside VictoryPanel!");
+
                 Debug.Log("[BossSceneManager] Victory panel found and ready");
             }
             else
-            {
                 Debug.LogWarning($"[BossSceneManager] '{victoryPanelName}' not found in Canvas!");
-            }
         }
         else
-        {
             Debug.LogWarning("[BossSceneManager] No persisted Canvas found!");
-        }
     }
 
-    /// <summary>
-    /// Call this when the boss dies
-    /// </summary>
     public void OnBossDefeated()
     {
-        Debug.Log("<color=lime>[BossSceneManager] Boss defeated!</color>");
+        if (victoryPanel == null)
+            FindPersistedCanvas();
 
         if (victoryPanel != null)
+        {
             victoryPanel.SetActive(true);
-
-        Time.timeScale = 0f; // Pause game
+            Time.timeScale = 0f;
+            Debug.Log("[BossSceneManager] Boss defeated — Victory panel shown!");
+        }
+        else
+            Debug.LogWarning("[BossSceneManager] Victory panel still null on boss defeat!");
     }
+
+    public void OnContinueButtonPressed()
+    {
+        Time.timeScale = 1f;
+        Debug.Log($"[BossSceneManager] Loading next scene: {nextSceneName}");
+        SceneManager.LoadScene(nextSceneName);
+        victoryPanel.SetActive(false);
+    }
+
+    [ContextMenu("DEBUG - Defeat Boss")]
+    public void DEBUG_DefeatBoss() => OnBossDefeated();
+
 }

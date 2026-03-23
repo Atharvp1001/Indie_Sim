@@ -17,6 +17,22 @@ public class StatTracker : MonoBehaviour
     [SerializeField] private EnemyKillTracker killTracker; // drag your kill tracker here
     [SerializeField] private CoinManager coinManager;      // drag your coin manager here
 
+    public static StatTracker Instance;
+    private void Awake()
+    {
+
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+    }
+
     private void Start()
     {
         // Auto-find if not assigned
