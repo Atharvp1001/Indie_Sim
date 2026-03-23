@@ -225,8 +225,16 @@ public class PlayerConeShooter : MonoBehaviour
             if (damageable == null) continue;
             if (damageable.IsDead()) continue;
 
-            Vector2 directionToTarget = (collider.transform.position - firePoint.position).normalized;
-            float distanceToTarget = Vector2.Distance(firePoint.position, collider.transform.position);
+            Vector2 closestPoint = collider.ClosestPoint(firePoint.position);
+            Vector2 directionToTarget = (closestPoint - (Vector2)firePoint.position).normalized;
+
+            if (directionToTarget.sqrMagnitude < 0.001f)
+            {
+                damageableTargets.Add(damageable); // treat as always hit if overlapping
+                continue;
+            }
+
+            float distanceToTarget = Vector2.Distance(firePoint.position, closestPoint);
 
             // Check if target is within the trapezium cone
             if (IsTargetInTrapezium(firePoint.position, direction, distanceToTarget, directionToTarget))

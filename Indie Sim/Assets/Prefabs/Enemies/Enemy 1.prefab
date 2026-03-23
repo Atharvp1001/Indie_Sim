@@ -163,7 +163,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.18
+  m_Radius: 0.5
 --- !u!114 &6515982525806870739
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -339,12 +339,12 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1773204433277557146}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de3adb5a62dea9941abb54f8df37f765, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHitboxSetup
-  hitboxRadius: 0.47
+  hitboxRadius: 0.76
   hitboxOffset: {x: 0, y: 0}
   hitboxLayer: EnemyHitbox
   showHitboxGizmo: 1
