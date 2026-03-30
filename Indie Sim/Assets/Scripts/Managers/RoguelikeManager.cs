@@ -114,6 +114,7 @@ public class RoguelikeManager : MonoBehaviour
     public void CompleteDungeon()
     {
         dungeonsClearedCount++;
+        UpgradeManager.Instance.currentDungeonLevel++;
         Debug.Log($"[RoguelikeManager] Dungeon #{dungeonsClearedCount} completed!");
 
         ClearCurrentDungeon();

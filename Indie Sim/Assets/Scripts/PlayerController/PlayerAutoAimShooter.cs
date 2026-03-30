@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerAutoAimShooter : MonoBehaviour
-{
+{ /*
     [Header("References")]
     [SerializeField] private Transform firePoint;
     [SerializeField] private LayerMask enemyLayers = -1;
@@ -137,5 +137,5 @@ public class PlayerAutoAimShooter : MonoBehaviour
         return Vector2.zero; // No target found
     }
 
-
+    */
 }

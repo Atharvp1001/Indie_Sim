@@ -155,13 +155,7 @@ public class WeaponUnlockManager : MonoBehaviour
         }
         PrintUnlockStatus();
 
-        // Notify store manager to update available upgrades
-        StoreManager storeManager = FindObjectOfType<StoreManager>();
-        if (storeManager != null)
-        {
-            storeManager.UnlockShotgunUpgrade();
-            storeManager.UnlockMachineGunUpgrade();
-        }
+
     }
 
     /// <summary>
@@ -174,7 +168,7 @@ public class WeaponUnlockManager : MonoBehaviour
         if (shotgun != null)
         {
             UnlockWeapon(shotgun);
-            FindObjectOfType<StoreManager>()?.UnlockShotgunUpgrade();
+            
         }
     }
 
@@ -187,7 +181,7 @@ public class WeaponUnlockManager : MonoBehaviour
         if (mg != null)
         {
             UnlockWeapon(mg);
-            FindObjectOfType<StoreManager>()?.UnlockMachineGunUpgrade();
+            
         }
     }
 }

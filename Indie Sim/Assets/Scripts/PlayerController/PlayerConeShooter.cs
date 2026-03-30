@@ -259,37 +259,63 @@ public class PlayerConeShooter : MonoBehaviour
     #region Bullet Trail & Damage Logic
 
     /// <summary>
+    /// Returns the weapon's final damage = base (from SO) + any bonus earned this run.
+    /// Uses the new Phase 2 API — one method handles ALL weapon types automatically.
+    /// </summary>
+    private int GetDynamicWeaponDamage()
+    {
+        // Failsafe: if UpgradeManager isn't in the scene, use the raw base stat
+        if (UpgradeManager.Instance == null)
+            return currentWeapon.baseDamagePerShot; // Note: was damagePerShot, now baseDamagePerShot
+
+        // GetFinalDamage() figures out pistol/shotgun/machinegun internally — no switch needed here
+        return UpgradeManager.Instance.GetFinalDamage(currentWeapon);
+    }
+
+    /// <summary>
+    /// Returns the weapon's final pierce count = base (from SO) + any bonus earned this run.
+    /// </summary>
+    private int GetDynamicPierceCount()
+    {
+        if (UpgradeManager.Instance == null)
+            return currentWeapon.maxPierceCount;
+
+        return UpgradeManager.Instance.GetFinalPierceCount(currentWeapon);
+    }
+    /// <summary>
     /// Creates visual bullet trails and applies damage based on weapon type.
     /// Standard weapons: 1 bullet to closest enemy
     /// Shotguns: Multiple pellets with spread
     /// </summary>
     private void CreateBulletTrailsAndDamage(Vector2 direction)
     {
+        // Fetch the buffed stats right before we fire
+        int actualDamage = GetDynamicWeaponDamage();
+
         if (currentWeapon.weaponType == WeaponData.WeaponType.Standard)
         {
-            FireStandardWeapon(direction);
+            FireStandardWeapon(direction, actualDamage);
         }
         else if (currentWeapon.weaponType == WeaponData.WeaponType.Shotgun)
         {
-            FireShotgun(direction);
+            FireShotgun(direction, actualDamage);
         }
-        else if (currentWeapon.weaponType == WeaponData.WeaponType.Piercer)  // ✅ NEW
+        else if (currentWeapon.weaponType == WeaponData.WeaponType.Piercer)
         {
-            FirePiercer(direction);
+            int actualPierceCount = GetDynamicPierceCount();
+            FirePiercer(direction, actualDamage, actualPierceCount);
         }
     }
 
     /// <summary>
     /// Fires a single bullet at the closest target.
-    /// If no target, fires with random spread.
     /// </summary>
-    private void FireStandardWeapon(Vector2 direction)
+    private void FireStandardWeapon(Vector2 direction, int damage) // ✅ Added damage parameter
     {
         IDamageable closestTarget = GetClosestTarget(out Vector3 hitPosition);
 
         if (closestTarget != null)
         {
-            // Check if wall blocks the shot
             Vector3 directionToTarget = (hitPosition - firePoint.position).normalized;
             float distanceToTarget = Vector3.Distance(firePoint.position, hitPosition);
 
@@ -297,20 +323,18 @@ public class PlayerConeShooter : MonoBehaviour
 
             if (wallCheck.collider != null)
             {
-                // Wall blocks - add random spread, no damage
                 Vector2 randomDirection = AddRandomSpread(direction, 5f);
                 Vector3 randomEndPos = GetTrailEndPosition(firePoint.position, randomDirection, currentWeapon.coneRange);
                 StartCoroutine(BulletTrailCoroutine(firePoint.position, randomEndPos, null, 0, Vector3.zero));
             }
             else
             {
-                // Clear shot - hit enemy (no spread on hits)
-                StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPosition, closestTarget, currentWeapon.damagePerShot, hitPosition));
+                // ✅ Pass the dynamic damage here
+                StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPosition, closestTarget, damage, hitPosition));
             }
         }
         else
         {
-            // No enemy - add random spread
             Vector2 randomDirection = AddRandomSpread(direction, 5f);
             Vector3 maxRangePosition = GetTrailEndPosition(firePoint.position, randomDirection, currentWeapon.coneRange);
             StartCoroutine(BulletTrailCoroutine(firePoint.position, maxRangePosition, null, 0, Vector3.zero));
@@ -319,9 +343,8 @@ public class PlayerConeShooter : MonoBehaviour
 
     /// <summary>
     /// Fires multiple pellets in a spread pattern (shotgun behavior).
-    /// Each pellet can hit a different target.
     /// </summary>
-    private void FireShotgun(Vector2 direction)
+    private void FireShotgun(Vector2 direction, int damage) // ✅ Added damage parameter
     {
         int pelletsPerShot = 6;
         float spreadAngle = currentWeapon.GetAngleAtDistance(currentWeapon.coneRange);
@@ -330,7 +353,6 @@ public class PlayerConeShooter : MonoBehaviour
 
         for (int i = 0; i < pelletsPerShot; i++)
         {
-            // Calculate pellet direction with spread
             float angleOffset = Mathf.Lerp(-spreadAngle, spreadAngle, i / (float)(pelletsPerShot - 1));
             Vector2 pelletDirection = RotateVector(direction, angleOffset);
 
@@ -342,26 +364,23 @@ public class PlayerConeShooter : MonoBehaviour
                 Vector3 hitPos = targetGO.transform.position;
                 float distanceToEnemy = Vector3.Distance(firePoint.position, hitPos);
 
-                // Check for walls
                 RaycastHit2D wallCheck = Physics2D.Raycast(firePoint.position, pelletDirection, distanceToEnemy, bulletTrailWallLayers);
 
                 if (wallCheck.collider != null)
                 {
-                    // Wall blocks - add random spread
                     Vector2 randomDirection = AddRandomSpread(pelletDirection, 5f);
                     Vector3 randomEndPos = GetTrailEndPosition(firePoint.position, randomDirection, currentWeapon.coneRange);
                     StartCoroutine(BulletTrailCoroutine(firePoint.position, randomEndPos, null, 0, Vector3.zero));
                 }
                 else
                 {
-                    // Clear shot - hit enemy
-                    StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPos, hitEnemy, currentWeapon.damagePerShot, hitPos));
+                    // ✅ Pass the dynamic damage here
+                    StartCoroutine(BulletTrailCoroutine(firePoint.position, hitPos, hitEnemy, damage, hitPos));
                     hitTargets.Add(hitEnemy);
                 }
             }
             else
             {
-                // No enemy - add random spread
                 Vector2 randomDirection = AddRandomSpread(pelletDirection, 5f);
                 Vector3 maxRangePosition = GetTrailEndPosition(firePoint.position, randomDirection, currentWeapon.coneRange);
                 StartCoroutine(BulletTrailCoroutine(firePoint.position, maxRangePosition, null, 0, Vector3.zero));
@@ -371,61 +390,52 @@ public class PlayerConeShooter : MonoBehaviour
 
     /// <summary>
     /// Fires a piercing bullet that penetrates multiple enemies.
-    /// Bullet travels through enemies until it hits maxPierceCount or a wall.
     /// </summary>
-    private void FirePiercer(Vector2 direction)
+    private void FirePiercer(Vector2 direction, int damage, int pierceCount) // ✅ Added parameters
     {
         List<IDamageable> piercedEnemies = new List<IDamageable>();
         Vector3 currentPosition = firePoint.position;
         Vector2 bulletDirection = direction;
         int enemiesHit = 0;
-        int maxPierces = currentWeapon.maxPierceCount;
 
-        // Keep searching for enemies until we hit max pierce count or max range
+        // ✅ Use the dynamic pierce count
+        int maxPierces = pierceCount;
+
         while (enemiesHit < maxPierces)
         {
-            // Find next enemy in line
             IDamageable nextTarget = GetNextPiercingTarget(currentPosition, bulletDirection, piercedEnemies, out Vector3 hitPosition, out float distanceToTarget);
 
             if (nextTarget != null)
             {
-                // Check if wall blocks shot before reaching this enemy
                 RaycastHit2D wallCheck = Physics2D.Raycast(currentPosition, bulletDirection, distanceToTarget, bulletTrailWallLayers);
 
                 if (wallCheck.collider != null)
                 {
-                    // Wall blocks - bullet stops at wall
                     Vector3 wallHitPos = wallCheck.point;
-                    StartCoroutine(PiercingBulletTrailCoroutine(currentPosition, wallHitPos, piercedEnemies, currentWeapon.damagePerShot));
-                    return; // Bullet stopped by wall
+                    StartCoroutine(PiercingBulletTrailCoroutine(currentPosition, wallHitPos, piercedEnemies, damage)); // ✅ Dynamic damage
+                    return;
                 }
 
-                // Hit this enemy
                 piercedEnemies.Add(nextTarget);
                 enemiesHit++;
-
-                // Move bullet position to this enemy
                 currentPosition = hitPosition;
 
-                // If we've hit max pierces, stop here
                 if (enemiesHit >= maxPierces)
                 {
-                    StartCoroutine(PiercingBulletTrailCoroutine(firePoint.position, hitPosition, piercedEnemies, currentWeapon.damagePerShot));
+                    StartCoroutine(PiercingBulletTrailCoroutine(firePoint.position, hitPosition, piercedEnemies, damage)); // ✅ Dynamic damage
                     return;
                 }
             }
             else
             {
-                // No more enemies in line - bullet travels to max range
                 Vector3 maxRangePos = GetTrailEndPosition(currentPosition, bulletDirection, currentWeapon.coneRange);
-                StartCoroutine(PiercingBulletTrailCoroutine(firePoint.position, maxRangePos, piercedEnemies, currentWeapon.damagePerShot));
+                StartCoroutine(PiercingBulletTrailCoroutine(firePoint.position, maxRangePos, piercedEnemies, damage)); // ✅ Dynamic damage
                 return;
             }
         }
 
-        // Should never reach here, but just in case
         Vector3 fallbackEndPos = currentPosition + (Vector3)bulletDirection * currentWeapon.coneRange;
-        StartCoroutine(PiercingBulletTrailCoroutine(firePoint.position, fallbackEndPos, piercedEnemies, currentWeapon.damagePerShot));
+        StartCoroutine(PiercingBulletTrailCoroutine(firePoint.position, fallbackEndPos, piercedEnemies, damage)); // ✅ Dynamic damage
     }
 
     /// <summary>
