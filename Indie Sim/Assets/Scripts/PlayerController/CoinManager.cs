@@ -1,207 +1,165 @@
 using UnityEngine;
-using TMPro;
+using System;
 
+/// <summary>
+/// Manages the player's coin economy for a single run.
+/// 
+/// Provides:
+///   - OnCoinsChanged event      → CoinUI subscribes to update the HUD
+///   - GetCurrentCoins()         → UpgradeButtonUI, StoreManager use this
+///   - SpendCoins()              → StoreManager calls this on purchase
+///   - HasEnoughCoins()          → PlayerStompController uses this
+///   - GetCoinsCollectedThisRun()→ StatTracker uses this for end screen
+///   - GetTotalCoinsEverCollected() → PlayerHealth uses this (lifetime stat)
+///   - ResetForNewRun()          → RoguelikeManager calls this at run start
+/// </summary>
 public class CoinManager : MonoBehaviour
 {
-    // Singleton instance
-    public static CoinManager Instance;
+    public static CoinManager Instance { get; private set; }
 
-    [Header("Coin Tracking")]
-    private int currentCoins = 0;
-    private int coinsCollectedThisRun = 0;
+    [Header("Starting Balance")]
+    [SerializeField] private int startingCoins = 0;
 
     [Header("Coin Cap")]
-    [SerializeField] private int baseMaxCoins = 999; // set this in Inspector
+    [SerializeField] private int startingMaxCoins = 200;
 
-    // PlayerPrefs key for storing total coins
-    private const string TOTAL_COINS_KEY = "TotalCoinsEverCollected";
+    // ─────────────────────────────────────────────────────────────────
+    //  STATE
+    // ─────────────────────────────────────────────────────────────────
+    private int _currentCoins;
+    private int _coinsCollectedThisRun;
+    private int _totalCoinsEverCollected; // persists across runs in memory
+    private int _maxCoins;
+    // ─────────────────────────────────────────────────────────────────
+    //  EVENTS
+    //  Subscribe: CoinManager.Instance.OnCoinsChanged += MyMethod;
+    //  Unsubscribe in OnDestroy to avoid memory leaks.
+    //  Passes the new coin count so listeners don't need to call Get().
+    // ─────────────────────────────────────────────────────────────────
 
-    [Header("Debug")]
-    [SerializeField] private bool showDebugLogs = true;
-
-    
-
-    // Event for UI updates (other scripts can subscribe to this)
-    public System.Action<int> OnCoinsChanged;
-
+    /// <summary>Fires whenever coins change. Argument = new current balance.</summary>
+    public event Action<int> OnCoinsChanged;
+    /// <summary>Fires when the coin cap increases (e.g. Coin Purse upgrade).</summary>
+    public event Action<int> OnMaxCoinsChanged;
+    // ─────────────────────────────────────────────────────────────────
+    //  UNITY LIFECYCLE
+    // ─────────────────────────────────────────────────────────────────
     private void Awake()
     {
-        currentCoins = 100; // Start with 100 coins for testing
-
-        // Singleton pattern
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject); // Persists across scene changes
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
+        Instance = this;
+
+        DontDestroyOnLoad(gameObject);
+        InitialiseRun();
     }
 
+    private void InitialiseRun()
+    {
+        _currentCoins = startingCoins;
+        _coinsCollectedThisRun = 0;
+        _maxCoins = startingMaxCoins;
+        // _totalCoinsEverCollected intentionally NOT reset
+        Debug.Log($"[CoinManager] Initialised — {_currentCoins}/{_maxCoins}");
+    }
+
+    private void Start()
+    {
+        //ResetForNewRun();
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  PUBLIC API — GETTERS
+    // ─────────────────────────────────────────────────────────────────
+
+    public int GetCurrentCoins() => _currentCoins;
+
+    /// <summary>Coins collected since the run began (for StatTracker end screen).</summary>
+    public int GetCoinsCollectedThisRun() => _coinsCollectedThisRun;
+
+    /// <summary>Lifetime coins across all runs (for PlayerHealth death screen).</summary>
+    public int GetTotalCoinsEverCollected() => _totalCoinsEverCollected;
+
+    /// <summary>Returns true if the player can afford the given amount.</summary>
+    public bool HasEnoughCoins(int amount) => _currentCoins >= amount;
+
+    public int MaxCoins => _maxCoins;
+
+    public int GetMaxCoins() => _maxCoins;
+
+
+    // ─────────────────────────────────────────────────────────────────
+    //  PUBLIC API — MUTATORS
+    // ─────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Add coins (e.g. enemy drop, pickup).
+    /// amount must be positive.
+    /// </summary>
     public void AddCoins(int amount)
     {
-        currentCoins = Mathf.Min(currentCoins + amount, MaxCoins); // ✅ respects cap
-        coinsCollectedThisRun += amount;
+        if (amount <= 0) return;
 
-        int totalCoins = PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
-        totalCoins += amount;
-        PlayerPrefs.SetInt(TOTAL_COINS_KEY, totalCoins);
-        PlayerPrefs.Save();
+        int actual = Mathf.Min(amount, _maxCoins - _currentCoins); // ← clamp to cap
+        if (actual <= 0) return;
 
-        OnCoinsChanged?.Invoke(currentCoins);
+        _currentCoins += actual;
+        _coinsCollectedThisRun += actual;
+        _totalCoinsEverCollected += actual;
 
-        if (showDebugLogs)
-            Debug.Log($"Coins added: {amount} | Cap: {MaxCoins} | Current: {currentCoins}");
-
-        if (AchievementManager.Instance != null)
-            AchievementManager.Instance.CheckCoinAchievements();
-    }
-
-    // ✅ NEW — getter for stat display
-    public int GetCoinsCollectedThisRun() => coinsCollectedThisRun;
-
-    // ✅ NEW — call this on retry/new run
-    public void ResetRunCoins()
-    {
-        currentCoins = 0;
-        coinsCollectedThisRun = 0;
-        OnCoinsChanged?.Invoke(currentCoins);
-        Debug.Log("[CoinManager] Run coins reset");
+        Debug.Log($"[CoinManager] +{actual} coins → {_currentCoins}/{_maxCoins}");
+        OnCoinsChanged?.Invoke(_currentCoins);
     }
 
     /// <summary>
-    /// Get coins from current run only
-    /// </summary>
-    public int GetCoins()
-    {
-        return currentCoins;
-    }
-
-    /// <summary>
-    /// Spend coins (returns true if successful)
-    /// Also triggers coin loss achievements
+    /// Spend coins (upgrade purchase, stomp cost, etc.).
+    /// Returns true if successful, false if not enough coins.
     /// </summary>
     public bool SpendCoins(int amount)
     {
-        if (currentCoins >= amount)
+        if (amount <= 0) return true;
+
+        if (!HasEnoughCoins(amount))
         {
-            currentCoins -= amount;
-
-            // Notify subscribers
-            OnCoinsChanged?.Invoke(currentCoins);
-
-            if (showDebugLogs)
-            {
-                Debug.Log($"Coins spent: {amount}. Remaining: {currentCoins}");
-            }
-
-            return true;
+            Debug.LogWarning($"[CoinManager] Not enough coins! Have {_currentCoins}, need {amount}");
+            return false;
         }
 
-        if (showDebugLogs)
-        {
-            Debug.LogWarning($"Not enough coins! Need: {amount}, Have: {currentCoins}");
-        }
+        _currentCoins -= amount;
+        Debug.Log($"[CoinManager] -{amount} coins → {_currentCoins} remaining");
+        OnCoinsChanged?.Invoke(_currentCoins);
+        return true;
+    }
 
-        return false;
+    /// <summary>
+    /// Increase the maximum coin cap. Called by UpgradeManager when a
+    /// CoinPurse upgrade is applied.
+    /// </summary>
+    public void IncreaseMaxCoins(int amount)
+    {
+        if (amount <= 0) return;
+        _maxCoins += amount;
+        Debug.Log($"[CoinManager] Max coins increased to {_maxCoins}");
+        OnMaxCoinsChanged?.Invoke(_maxCoins);
+        OnCoinsChanged?.Invoke(_currentCoins); // refresh UI fill bar
     }
 
 
     /// <summary>
-    /// Get current run coins
+    /// Call at the start of each new run to reset per-run counters.
+    /// Lifetime total is NOT reset.
     /// </summary>
-    public int GetCurrentCoins()
+    public void ResetForNewRun()
     {
-        return currentCoins;
-    }
+        _currentCoins = startingCoins;
+        _coinsCollectedThisRun = 0;
+        _maxCoins = startingMaxCoins;  // ← add this line
 
-    /// <summary>
-    /// Check if player has enough coins in current run
-    /// </summary>
-    public bool HasEnoughCoins(int amount)
-    {
-        return currentCoins >= amount;
-    }
-
-    /// <summary>
-    /// Total coin cap = base cap + CoinPurse upgrade bonus from UpgradeManager.
-    /// </summary>
-    private int MaxCoins
-    {
-        get
-        {
-            int bonus = UpgradeManager.Instance != null
-                ? UpgradeManager.Instance.GetBonusCoinCapacity()
-                : 0;
-            return baseMaxCoins + bonus;
-        }
-    }
-
-
-    /// <summary>
-    /// Get ALL coins ever collected (across all runs)
-    /// </summary>
-    public int GetTotalCoinsEverCollected()
-    {
-        return PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
-    }
-
-    /// <summary>
-    /// Reset current run coins (called when dungeon completes or game resets)
-    /// </summary>
-    public void ResetCurrentRunCoins()
-    {
-        currentCoins = 0;
-        OnCoinsChanged?.Invoke(currentCoins);
-
-        if (showDebugLogs)
-        {
-            Debug.Log("[CoinManager] Current run coins reset. Total coins still saved.");
-        }
-    }
-
-    /// <summary>
-    /// DEBUG: Reset all coins
-    /// </summary>
-    public void DEBUG_ResetAllCoins()
-    {
-        currentCoins = 0;
-        PlayerPrefs.DeleteKey(TOTAL_COINS_KEY);
-        PlayerPrefs.Save();
-        OnCoinsChanged?.Invoke(currentCoins);
-
-        if (showDebugLogs)
-        {
-            Debug.Log("[CoinManager] ALL coins reset!");
-        }
-    }
-
-    /// <summary>
-    /// DEBUG: Print current coin status
-    /// </summary>
-    public void DEBUG_PrintCoinStatus()
-    {
-        int totalCoins = GetTotalCoinsEverCollected();
-        Debug.Log($"========== COIN STATUS ==========");
-        Debug.Log($"Current Run Coins: {currentCoins}");
-        Debug.Log($"Total Coins Ever Collected: {totalCoins}");
-        Debug.Log($"=================================");
-    }
-
-    // Auto-save when application quits
-    private void OnApplicationQuit()
-    {
-        PlayerPrefs.Save();
-    }
-
-    // Auto-save when application pauses
-    private void OnApplicationPause(bool pauseStatus)
-    {
-        if (pauseStatus)
-        {
-            PlayerPrefs.Save();
-        }
+        Debug.Log($"[CoinManager] Run reset — {_currentCoins}/{_maxCoins}");
+        OnCoinsChanged?.Invoke(_currentCoins);
+        OnMaxCoinsChanged?.Invoke(_maxCoins);
     }
 }

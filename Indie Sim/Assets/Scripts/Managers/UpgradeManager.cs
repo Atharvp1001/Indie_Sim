@@ -112,8 +112,9 @@ public class UpgradeManager : MonoBehaviour
                 break;
 
             case UpgradeDataSO.UpgradeType.CoinPurse:
-                bonusCoinCapacity += upgrade.capacityIncrease;
-                Debug.Log($"[UpgradeManager] Coin capacity bonus → +{bonusCoinCapacity} total");
+                // Increase the coin cap by the SO's capacityIncrease value
+                CoinManager.Instance.IncreaseMaxCoins(upgrade.capacityIncrease);
+                Debug.Log($"[UpgradeManager] Coin cap increased by {upgrade.capacityIncrease} → now {CoinManager.Instance.MaxCoins}");
                 break;
 
             case UpgradeDataSO.UpgradeType.StompUpgrade:
