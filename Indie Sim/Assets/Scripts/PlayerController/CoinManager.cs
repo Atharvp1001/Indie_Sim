@@ -10,6 +10,9 @@ public class CoinManager : MonoBehaviour
     private int currentCoins = 0;
     private int coinsCollectedThisRun = 0;
 
+    [Header("Coin Cap")]
+    [SerializeField] private int baseMaxCoins = 999; // set this in Inspector
+
     // PlayerPrefs key for storing total coins
     private const string TOTAL_COINS_KEY = "TotalCoinsEverCollected";
 
@@ -39,8 +42,8 @@ public class CoinManager : MonoBehaviour
 
     public void AddCoins(int amount)
     {
-        currentCoins += amount;
-        coinsCollectedThisRun += amount; // ✅ NEW — track collected separately
+        currentCoins = Mathf.Min(currentCoins + amount, MaxCoins); // ✅ respects cap
+        coinsCollectedThisRun += amount;
 
         int totalCoins = PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
         totalCoins += amount;
@@ -50,7 +53,7 @@ public class CoinManager : MonoBehaviour
         OnCoinsChanged?.Invoke(currentCoins);
 
         if (showDebugLogs)
-            Debug.Log($"Coins added: {amount} | Collected this run: {coinsCollectedThisRun} | Current: {currentCoins}");
+            Debug.Log($"Coins added: {amount} | Cap: {MaxCoins} | Current: {currentCoins}");
 
         if (AchievementManager.Instance != null)
             AchievementManager.Instance.CheckCoinAchievements();
@@ -121,6 +124,21 @@ public class CoinManager : MonoBehaviour
     {
         return currentCoins >= amount;
     }
+
+    /// <summary>
+    /// Total coin cap = base cap + CoinPurse upgrade bonus from UpgradeManager.
+    /// </summary>
+    private int MaxCoins
+    {
+        get
+        {
+            int bonus = UpgradeManager.Instance != null
+                ? UpgradeManager.Instance.GetBonusCoinCapacity()
+                : 0;
+            return baseMaxCoins + bonus;
+        }
+    }
+
 
     /// <summary>
     /// Get ALL coins ever collected (across all runs)

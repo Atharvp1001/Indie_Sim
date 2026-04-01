@@ -142,6 +142,9 @@ public class StoreManager : MonoBehaviour
         if (coins != null && _selectedButton.Data.cost > 0)
             coins.SpendCoins(_selectedButton.Data.cost);
 
+        Debug.Log("[StoreManager] Continue clicked after selecting upgrade ");
+
+
         // Hand the SO to UpgradeManager — all math happens there
         UpgradeManager.Instance.ApplyUpgrade(_selectedButton.Data);
 

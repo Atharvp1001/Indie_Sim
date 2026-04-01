@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -21,6 +22,8 @@ public class WeaponInventory : MonoBehaviour
 
     // ✅ EVENT: Other scripts can listen to this without needing a reference to this script
     public static event Action<WeaponData> OnWeaponChanged;
+
+    private Dictionary<WeaponData, int> _currentAmmo = new Dictionary<WeaponData, int>();
 
     #region Unity Lifecycle
 
@@ -239,6 +242,51 @@ public class WeaponInventory : MonoBehaviour
     public int GetCurrentWeaponIndex()
     {
         return currentWeaponIndex;
+    }
+
+
+    /// <summary>
+    /// Returns current ammo for a weapon. Initialises to full mag on first access.
+    /// </summary>
+    public int GetCurrentAmmo(WeaponData weapon)
+    {
+        if (weapon == null) return 0;
+
+        if (!_currentAmmo.ContainsKey(weapon))
+            _currentAmmo[weapon] = UpgradeManager.Instance != null
+                ? UpgradeManager.Instance.GetFinalAmmo(weapon)
+                : weapon.magazineCapacity;
+
+        return _currentAmmo[weapon];
+    }
+
+    /// <summary>
+    /// Call this every time a bullet is fired.
+    /// </summary>
+    public void ConsumeAmmo(WeaponData weapon, int amount = 1)
+    {
+        if (weapon == null) return;
+        _currentAmmo[weapon] = Mathf.Max(0, GetCurrentAmmo(weapon) - amount);
+    }
+
+    /// <summary>
+    /// Call this when reload finishes.
+    /// </summary>
+    public void RefillAmmo(WeaponData weapon)
+    {
+        if (weapon == null) return;
+        int maxAmmo = UpgradeManager.Instance != null
+            ? UpgradeManager.Instance.GetFinalAmmo(weapon)
+            : weapon.magazineCapacity;
+        _currentAmmo[weapon] = maxAmmo;
+    }
+
+    /// <summary>
+    /// Call this at run start / on death to wipe all ammo state.
+    /// </summary>
+    public void ResetAllAmmo()
+    {
+        _currentAmmo.Clear();
     }
 
     #endregion
