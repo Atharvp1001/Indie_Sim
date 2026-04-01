@@ -24,6 +24,9 @@ public class RoguelikeManager : MonoBehaviour
     private const float SIZE_INCREASE_CHANCE = 0.5f;
     private int currentLevel = 1;
 
+    private WeaponInventory weaponInventory;
+    private WeaponAmmoManager AmmoManager;
+
     // ✅ NEW — singleton + persist
     private void Awake()
     {
@@ -38,6 +41,8 @@ public class RoguelikeManager : MonoBehaviour
             return;
         }
     }
+
+   
 
     // ✅ NEW — subscribe to scene load events
     private void OnEnable()
@@ -61,12 +66,16 @@ public class RoguelikeManager : MonoBehaviour
 
     private IEnumerator InitRoguelikeScene2()
     {
-       
+
+        yield return null;
 
         dungeonGenerator = FindFirstObjectByType<DungeonMapGenerator>();
         teleporter = FindFirstObjectByType<Teleporter>();
         storeManager = FindFirstObjectByType<StoreManager>();
         playerTransform = FindFirstObjectByType<PlayerController>()?.transform;
+        weaponInventory = FindFirstObjectByType<WeaponInventory>();
+        AmmoManager = FindFirstObjectByType<WeaponAmmoManager>();
+
 
         // ✅ Debug every ref so we know exactly what's null
         Debug.Log($"[RoguelikeManager] dungeonGenerator: {dungeonGenerator}");
@@ -94,8 +103,18 @@ public class RoguelikeManager : MonoBehaviour
     }
     private void Start()
     {
+
+        weaponInventory = FindFirstObjectByType<WeaponInventory>();
+        AmmoManager = FindFirstObjectByType<WeaponAmmoManager>();
+        if (weaponInventory == null)
+            Debug.LogError("[RoguelikeManager] WeaponInventory not found in scene!");
+        if (AmmoManager == null)
+            Debug.LogError("[RoguelikeManager] WeaponAmmoManager not found in scene!");
+
         GenerateNewDungeon();
         UpdateSpawnerDifficulty();
+        AmmoManager.InitialiseAmmo(weaponInventory.GetAllWeapons());
+
     }
 
     private int GetCurrentDungeonSize()
@@ -114,7 +133,8 @@ public class RoguelikeManager : MonoBehaviour
     public void CompleteDungeon()
     {
         dungeonsClearedCount++;
-        UpgradeManager.Instance.currentDungeonLevel++;
+        UpgradeManager.Instance.AdvanceDungeonLevel();
+
         Debug.Log($"[RoguelikeManager] Dungeon #{dungeonsClearedCount} completed!");
 
         ClearCurrentDungeon();

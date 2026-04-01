@@ -138,9 +138,21 @@ public class StoreManager : MonoBehaviour
         }
 
         // Spend the coins
-        CoinManager coins = FindObjectOfType<CoinManager>();
-        if (coins != null && _selectedButton.Data.cost > 0)
-            coins.SpendCoins(_selectedButton.Data.cost);
+        int cost = _selectedButton.Data.cost;
+
+        // Use Instance instead of FindObjectOfType (faster)
+        // AND check the return value — SpendCoins returns false if not enough coins
+        if (cost > 0)
+        {
+            if (CoinManager.Instance == null || !CoinManager.Instance.SpendCoins(cost))
+            {
+                Debug.LogWarning("[StoreManager] Cannot afford this upgrade — purchase blocked.");
+                return; // Don't apply the upgrade if coins failed
+            }
+        }
+
+        Debug.Log("[StoreManager] Continue clicked after selecting upgrade ");
+
 
         // Hand the SO to UpgradeManager — all math happens there
         UpgradeManager.Instance.ApplyUpgrade(_selectedButton.Data);

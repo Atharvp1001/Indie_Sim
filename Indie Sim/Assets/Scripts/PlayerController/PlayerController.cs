@@ -75,7 +75,7 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        currentMoveSpeed = baseMoveSpeed;
+        RefreshSpeed();
 
         rb.gravityScale = 0;
         rb.linearDamping = 0;
@@ -91,6 +91,18 @@ public class PlayerController : MonoBehaviour
     }
 
     public void SetSpeed(float newSpeed) => currentMoveSpeed = newSpeed;
+
+
+    /// <summary>
+    /// Recalculates currentMoveSpeed = baseMoveSpeed + upgrade bonus.
+    /// Call this from Start() and after any speed upgrade is applied.
+    /// </summary>
+    public void RefreshSpeed()
+    {
+        float bonus = (UpgradeManager.Instance != null) ? UpgradeManager.Instance.GetBonusSpeed() : 0f;
+        currentMoveSpeed = baseMoveSpeed + bonus;
+        Debug.Log($"[PlayerController] Speed refreshed: {baseMoveSpeed} base + {bonus} bonus = {currentMoveSpeed}");
+    }
 
     #region Dash System
 

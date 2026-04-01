@@ -55,7 +55,7 @@ public class UpgradeButtonUI : MonoBehaviour
     // ─────────────────────────────────────────────────────────────────
     private void Awake()
     {
-        _coinManager = FindObjectOfType<CoinManager>();
+        //_coinManager = FindObjectOfType<CoinManager>();
         _weaponInventory = FindObjectOfType<WeaponInventory>();
 
         if (button == null)
@@ -135,7 +135,8 @@ public class UpgradeButtonUI : MonoBehaviour
     {
         if (button == null || _data == null) return;
 
-        bool canAfford = _coinManager == null || _coinManager.GetCurrentCoins() >= _data.cost;
+        // Use Instance instead of the cached _coinManager field
+        bool canAfford = CoinManager.Instance == null || CoinManager.Instance.HasEnoughCoins(_data.cost);
         button.interactable = canAfford;
     }
 

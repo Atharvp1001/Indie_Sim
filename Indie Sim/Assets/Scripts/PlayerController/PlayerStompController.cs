@@ -77,7 +77,17 @@ public class PlayerStompController : MonoBehaviour
 
     private void PerformStomp()
     {
-        Debug.Log($"STOMP! Radius: {stompRadius}, Damage: {stompDamage}");
+        // Pull final values: base stat + any upgrade bonuses
+        float finalRadius = stompRadius;
+        int finalDamage = stompDamage;
+
+        if (UpgradeManager.Instance != null)
+        {
+            finalRadius += UpgradeManager.Instance.GetBonusStompRadius();
+            finalDamage += UpgradeManager.Instance.GetBonusStompDamage();
+        }
+
+        Debug.Log($"STOMP! Radius: {finalRadius}, Damage: {finalDamage}");
 
         Vector2 playerPos = transform.position;
 
@@ -85,19 +95,18 @@ public class PlayerStompController : MonoBehaviour
         {
             GameObject vfx = Instantiate(stompVFXPrefab, transform.position, Quaternion.identity);
             StompShockwave shockwave = vfx.GetComponent<StompShockwave>();
-            if (shockwave != null) shockwave.Initialize(stompRadius);
+            if (shockwave != null) shockwave.Initialize(finalRadius); // pass upgraded radius to VFX
         }
 
-        // Violent stomp shake — high amplitude (8), short duration (0.15s)
         CameraShake.Instance?.ShakeCamera(stompScreenShakeAmp, stompScreenShakeDuration);
 
-        DestroyBulletsInRange(playerPos);
-        DamageAndPushEnemies(playerPos);
+        DestroyBulletsInRange(playerPos, finalRadius);
+        DamageAndPushEnemies(playerPos, finalRadius, finalDamage);
     }
 
-    private void DestroyBulletsInRange(Vector2 playerPos)
+    private void DestroyBulletsInRange(Vector2 playerPos, float radius)
     {
-        Collider2D[] bullets = Physics2D.OverlapCircleAll(playerPos, stompRadius, stompBulletLayer);
+        Collider2D[] bullets = Physics2D.OverlapCircleAll(playerPos, radius, stompBulletLayer);
 
         foreach (Collider2D bulletCol in bullets)
         {
@@ -107,14 +116,13 @@ public class PlayerStompController : MonoBehaviour
             if (wallCheck.collider == null)
             {
                 Destroy(bulletCol.gameObject);
-                Debug.Log("Destroyed bullet with stomp");
             }
         }
     }
 
-    private void DamageAndPushEnemies(Vector2 playerPos)
+    private void DamageAndPushEnemies(Vector2 playerPos, float radius, int damage)
     {
-        Collider2D[] enemies = Physics2D.OverlapCircleAll(playerPos, stompRadius, stompEnemyLayer);
+        Collider2D[] enemies = Physics2D.OverlapCircleAll(playerPos, radius, stompEnemyLayer);
 
         foreach (Collider2D enemyCol in enemies)
         {
@@ -122,29 +130,19 @@ public class PlayerStompController : MonoBehaviour
             float distanceToEnemy = toEnemy.magnitude;
 
             RaycastHit2D wallCheck = Physics2D.Raycast(playerPos, toEnemy.normalized, distanceToEnemy, stompWallLayer);
-            if (wallCheck.collider != null)
-            {
-                Debug.Log($"Enemy {enemyCol.name} blocked by wall, skipping");
-                continue;
-            }
+            if (wallCheck.collider != null) continue;
 
             IDamageable damageable = enemyCol.GetComponent<IDamageable>();
             if (damageable != null && !damageable.IsDead())
-            {
-                damageable.TakeDamage(stompDamage);
-                Debug.Log($"Stomped {enemyCol.name} for {stompDamage} damage");
-            }
+                damageable.TakeDamage(damage); // uses upgraded damage
 
             Vector2 pushDirection = toEnemy.normalized;
-            float targetDistance = stompRadius + stompPushBeyondRadius;
+            float targetDistance = radius + stompPushBeyondRadius;
             Vector2 targetPosition = playerPos + (pushDirection * targetDistance);
 
             RaycastHit2D pushWallCheck = Physics2D.Raycast(
-                enemyCol.transform.position,
-                pushDirection,
-                Vector2.Distance(enemyCol.transform.position, targetPosition),
-                stompWallLayer
-            );
+                enemyCol.transform.position, pushDirection,
+                Vector2.Distance(enemyCol.transform.position, targetPosition), stompWallLayer);
 
             if (pushWallCheck.collider != null)
             {
@@ -156,8 +154,6 @@ public class PlayerStompController : MonoBehaviour
 
             Rigidbody2D enemyRb = enemyCol.GetComponent<Rigidbody2D>();
             if (enemyRb != null) enemyRb.linearVelocity = Vector2.zero;
-
-            Debug.Log($"Pushed {enemyCol.name} to position {targetPosition}");
         }
     }
 
@@ -199,10 +195,14 @@ public class PlayerStompController : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
+        float previewRadius = stompRadius;
+        if (UpgradeManager.Instance != null)
+            previewRadius += UpgradeManager.Instance.GetBonusStompRadius();
+
         Gizmos.color = canStomp ? Color.cyan : Color.gray;
-        Gizmos.DrawWireSphere(transform.position, stompRadius);
+        Gizmos.DrawWireSphere(transform.position, previewRadius);
 
         Gizmos.color = Color.magenta;
-        Gizmos.DrawWireSphere(transform.position, stompRadius + stompPushBeyondRadius);
+        Gizmos.DrawWireSphere(transform.position, previewRadius + stompPushBeyondRadius);
     }
 }

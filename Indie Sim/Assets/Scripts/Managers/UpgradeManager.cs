@@ -13,6 +13,7 @@ public class UpgradeManager : MonoBehaviour
     [SerializeField] private PlayerHealth playerHealth;
     [SerializeField] private PlayerConeShooter playerShooter;
     [SerializeField] private WeaponInventory weaponInventory;
+    
 
     [Header("All Upgrade Templates")]
     [Tooltip("Drag ALL your UpgradeDataSO assets here. The tech tree logic reads from this list.")]
@@ -36,9 +37,10 @@ public class UpgradeManager : MonoBehaviour
     private int bonusMachineGunAmmo;
     private float bonusSpeed;
     private float bonusStompRadius;
+    private int bonusStompDamage;
     private int bonusCoinCapacity;
-    public int currentDungeonLevel; // This is set by the DungeonManager each time you enter a new floor, and read by UpgradeManager when filtering available upgrades.
-
+    //public int currentDungeonLevel; // This is set by the DungeonManager each time you enter a new floor, and read by UpgradeManager when filtering available upgrades.
+    public int CurrentDungeonLevel { get; private set; } = 1;
     // ═════════════════════════════════════════════════════════════════
     //  UNITY LIFECYCLE
     // ═════════════════════════════════════════════════════════════════
@@ -59,6 +61,8 @@ public class UpgradeManager : MonoBehaviour
     {
         if (weaponInventory == null)
             weaponInventory = FindObjectOfType<WeaponInventory>();
+
+        
 
         ValidateReferences();
 
@@ -86,6 +90,7 @@ public class UpgradeManager : MonoBehaviour
         {
             case UpgradeDataSO.UpgradeType.Speed:
                 HandleSpeedUpgrade(upgrade);
+               
                 break;
 
             case UpgradeDataSO.UpgradeType.UnlockGun:
@@ -94,16 +99,27 @@ public class UpgradeManager : MonoBehaviour
 
             case UpgradeDataSO.UpgradeType.GunUpgrade:
                 HandleGunUpgrade(upgrade);
+
+                if (upgrade.ammoIncrease > 0)
+                {
+                    WeaponData weapon = FindWeaponForTargetEnum(upgrade.targetWeapon);
+                    if (weapon != null)
+                    {
+                        // ✅ Bug 1+2 Fix: WeaponAmmoManager now has Instance and RefillAmmo()
+                        WeaponAmmoManager.Instance?.RefillAmmo(weapon);
+                    }
+                }
                 break;
 
             case UpgradeDataSO.UpgradeType.CoinPurse:
-                bonusCoinCapacity += upgrade.capacityIncrease;
-                Debug.Log($"[UpgradeManager] Coin capacity bonus → +{bonusCoinCapacity} total");
+                // Increase the coin cap by the SO's capacityIncrease value
+                CoinManager.Instance.IncreaseMaxCoins(upgrade.capacityIncrease);
+                Debug.Log($"[UpgradeManager] Coin cap increased by {upgrade.capacityIncrease} → now {CoinManager.Instance.MaxCoins}");
                 break;
 
             case UpgradeDataSO.UpgradeType.StompUpgrade:
                 bonusStompRadius += upgrade.radiusIncrease;
-                Debug.Log($"[UpgradeManager] Stomp radius bonus → +{bonusStompRadius} total");
+                bonusStompDamage += upgrade.damageIncrease;
                 break;
 
             default:
@@ -195,14 +211,22 @@ public class UpgradeManager : MonoBehaviour
             if (upgrade == null) continue;
 
             // Filter 1: Dungeon level requirement
-            if (currentDungeonLevel < upgrade.minDungeonLevel) continue;
+            if (CurrentDungeonLevel < upgrade.minDungeonLevel) continue;
 
-            // Filter 2: Skip unlock cards for already-unlocked weapons
+            // Filter 2: Skip UnlockGun cards for weapons already unlocked
             if (upgrade.upgradeType == UpgradeDataSO.UpgradeType.UnlockGun)
             {
-                // ✅ FIX: call through WeaponUnlockManager, not locally
                 WeaponData weapon = FindWeaponForTargetEnum(upgrade.targetWeapon);
                 if (weapon != null && WeaponUnlockManager.Instance.IsWeaponUnlocked(weapon))
+                    continue;
+            }
+
+            // ✅ Filter 3: Skip GunUpgrade cards for weapons NOT yet unlocked
+            // e.g. Shotgun Upgrade card is hidden until you've bought Unlock Shotgun
+            if (upgrade.upgradeType == UpgradeDataSO.UpgradeType.GunUpgrade)
+            {
+                WeaponData weapon = FindWeaponForTargetEnum(upgrade.targetWeapon);
+                if (weapon != null && !WeaponUnlockManager.Instance.IsWeaponUnlocked(weapon))
                     continue;
             }
 
@@ -211,7 +235,6 @@ public class UpgradeManager : MonoBehaviour
 
         return available;
     }
-
     // Helper to resolve a TargetWeapon enum → actual WeaponData from inventory
     private WeaponData FindWeaponForTargetEnum(UpgradeDataSO.TargetWeapon target)
     {
@@ -272,6 +295,24 @@ public class UpgradeManager : MonoBehaviour
     // ═════════════════════════════════════════════════════════════════
 
     /// <summary>
+    /// Called by RoguelikeManager when the player clears a dungeon floor.
+    /// </summary>
+    public void AdvanceDungeonLevel()
+    {
+        CurrentDungeonLevel++;
+        Debug.Log($"[UpgradeManager] Dungeon level advanced to {CurrentDungeonLevel}");
+    }
+
+    /// <summary>
+    /// Returns ONLY the speed bonus earned from upgrades this run.
+    /// PlayerController adds this on top of its own baseMoveSpeed.
+    /// </summary>
+    public float GetBonusSpeed()
+    {
+        return bonusSpeed; // bonusSpeed is the private field incremented by ApplyUpgrade()
+    }
+
+    /// <summary>
     /// Returns baseDamagePerShot from the WeaponData SO + any bonus earned this run.
     /// PlayerConeShooter should call this instead of reading weapon.baseDamagePerShot directly.
     /// </summary>
@@ -308,6 +349,15 @@ public class UpgradeManager : MonoBehaviour
         // and increment it here, exactly like bonusPistolDamage.
         return 0;
     }
+
+    /// <summary>Returns the total bonus added to stomp radius this run.</summary>
+    public float GetBonusStompRadius() => bonusStompRadius;
+
+    /// <summary>Returns the total bonus added to stomp damage this run.</summary>
+    public int GetBonusStompDamage() => bonusStompDamage;
+
+    /// <summary>Returns the total bonus coin capacity added this run.</summary>
+    public int GetBonusCoinCapacity() => bonusCoinCapacity;
 
     public float GetFinalSpeed() => basePlayerSpeed + bonusSpeed;
     public float GetFinalStompRadius(float baseRadius) => baseRadius + bonusStompRadius;
@@ -452,9 +502,48 @@ public class UpgradeManager : MonoBehaviour
         Debug.Log("═════════════════════════════════════════════════");
     }
 
+
+    [ContextMenu("DEBUG - PrintUpgradeStats")]
+    public void Debug_PrintUpgradeStats()
+    {
+        Debug.Log("═══════════ UPGRADE BONUSES THIS RUN ═══════════");
+        Debug.Log($"Speed:      +{bonusSpeed}  →  Final: {GetFinalSpeed()}");
+        Debug.Log($"Pistol:     Dmg +{bonusPistolDamage}  | Ammo +{bonusPistolAmmo}");
+        Debug.Log($"Shotgun:    Dmg +{bonusShotgunDamage}  | Ammo +{bonusShotgunAmmo}");
+        Debug.Log($"MachineGun: Dmg +{bonusMachineGunDamage}  | Ammo +{bonusMachineGunAmmo}");
+        Debug.Log($"Stomp Radius bonus: +{bonusStompRadius}");
+        Debug.Log($"Coin Capacity bonus: +{bonusCoinCapacity}");
+        Debug.Log("═════════════════════════════════════════════════");
+    }
+
     [ContextMenu("DEBUG - Reset Run Data")]
     public void DEBUG_ResetRunData() => ResetRunData();
 
     [ContextMenu("DEBUG - Show Weapon Unlock Status")]
     public void DEBUG_ShowWeaponStatus() => WeaponUnlockManager.Instance?.PrintUnlockStatus();
+
+
+    [ContextMenu("DEBUG - Print Available Upgrades")]
+    public void DEBUG_PrintAvailableUpgrades()
+    {
+        List<UpgradeDataSO> available = GetAvailableUpgrades();
+
+        Debug.Log($"========== AVAILABLE UPGRADES (Dungeon Level {CurrentDungeonLevel}) ==========");
+
+        if (available == null || available.Count == 0)
+        {
+            Debug.Log("  ⚠️ No upgrades available!");
+        }
+        else
+        {
+            for (int i = 0; i < available.Count; i++)
+            {
+                UpgradeDataSO u = available[i];
+                Debug.Log($"  [{i}] {u.upgradeName} | Type: {u.upgradeType} | Target: {u.targetWeapon} | Cost: {u.cost} | Min Level: {u.minDungeonLevel}");
+            }
+            Debug.Log($"  Total: {available.Count} upgrade(s) in pool");
+        }
+
+        Debug.Log("====================================================================");
+    }
 }
