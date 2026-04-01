@@ -5413,7 +5413,7 @@ Transform:
   m_GameObject: {fileID: 6955474665586528303}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5725,8 +5725,10 @@ MonoBehaviour:
     m_Bits: 256
   stompBulletLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 2048
   stompVFXPrefab: {fileID: 6049408367209875220, guid: f1fe5f474aa391845ab0c1f3ffd98948, type: 3}
+  stompScreenShakeDuration: 0.1
+  stompScreenShakeAmp: 11
   lightIcon: {fileID: 0}
 --- !u!114 &256087201219941255
 MonoBehaviour:
@@ -5741,11 +5743,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   baseMoveSpeed: 5
-  dashSpeed: 30
+  dashSpeed: 20
   dashDuration: 0.1
   dashCooldown: 1
   invulnerableDuringDash: 0
   dashLightIcon: {fileID: 0}
+  dashBlurVolume: {fileID: 0}
   pushRadius: 0.25
   pushStr: 5
   enemyLayer:
@@ -5753,7 +5756,7 @@ MonoBehaviour:
     m_Bits: 128
   collisionMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 256
   wallCheckDistance: 0.5
 --- !u!61 &6221989387875595873
 BoxCollider2D:
@@ -5881,6 +5884,7 @@ MonoBehaviour:
   playerShooter: {fileID: 6900749776920343997}
   audioSource: {fileID: 441459428130447590}
   ammoText: {fileID: 0}
+  reloadIcon: {fileID: 0}
   currentAmmoInMagazine: 0
   isReloading: 0
 --- !u!82 &441459428130447590
@@ -6011,9 +6015,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   activationRadius: 10
   checkInterval: 0.1
-  maxActiveEnemies: 15
-  maxPathfindingEnemies: 10
-  pathfindingPriorityRadius: 8
+  maxActiveEnemies: 30
+  usePathfinding: 0
+  maxPathfindingEnemies: 0
+  pathfindingPriorityRadius: 0
   showDebugGizmos: 1
 --- !u!114 &6531144439329103242
 MonoBehaviour:
@@ -6344,6 +6349,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d16a21e2c670a442ad0c5e539ad0320, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SceneTransitionHandler
+  bossSceneName: BossLevel
 --- !u!114 &3782965380875294803
 MonoBehaviour:
   m_ObjectHideFlags: 0

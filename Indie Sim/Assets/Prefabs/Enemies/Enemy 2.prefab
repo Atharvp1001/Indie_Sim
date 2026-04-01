@@ -101,6 +101,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   pathCheckDistance: 2
+  usePathfinding: 0
   pathUpdateInterval: 0.5
 --- !u!50 &257384993561902794
 Rigidbody2D:

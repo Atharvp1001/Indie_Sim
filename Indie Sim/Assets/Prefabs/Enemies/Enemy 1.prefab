@@ -88,18 +88,26 @@ MonoBehaviour:
   normalDrag: 1
   knockbackDrag: 25
   detectionRadius: 5
-  separationRadius: 0.4
+  separationRadius: 0.2
   leaderRadius: 5
   minFlockSize: 6
   alignmentWeight: 1
   cohesionWeight: 1
   separationWeight: 1.5
   playerSeekWeight: 2
+  avoidanceLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  avoidanceDistance: 1.5
+  avoidanceWeight: 3
+  avoidanceRayCount: 5
+  avoidanceArcDegrees: 120
   tileSize: 1
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 256
   pathCheckDistance: 2
+  usePathfinding: 0
   pathUpdateInterval: 0.5
 --- !u!50 &257384993561902794
 Rigidbody2D:
@@ -113,7 +121,7 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
+  m_Mass: 2
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 0
@@ -163,7 +171,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.5
+  m_Radius: 0.3
 --- !u!114 &6515982525806870739
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -316,7 +324,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1773204433277557146}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8ca43aa1596ebc045b3a7d5a9a49b6b8, type: 3}
   m_Name: 
@@ -339,7 +347,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1773204433277557146}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de3adb5a62dea9941abb54f8df37f765, type: 3}
   m_Name: 
