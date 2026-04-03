@@ -211,7 +211,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BloodSplatterEffect
   bloodSplatterPrefabs:
-  - {fileID: 4632746306492434432, guid: 222607b62edaa0a44ba2a147cef90fc9, type: 3}
+  - {fileID: 7557436764614164369, guid: d57d95bfce61f4146b424564423b8614, type: 3}
   bloodLifetime: 6
   bloodChunkSprite: {fileID: -5750837228397793580, guid: cb88b18abca96564aab46914c0661e89, type: 3}
   chunkCount: 8

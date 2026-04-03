@@ -96,6 +96,13 @@ MonoBehaviour:
   cohesionWeight: 1
   separationWeight: 1.5
   playerSeekWeight: 2
+  avoidanceLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  avoidanceDistance: 1.5
+  avoidanceWeight: 3
+  avoidanceRayCount: 5
+  avoidanceArcDegrees: 120
   tileSize: 1
   obstacleLayer:
     serializedVersion: 2
@@ -237,7 +244,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -1247100275
-  m_SortingLayer: 3
+  m_SortingLayer: 4
   m_SortingOrder: 3
   m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
