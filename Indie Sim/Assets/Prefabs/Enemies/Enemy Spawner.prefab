@@ -47,40 +47,55 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e63b8188e5e49e94e8fec3886b580bf8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enemyLevel1Prefab: {fileID: 1773204433277557146, guid: 56da4d5d08d2d3046b2ab1d007b5174e, type: 3}
-  enemyLevel2Prefab: {fileID: 1773204433277557146, guid: 4ab6385bfb62248479107c25efb7f6d7, type: 3}
-  enemyLevel3Prefab: {fileID: 1595180837359364782, guid: 996caeec860be5148bb93d18dff4fc61, type: 3}
-  spawnRadius: 5
+  startingBudget: 300
   spawnInterval: 3
-  maxEnemies: 0
-  currentDungeonLevel: 1
+  fodderLevel1:
+    prefab: {fileID: 1773204433277557146, guid: 56da4d5d08d2d3046b2ab1d007b5174e, type: 3}
+    budgetCost: 30
+    spawnWeight: 5
+    maxAllowed: 8
+    currentSpawned: 0
+  fodderLevel2:
+    prefab: {fileID: 0}
+    budgetCost: 0
+    spawnWeight: 0
+    maxAllowed: 0
+    currentSpawned: 0
+  fodderLevel3:
+    prefab: {fileID: 0}
+    budgetCost: 0
+    spawnWeight: 0
+    maxAllowed: 0
+    currentSpawned: 0
+  rangedEnemy:
+    prefab: {fileID: 0}
+    budgetCost: 0
+    spawnWeight: 0
+    maxAllowed: 0
+    currentSpawned: 0
+  cthulhuEye:
+    prefab: {fileID: 0}
+    budgetCost: 0
+    spawnWeight: 0
+    maxAllowed: 0
+    currentSpawned: 0
+  cthulhuExclusionRadius: 25
+  coinPrefab: {fileID: 0}
+  coinRewardMultiplier: 0.5
+  coinDropForce: 2
   maxHealth: 100
-  currentHealth: 0
   flashDuration: 0.15
   flashColor: {r: 0, g: 0, b: 0, a: 1}
-  audioSource: {fileID: 0}
-  damageSound: {fileID: 0}
-  deathSound: {fileID: 0}
+  spawnRadius: 5
   wallLayer:
     serializedVersion: 2
     m_Bits: 256
-  canRespawn: 0
-  respawnDelay: 1
-  respawnExclusionRadius: 8
   requiresActivation: 1
-  isActivated: 0
+  audioSource: {fileID: 0}
   activationSound: {fileID: 0}
-  useBurstMode: 1
-  minEnemiesPerBurst: 4
-  maxEnemiesPerBurst: 6
-  burstCooldown: 5
-  maxActiveBursts: 3
-  maxTotalEnemies: 20
-  cthulhuEyePrefab: {fileID: 6048784882248778353, guid: b8bc32b551b4ab545a865cdfecdef7c7, type: 3}
-  canSpawnCthulhuEye: 1
-  cthulhuEyeSpawnChance: 0.5
-  cthulhuEyeSpawnRadius: 15
-  minDungeonLevelForCthulhuEye: 2
+  damageSound: {fileID: 0}
+  deathSound: {fileID: 0}
+  maxEnemies: 0
 --- !u!212 &3399380655111319332
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -126,7 +141,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -1247100275
-  m_SortingLayer: 3
+  m_SortingLayer: 4
   m_SortingOrder: 2
   m_Sprite: {fileID: 21300000, guid: 823c56a6c33cbac4d98e4b1f8ca9f53d, type: 3}
   m_Color: {r: 1, g: 0.04721839, b: 0, a: 1}

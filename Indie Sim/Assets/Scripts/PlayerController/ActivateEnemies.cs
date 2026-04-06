@@ -7,44 +7,33 @@ public class ActivateEnemies : MonoBehaviour
     [Header("Activation Settings")]
     [SerializeField] private float activationRadius = 15f;
     [SerializeField] private float checkInterval = 0.3f;
-    [SerializeField] private int maxActiveEnemies = 15; // NEW: Limit on active enemies
-    
-    [Header("Pathfinding Settings")]
-    [SerializeField] private int maxPathfindingEnemies = 10; // Max enemies that can pathfind simultaneously
-    [SerializeField] private float pathfindingPriorityRadius = 8f; // Closer enemies get priority
+    [SerializeField] private int maxActiveEnemies = 15;
+
+    [Header("Pathfinding")]
+    [Tooltip("Enable JumpFlood pathfinding assignment. Uncheck to activate enemies by distance only — no pathfinding slots will be assigned.")]
+    [SerializeField] private bool usePathfinding = true;
+    [SerializeField] private int maxPathfindingEnemies = 10;
+    [SerializeField] private float pathfindingPriorityRadius = 8f;
 
     [Header("Debug")]
     [SerializeField] private bool showDebugGizmos = true;
 
-    // Static reference
     public static ActivateEnemies Instance;
 
-    // Enemy tracking
-    private HashSet<GameObject> activatedEnemies = new HashSet<GameObject>();
-    private List<GameObject> enemiesInRange = new List<GameObject>(); // For priority sorting
-    private HashSet<EnemyMovement> pathfindingEnemies = new HashSet<EnemyMovement>();
+    private HashSet<GameObject>     activatedEnemies  = new HashSet<GameObject>();
+    private List<GameObject>        enemiesInRange    = new List<GameObject>();
+    private HashSet<EnemyMovement>  pathfindingEnemies = new HashSet<EnemyMovement>();
 
+    // -------------------------------------------------------------------------
     void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            // Don't destroy on load if you want it to persist
-            // DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
     }
 
     void OnDestroy()
     {
-        // Clean up if this instance is being destroyed
-        if (Instance == this)
-        {
-            Instance = null;
-        }
+        if (Instance == this) Instance = null;
     }
 
     void Start()
@@ -52,6 +41,7 @@ public class ActivateEnemies : MonoBehaviour
         StartCoroutine(CheckForEnemies());
     }
 
+    // -------------------------------------------------------------------------
     private IEnumerator CheckForEnemies()
     {
         while (true)
@@ -63,24 +53,17 @@ public class ActivateEnemies : MonoBehaviour
 
     private void UpdateEnemyActivation()
     {
-        // Clean up destroyed enemies from activated set
+        // Remove destroyed references
         activatedEnemies.RemoveWhere(e => e == null);
-        
-        // Find all enemies in range
-        Collider2D[] enemiesInRangeColliders = Physics2D.OverlapCircleAll(transform.position, activationRadius);
-        
-        // Clear and rebuild the in-range list
+
+        // Find all enemies in activation radius
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, activationRadius);
         enemiesInRange.Clear();
-        
-        foreach (Collider2D enemy in enemiesInRangeColliders)
-        {
-            if (enemy != null && enemy.CompareTag("Enemy"))
-            {
-                enemiesInRange.Add(enemy.gameObject);
-            }
-        }
-        
-        // AUTO-CLEAR: If no enemies in range at all, clear everything to start fresh
+        foreach (Collider2D hit in hits)
+            if (hit != null && hit.CompareTag("Enemy"))
+                enemiesInRange.Add(hit.gameObject);
+
+        // Nothing nearby — clear everything
         if (enemiesInRange.Count == 0)
         {
             if (activatedEnemies.Count > 0 || pathfindingEnemies.Count > 0)
@@ -89,179 +72,128 @@ public class ActivateEnemies : MonoBehaviour
                 activatedEnemies.Clear();
                 pathfindingEnemies.Clear();
             }
-            return; // Early exit, nothing to activate
+            return;
         }
-        
-        // Sort by distance (closest first for priority)
-        enemiesInRange.Sort((a, b) => 
-        {
-            float distA = Vector2.Distance(transform.position, a.transform.position);
-            float distB = Vector2.Distance(transform.position, b.transform.position);
-            return distA.CompareTo(distB);
-        });
-        
-        // Activate up to maxActiveEnemies, prioritizing closest
+
+        // Sort closest-first for priority
+        enemiesInRange.Sort((a, b) =>
+            Vector2.Distance(transform.position, a.transform.position)
+            .CompareTo(Vector2.Distance(transform.position, b.transform.position)));
+
+        // Activate up to maxActiveEnemies
         int activatedCount = 0;
         HashSet<GameObject> shouldBeActive = new HashSet<GameObject>();
-        
+
         foreach (GameObject enemy in enemiesInRange)
         {
-            if (activatedCount < maxActiveEnemies)
+            if (activatedCount >= maxActiveEnemies) break;
+
+            shouldBeActive.Add(enemy);
+            if (!activatedEnemies.Contains(enemy))
             {
-                shouldBeActive.Add(enemy);
-                
-                if (!activatedEnemies.Contains(enemy))
-                {
-                    activatedEnemies.Add(enemy);
-                    Debug.Log($"Activated enemy: {enemy.name} ({activatedCount + 1}/{maxActiveEnemies})");
-                }
-                
-                activatedCount++;
+                activatedEnemies.Add(enemy);
+                Debug.Log($"Activated enemy: {enemy.name} ({activatedCount + 1}/{maxActiveEnemies})");
             }
+            activatedCount++;
         }
-        
-        // Deactivate enemies that are no longer in priority range
-        List<GameObject> toDeactivate = new List<GameObject>();
+
+        // Deactivate enemies that dropped out of the priority window
+        var toDeactivate = new List<GameObject>();
         foreach (GameObject enemy in activatedEnemies)
-        {
             if (enemy == null || !shouldBeActive.Contains(enemy))
-            {
                 toDeactivate.Add(enemy);
-            }
-        }
-        
+
         foreach (GameObject enemy in toDeactivate)
         {
             activatedEnemies.Remove(enemy);
-            
-            // Also disable pathfinding if they had it
             if (enemy != null)
             {
-                EnemyMovement enemyMovement = enemy.GetComponent<EnemyMovement>();
-                if (enemyMovement != null && enemyMovement.IsPathfinding())
-                {
-                    enemyMovement.DisablePathfinding();
-                }
-                
+                EnemyMovement mv = enemy.GetComponent<EnemyMovement>();
+                if (mv != null && mv.IsPathfinding()) mv.DisablePathfinding();
                 Debug.Log($"Deactivated enemy: {enemy.name}");
             }
         }
-        
-        // Update pathfinding assignments
-        UpdatePathfindingAssignments();
+
+        // Only run pathfinding assignment if the toggle is on
+        if (usePathfinding)
+            UpdatePathfindingAssignments();
     }
+
+    // -------------------------------------------------------------------------
+    // Pathfinding slot management — only called when usePathfinding is true
+    // -------------------------------------------------------------------------
 
     private void UpdatePathfindingAssignments()
     {
-        // Clean up destroyed enemies
         pathfindingEnemies.RemoveWhere(e => e == null);
-        
-        // Get all active enemy movements
-        List<EnemyMovement> activeEnemyMovements = new List<EnemyMovement>();
-        
+
+        // Collect active EnemyMovements
+        var activeMovements = new List<EnemyMovement>();
         foreach (GameObject enemy in activatedEnemies)
         {
             if (enemy == null) continue;
-            
-            EnemyMovement movement = enemy.GetComponent<EnemyMovement>();
-            if (movement != null)
-            {
-                activeEnemyMovements.Add(movement);
-            }
+            EnemyMovement mv = enemy.GetComponent<EnemyMovement>();
+            if (mv != null) activeMovements.Add(mv);
         }
-        
-        // Sort by distance for pathfinding priority
-        activeEnemyMovements.Sort((a, b) => 
+
+        // Sort closest-first for pathfinding priority
+        activeMovements.Sort((a, b) =>
+            Vector2.Distance(transform.position, a.transform.position)
+            .CompareTo(Vector2.Distance(transform.position, b.transform.position)));
+
+        // Grant pathfinding to eligible leaders within priority radius
+        int pfCount = pathfindingEnemies.Count;
+        foreach (EnemyMovement enemy in activeMovements)
         {
-            float distA = Vector2.Distance(transform.position, a.transform.position);
-            float distB = Vector2.Distance(transform.position, b.transform.position);
-            return distA.CompareTo(distB);
-        });
-        
-        // Assign pathfinding to closest enemies that need it (leaders or solo enemies)
-        int pathfindingCount = pathfindingEnemies.Count;
-        
-        foreach (EnemyMovement enemy in activeEnemyMovements)
-        {
-            // Skip if at max capacity
-            if (pathfindingCount >= maxPathfindingEnemies)
-                break;
-            
-            // CRITICAL: Only give pathfinding to LEADERS, not solo enemies
-            if (enemy.IsPathfinding())
+            if (pfCount >= maxPathfindingEnemies) break;
+            if (enemy.IsPathfinding()) continue;
+
+            float dist = Vector2.Distance(transform.position, enemy.transform.position);
+            if (dist <= pathfindingPriorityRadius && enemy.IsLeader())
             {
-                // Already pathfinding
-                continue;
-            }
-            
-            // Check if enemy is within priority radius AND is a flock leader
-            float distance = Vector2.Distance(transform.position, enemy.transform.position);
-            if (distance <= pathfindingPriorityRadius && enemy.IsLeader())
-            {
-                // Try to enable pathfinding for this leader
                 TryEnablePathfinding(enemy);
-                pathfindingCount = pathfindingEnemies.Count;
+                pfCount = pathfindingEnemies.Count;
             }
         }
-        
-        // Disable pathfinding for enemies outside priority radius
-        List<EnemyMovement> toDisable = new List<EnemyMovement>();
+
+        // Revoke pathfinding from enemies that moved outside the priority radius
+        var toDisable = new List<EnemyMovement>();
         foreach (EnemyMovement enemy in pathfindingEnemies)
         {
-            if (enemy == null)
-            {
+            if (enemy == null) { toDisable.Add(enemy); continue; }
+            if (Vector2.Distance(transform.position, enemy.transform.position) > pathfindingPriorityRadius)
                 toDisable.Add(enemy);
-                continue;
-            }
-            
-            float distance = Vector2.Distance(transform.position, enemy.transform.position);
-            if (distance > pathfindingPriorityRadius)
-            {
-                toDisable.Add(enemy);
-            }
         }
-        
+
         foreach (EnemyMovement enemy in toDisable)
         {
-            if (enemy != null)
-            {
-                enemy.DisablePathfinding();
-            }
-            else
-            {
-                pathfindingEnemies.Remove(enemy);
-            }
+            if (enemy != null) enemy.DisablePathfinding();
+            else pathfindingEnemies.Remove(enemy);
         }
     }
 
-    public bool IsEnemyActivated(GameObject enemy)
-    {
-        return activatedEnemies.Contains(enemy);
-    }
+    // -------------------------------------------------------------------------
+    // Public API
+    // -------------------------------------------------------------------------
+
+    public bool IsEnemyActivated(GameObject enemy) => activatedEnemies.Contains(enemy);
 
     public bool TryEnablePathfinding(EnemyMovement enemy)
     {
         if (enemy == null) return false;
-        
-        // Check if already pathfinding
-        if (pathfindingEnemies.Contains(enemy))
-            return true;
-        
-        // Check if we have capacity
+        if (pathfindingEnemies.Contains(enemy)) return true;
+
         if (pathfindingEnemies.Count >= maxPathfindingEnemies)
         {
-            Debug.Log($"Cannot enable pathfinding for {enemy.gameObject.name}: Max capacity reached ({maxPathfindingEnemies})");
+            Debug.Log($"Cannot enable pathfinding for {enemy.gameObject.name}: max capacity ({maxPathfindingEnemies})");
             return false;
         }
-        
-        // Check if enemy is activated
         if (!activatedEnemies.Contains(enemy.gameObject))
         {
-            Debug.Log($"Cannot enable pathfinding for {enemy.gameObject.name}: Enemy not activated");
+            Debug.Log($"Cannot enable pathfinding for {enemy.gameObject.name}: not activated");
             return false;
         }
-        
-        // Enable pathfinding
+
         pathfindingEnemies.Add(enemy);
         enemy.EnablePathfinding();
         Debug.Log($"Enabled pathfinding for {enemy.gameObject.name} ({pathfindingEnemies.Count}/{maxPathfindingEnemies})");
@@ -271,27 +203,9 @@ public class ActivateEnemies : MonoBehaviour
     public void UnregisterPathfindingEnemy(EnemyMovement enemy)
     {
         if (pathfindingEnemies.Remove(enemy))
-        {
             Debug.Log($"Unregistered pathfinding for {enemy.gameObject.name} ({pathfindingEnemies.Count}/{maxPathfindingEnemies})");
-        }
     }
 
-    public float GetActivationRadius()
-    {
-        return activationRadius;
-    }
-
-    public int GetActiveEnemyCount()
-    {
-        return activatedEnemies.Count;
-    }
-
-    public int GetPathfindingEnemyCount()
-    {
-        return pathfindingEnemies.Count;
-    }
-
-    // Call this when loading a new level to clean up old references
     public void ClearAllEnemies()
     {
         activatedEnemies.Clear();
@@ -300,43 +214,48 @@ public class ActivateEnemies : MonoBehaviour
         Debug.Log("ActivateEnemies: Cleared all enemy references");
     }
 
+    public float GetActivationRadius()      => activationRadius;
+    public int   GetActiveEnemyCount()      => activatedEnemies.Count;
+    public int   GetPathfindingEnemyCount() => pathfindingEnemies.Count;
+
+    // -------------------------------------------------------------------------
+    // Gizmos / Debug UI
+    // -------------------------------------------------------------------------
+
     private void OnDrawGizmos()
     {
         if (!showDebugGizmos) return;
 
-        // Activation radius
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, activationRadius);
-        
-        // Pathfinding priority radius
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, pathfindingPriorityRadius);
-        
-        // Draw lines to pathfinding enemies
-        if (Application.isPlaying && pathfindingEnemies != null)
+
+        // Only draw pathfinding gizmos when the feature is on
+        if (usePathfinding)
         {
-            Gizmos.color = Color.magenta;
-            foreach (EnemyMovement enemy in pathfindingEnemies)
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(transform.position, pathfindingPriorityRadius);
+
+            if (Application.isPlaying && pathfindingEnemies != null)
             {
-                if (enemy != null)
-                {
-                    Gizmos.DrawLine(transform.position, enemy.transform.position);
-                }
+                Gizmos.color = Color.magenta;
+                foreach (EnemyMovement enemy in pathfindingEnemies)
+                    if (enemy != null) Gizmos.DrawLine(transform.position, enemy.transform.position);
             }
         }
     }
 
-    // Debug UI
     void OnGUI()
     {
-        if (showDebugGizmos)
-        {
-            GUIStyle style = new GUIStyle();
-            style.fontSize = 16;
-            style.normal.textColor = Color.white;
-            
-            GUI.Label(new Rect(10, 10, 300, 30), $"Active Enemies: {activatedEnemies.Count}/{maxActiveEnemies}", style);
-            GUI.Label(new Rect(10, 30, 300, 30), $"Pathfinding Enemies: {pathfindingEnemies.Count}/{maxPathfindingEnemies}", style);
-        }
+        if (!showDebugGizmos) return;
+
+        GUIStyle style = new GUIStyle { fontSize = 16 };
+        style.normal.textColor = Color.white;
+
+        GUI.Label(new Rect(10, 10, 300, 25), $"Active Enemies: {activatedEnemies.Count}/{maxActiveEnemies}", style);
+
+        if (usePathfinding)
+            GUI.Label(new Rect(10, 35, 300, 25), $"Pathfinding Enemies: {pathfindingEnemies.Count}/{maxPathfindingEnemies}", style);
+        else
+            GUI.Label(new Rect(10, 35, 300, 25), "Pathfinding: OFF (sightline mode)", style);
     }
 }

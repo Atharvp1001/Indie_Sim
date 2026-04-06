@@ -171,20 +171,37 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     #region Physics & Wall Detection
     private Vector2 GetValidSpawnPosition()
     {
-        // Pick a random direction
-        Vector2 randomDir = Random.insideUnitCircle.normalized;
-        float distance = Random.Range(1f, spawnRadius);
+        // 1. Define the 4 cardinal directions (North, South, East, West)
+        Vector2[] checkDirections = { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
+        List<Vector2> validDirections = new List<Vector2>();
 
-        // Raycast to check for walls
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, randomDir, distance, wallLayer);
+        // We use the spawner's scale to ensure the "sensor" width matches the sprite.
+        // Shrinking slightly (0.9f) helps prevent getting stuck on corner-tiles.
+        Vector2 boxSize = transform.localScale * 0.9f;
 
-        if (hit.collider != null)
+        foreach (Vector2 dir in checkDirections)
         {
-            // If we hit a wall, spawn slightly in front of it so enemy doesn't get stuck
-            distance = Mathf.Max(1f, hit.distance - 0.5f);
+            // BoxCast checks an entire square area in that direction for walls.
+            RaycastHit2D hit = Physics2D.BoxCast(transform.position, boxSize, 0f, dir, spawnRadius, wallLayer);
+
+            // If the side is open or the wall is far enough away, it's valid.
+            if (hit.collider == null || hit.distance > 1.5f)
+            {
+                validDirections.Add(dir);
+            }
         }
 
-        return (Vector2)transform.position + (randomDir * distance);
+        // 2. Fallback: If totally surrounded, spawn at spawner position.
+        if (validDirections.Count == 0) return transform.position;
+
+        // 3. Choose an open direction and find the specific spawn distance.
+        Vector2 chosenDir = validDirections[Random.Range(0, validDirections.Count)];
+        RaycastHit2D finalHit = Physics2D.BoxCast(transform.position, boxSize, 0f, chosenDir, spawnRadius, wallLayer);
+        
+        float maxDist = (finalHit.collider != null) ? finalHit.distance - 0.5f : spawnRadius;
+        float finalDist = Random.Range(1f, Mathf.Max(1.1f, maxDist));
+
+        return (Vector2)transform.position + (chosenDir * finalDist);
     }
 
     private bool IsCthulhuTooClose()
@@ -304,15 +321,11 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     }
 
     // --- Fixes for DungeonMapGenerator.cs ---
-    // The generator tries to limit enemies. We add the variable back to satisfy the compiler.
-    // (Though your Budget System and maxAllowed variables now do the real heavy lifting!)
     public int maxEnemies = 8;
 
     public void SetDungeonGenerator(MonoBehaviour generator)
     {
-        // Intentionally left blank. 
-        // You explicitly requested: "dont have the spawner be respawned".
-        // So we accept the reference from the Generator to prevent errors, but we just ignore it.
+        // Intentionally left blank to satisfy compiler
     }
 
     // --- Fixes for RoguelikeManager.cs ---
@@ -323,24 +336,19 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
     public void UpdateDifficultyForLevel(int currentLevel)
     {
-        // Translate the old "level" logic into your new Budget System!
         if (currentLevel <= 1) return;
 
-        // Increase the Piñata budget for higher floors (e.g., +50 points per level)
         startingBudget += (currentLevel * 50);
 
-        // If the spawner hasn't started spending yet, update its current wallet too
         if (currentBudget > 0 && currentHealth == maxHealth)
         {
             currentBudget = startingBudget;
         }
 
-        // Make the spawn rate slightly faster on higher levels (caps at 0.5 seconds)
         spawnInterval = Mathf.Max(0.5f, spawnInterval - (currentLevel * 0.15f));
 
         Debug.Log($"[EnemySpawner] Upgraded for Level {currentLevel}. New Budget: {startingBudget}");
     }
 
     #endregion
-
 }
