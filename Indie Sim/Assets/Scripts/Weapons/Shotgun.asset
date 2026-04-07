@@ -16,7 +16,7 @@ MonoBehaviour:
   weaponIcon: {fileID: 0}
   weaponType: 1
   coneAngle: 30
-  coneRange: 6
+  coneRange: 30
   fireRate: 1.6
   baseDamagePerShot: 150
   baseWidthMultiplier: 1
