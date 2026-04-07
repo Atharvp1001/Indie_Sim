@@ -48,7 +48,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startingBudget: 300
-  spawnInterval: 3
+  spawnInterval: 2
   fodderLevel1:
     prefab: {fileID: 1773204433277557146, guid: 56da4d5d08d2d3046b2ab1d007b5174e, type: 3}
     budgetCost: 30
@@ -80,7 +80,7 @@ MonoBehaviour:
     maxAllowed: 0
     currentSpawned: 0
   cthulhuExclusionRadius: 25
-  coinPrefab: {fileID: 0}
+  coinPrefab: {fileID: 5576711845111610058, guid: 6507a99d4a98a9e4a91ab2d3fd43d539, type: 3}
   coinRewardMultiplier: 0.5
   coinDropForce: 2
   maxHealth: 100

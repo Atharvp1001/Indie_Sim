@@ -5,71 +5,43 @@ public class Coin : MonoBehaviour
     [Header("Coin Settings")]
     [SerializeField] private int coinValue = 1;
 
-    private Rigidbody2D rb;
     private bool isBeingCollected = false;
+    private bool isBeingAttracted = false;
+    private Vector2 attractTarget;
+    private float attractSpeed = 0f;
 
-    void Awake()
+    void Update()
     {
-        rb = GetComponent<Rigidbody2D>();
+        if (!isBeingAttracted || isBeingCollected) return;
 
-        // Auto-setup if Rigidbody2D is missing
-        if (rb == null)
-        {
-            rb = gameObject.AddComponent<Rigidbody2D>();
-            rb.bodyType = RigidbodyType2D.Dynamic;
-            rb.gravityScale = 0;
-            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-        }
+        // ✅ Just move the Transform directly — no physics needed
+        transform.position = Vector2.MoveTowards(
+            transform.position,
+            attractTarget,
+            attractSpeed * Time.deltaTime
+        );
     }
 
-    /// <summary>
-    /// Called by PlayerCoinCollector to move coin towards player
-    /// </summary>
-    public void MoveTowardsPlayer(Vector3 playerPosition, float magnetStrength)
+    public void StartAttraction(Vector2 targetPosition, float speed)
     {
-        if (isBeingCollected || rb == null) return;
-
-        Vector2 direction = (playerPosition - transform.position).normalized;
-
-        // Use MovePosition for physics-based movement
-        Vector2 newPosition = rb.position + direction * magnetStrength * Time.deltaTime;
-        rb.MovePosition(newPosition);
+        isBeingAttracted = true;
+        attractTarget = targetPosition;
+        attractSpeed = speed;
     }
 
-    /// <summary>
-    /// Check if coin can be attracted by magnet
-    /// </summary>
-    public bool CanBeAttracted()
-    {
-        return !isBeingCollected;
-    }
+    public bool CanBeAttracted() => !isBeingCollected;
 
-    /// <summary>
-    /// Collect this coin (called by PlayerCoinCollector)
-    /// </summary>
     public void Collect()
     {
         if (isBeingCollected) return;
-
         isBeingCollected = true;
 
-        // Add to CoinManager
         if (CoinManager.Instance != null)
-        {
             CoinManager.Instance.AddCoins(coinValue);
-        }
 
         Debug.Log($"Coin collected! Value: {coinValue}");
-
-        // Destroy coin
         Destroy(gameObject);
     }
 
-    /// <summary>
-    /// Get coin value (useful for display or special coins)
-    /// </summary>
-    public int GetValue()
-    {
-        return coinValue;
-    }
+    public int GetValue() => coinValue;
 }
