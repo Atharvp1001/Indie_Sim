@@ -233,6 +233,8 @@ public class DungeonMapGenerator : MonoBehaviour
     [Tooltip("If false, will wait for external call instead of generating on Start")]
     public bool generateOnStart = false;
 
+    [SerializeField] private TilemapShadowCaster2D shadowCaster;
+
     // Room ID counters for each category
     private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
     private int leafRoomIdCounter = RoomIDCategories.LEAF_ROOM_START;
@@ -434,6 +436,8 @@ public class DungeonMapGenerator : MonoBehaviour
             return;
         }
 
+        // clear all shadows before painting new tiles to prevent leftover shadows from old map
+        shadowCaster.ClearShadows();
         // Clear all tilemaps
         floorTilemap.ClearAllTiles();
         wallTilemap.ClearAllTiles();
@@ -458,6 +462,8 @@ public class DungeonMapGenerator : MonoBehaviour
             TileBase selectedWallTile = GetWallTileForPosition(wallPos, mapData.floorTiles, mapData.wallTiles);
             wallTilemap.SetTile((Vector3Int)wallPos, selectedWallTile);
         }
+
+        shadowCaster.RegenerateShadows();
 
         Debug.Log("Tile painting complete");
     }

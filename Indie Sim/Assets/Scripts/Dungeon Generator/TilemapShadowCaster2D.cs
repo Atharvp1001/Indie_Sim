@@ -1,10 +1,6 @@
 using UnityEngine;
-using UnityEngine.Rendering.Universal; // ✅ UPDATED NAMESPACE
+using UnityEngine.Rendering.Universal;
 
-/// <summary>
-/// Attach this to your wall tilemap GameObject.
-/// It automatically generates shadow casters after the tilemap is created.
-/// </summary>
 public class TilemapShadowCaster2D : MonoBehaviour
 {
     [SerializeField]
@@ -21,13 +17,11 @@ public class TilemapShadowCaster2D : MonoBehaviour
 
     private void Reset()
     {
-        // Auto-assign if on same GameObject
         m_TilemapCollider = GetComponent<CompositeCollider2D>();
     }
 
     private void Start()
     {
-        // Generate shadows after a short delay
         Invoke(nameof(GenerateShadows), m_GenerationDelay);
     }
 
@@ -39,14 +33,39 @@ public class TilemapShadowCaster2D : MonoBehaviour
             return;
         }
 
+        // ✅ Force the composite collider to rebuild its geometry first
+        m_TilemapCollider.GenerateGeometry();
+
         ShadowCaster2DGenerator.GenerateTilemapShadowCasters(m_TilemapCollider, m_SelfShadows);
     }
 
     /// <summary>
-    /// Call this manually from your dungeon generator after tilemap is complete.
+    /// Call this from your dungeon generator after tilemap is complete.
     /// </summary>
     public void RegenerateShadows()
     {
-        GenerateShadows();
+        //ClearShadows();
+        Invoke(nameof(GenerateShadows), m_GenerationDelay); // ✅ Small delay so tilemap finishes
+    }
+
+    /// <summary>
+    /// Destroys all ShadowCaster2D child GameObjects entirely (not just the component).
+    /// </summary>
+    public void ClearShadows()
+    {
+        // ✅ Collect all children named like "ShadowCaster2D_Path*"
+        // We go backwards to safely destroy while iterating
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            GameObject child = transform.GetChild(i).gameObject;
+
+            // ✅ Destroy the entire GameObject, not just the component
+            if (child.name.StartsWith("ShadowCaster2D"))
+            {
+                DestroyImmediate(child);
+            }
+        }
+
+        Debug.Log("[TilemapShadowCaster2D] Shadow caster GameObjects cleared.");
     }
 }
