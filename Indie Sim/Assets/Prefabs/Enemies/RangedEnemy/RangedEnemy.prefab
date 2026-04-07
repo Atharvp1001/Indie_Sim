@@ -142,6 +142,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7685886254960824145}
   - component: {fileID: 94171608974134701}
+  - component: {fileID: 6202261181874414760}
+  - component: {fileID: 7944664734397250868}
   m_Layer: 7
   m_Name: squidenemy
   m_TagString: Enemy
@@ -209,9 +211,9 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -1247100275
-  m_SortingLayer: 3
+  m_SortingLayer: 4
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 2ed89806ff1cfbc4084beee8aed0b40b, type: 3}
+  m_Sprite: {fileID: -1879864852368915752, guid: a76b54c22fc7fa747b3470f2be91ea1e, type: 3}
   m_Color: {r: 0.5924529, g: 0.5924529, b: 0.5924529, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -222,3 +224,37 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &6202261181874414760
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665078584694915778}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: a0cc2cd7058b92a41b718d2cd24908e0, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &7944664734397250868
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665078584694915778}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac162be996f62604987d5a0d974d7abd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TriangleAnimationController

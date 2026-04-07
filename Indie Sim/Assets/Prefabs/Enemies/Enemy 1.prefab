@@ -193,7 +193,7 @@ MonoBehaviour:
   deathEffect: {fileID: 0}
   deathEffectDuration: 2
   audioSource: {fileID: 6872814849207381837}
-  deathSound: {fileID: 8300000, guid: 72a715e268ec57b42899c8b7c68df99f, type: 3}
+  deathSound: {fileID: 8300000, guid: d3b1bb54b0414444293f1b0eee72fb2f, type: 3}
   disableAllScripts: 1
   scriptsToDisable:
   - {fileID: 2988419187499292438}
@@ -383,13 +383,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7865423505771993537}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: -0.7071068, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 5567092838738821391}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -90}
 --- !u!212 &4060607709702875625
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -460,7 +460,7 @@ Animator:
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 6078fe0b9555af246b0c9a5f9a5f6911, type: 2}
   m_CullingMode: 0
-  m_UpdateMode: 0
+  m_UpdateMode: 1
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0

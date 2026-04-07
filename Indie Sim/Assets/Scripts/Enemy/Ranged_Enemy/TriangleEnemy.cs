@@ -106,7 +106,7 @@ public class TriangleEnemy : MonoBehaviour, IDamageable
     // Health
     private int  currentHealth;
     private bool isDead = false;
-
+    public bool IsInAttackMode => state == State.Turning || state == State.Shooting;
     // Roaming
     private float currentMoveAngle;
     private float nextWanderTime;
