@@ -233,7 +233,8 @@ public class DungeonMapGenerator : MonoBehaviour
     [Tooltip("If false, will wait for external call instead of generating on Start")]
     public bool generateOnStart = false;
 
-    [SerializeField] private TilemapShadowCaster2D shadowCaster;
+    [SerializeField] private TilemapShadowCaster2D shadowCaster; // for shadows
+    [SerializeField] private ChunkedGorePainter gorePainter; // for blood splatter effects
 
     // Room ID counters for each category
     private int mainRoomIdCounter = RoomIDCategories.MAIN_ROOM_START;
@@ -436,6 +437,8 @@ public class DungeonMapGenerator : MonoBehaviour
             return;
         }
 
+        // Clear gore chunks before painting new tiles to prevent leftover gore from old map
+        gorePainter.ClearAllChunks();
         // clear all shadows before painting new tiles to prevent leftover shadows from old map
         shadowCaster.ClearShadows();
         // Clear all tilemaps

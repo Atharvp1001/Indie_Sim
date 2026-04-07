@@ -146,6 +146,35 @@ public class ChunkedGorePainter : MonoBehaviour
         }
     }
 
+
+    /// <summary>
+    /// Call this from your dungeon generator before regenerating the map.
+    /// Cleans up all blood chunks, textures, and display objects.
+    /// </summary>
+    public void ClearAllChunks()
+    {
+        // ✅ Cleanup each chunk's RenderTexture, material, and GameObject
+        foreach (var chunk in loadedChunks.Values)
+        {
+            chunk.Cleanup();
+        }
+
+        loadedChunks.Clear();
+
+        // ✅ Safety pass — destroy any leftover child GameObjects under Gore_Root
+        // in case Cleanup() missed anything
+        if (chunkDisplayParent != null)
+        {
+            for (int i = chunkDisplayParent.childCount - 1; i >= 0; i--)
+            {
+                DestroyImmediate(chunkDisplayParent.GetChild(i).gameObject);
+            }
+        }
+
+        Debug.Log("[ChunkedGorePainter] All gore chunks cleared.");
+    }
+
+
     void OnDestroy()
     {
         if (splatMaterial != null) Destroy(splatMaterial);

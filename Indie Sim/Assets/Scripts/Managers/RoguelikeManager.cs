@@ -173,6 +173,11 @@ public class RoguelikeManager : MonoBehaviour
         GameObject[] enemySpawners = GameObject.FindGameObjectsWithTag("EnemySpawner");
         foreach (GameObject spawner in enemySpawners) Destroy(spawner);
         Debug.Log($"[RoguelikeManager] Cleared {enemySpawners.Length} spawners");
+
+        GameObject[] coins = GameObject.FindGameObjectsWithTag("Coin");
+        foreach (GameObject coin in coins) Destroy(coin);
+        Debug.Log($"[RoguelikeManager] Cleared {coins.Length} coins");
+
     }
 
     public void ContinueDungeon()
