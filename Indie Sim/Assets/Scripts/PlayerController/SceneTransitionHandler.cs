@@ -1,9 +1,9 @@
+using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-
 public class SceneTransitionHandler : MonoBehaviour
 {
-    [SerializeField] private string bossSceneName = "BossLevel";
+    [SerializeField] private string bossSceneName = "BossRoom1Scene";
 
     private Camera playerCam;
 
@@ -29,25 +29,20 @@ public class SceneTransitionHandler : MonoBehaviour
 
     private void SetupBossScene()
     {
-        // Find and detach player camera
-        playerCam = null;
-        foreach (Camera cam in GetComponentsInChildren<Camera>())
+       
+        CinemachineCamera virtualCam = Object.FindFirstObjectByType<CinemachineCamera>();
+        if (virtualCam != null)
         {
-            if (cam.CompareTag("MainCamera"))
-            {
-                playerCam = cam;
-                break;
-            }
-        }
+            virtualCam.Follow = null;   // ✅ Stops following player
+            virtualCam.LookAt = null;   // ✅ Stops rotating toward player
 
-        if (playerCam != null)
-        {
-            playerCam.transform.SetParent(null);
-            playerCam.transform.position = new Vector3(0f, 0f, -11.6f);
-            Debug.Log("[SceneTransitionHandler] Camera detached and fixed for boss scene");
+            // ✅ Fix camera at boss scene position
+            virtualCam.transform.position = new Vector3(0f, 0f, -12.6f);
+
+            Debug.Log("[SceneTransitionHandler] Cinemachine camera detached and fixed for boss scene");
         }
         else
-            Debug.LogWarning("[SceneTransitionHandler] No MainCamera found in player children!");
+            Debug.LogWarning("[SceneTransitionHandler] No CinemachineCamera found in scene!");
 
         // Reassign camera to shooter
         PlayerConeShooter shooter = GetComponent<PlayerConeShooter>();

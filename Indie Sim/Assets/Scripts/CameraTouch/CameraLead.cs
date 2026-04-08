@@ -82,15 +82,17 @@ public class CinemachineCursorLead : MonoBehaviour
     private float currentZoom;
     private Vector3 baseFollowOffset;
 
-    void Awake()
+    private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
             Destroy(gameObject);
+            return;
         }
     }
 
