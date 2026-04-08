@@ -61,8 +61,8 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 0
+  m_CollisionDetection: 1
+  m_Constraints: 4
 --- !u!58 &4025049378274461453
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -73,7 +73,7 @@ CircleCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 6eb00017fea73c248bfaafcc84e26f79, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -126,9 +126,9 @@ MonoBehaviour:
   attackDamage: 10
   attackCooldown: 1.5
   moveSpeed: 4
-  maxSpeed: 15
-  speedIncreasePerBounce: 0.5
-  directionChangeInterval: 100
+  maxSpeed: 20
+  speedIncreasePerBounce: 1
+  directionChangeInterval: 20
   shieldHealth: 150
   shieldColor: {r: 0, g: 0.8, b: 1, a: 0.5}
   shieldVisualPrefab: {fileID: 0}
@@ -234,7 +234,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -1247100275
-  m_SortingLayer: 3
+  m_SortingLayer: 4
   m_SortingOrder: 2
   m_Sprite: {fileID: 21300000, guid: 8b8de89563200e44c8b5e28aaf782025, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}

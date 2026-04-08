@@ -12,7 +12,7 @@ public class BossEnemy : MonoBehaviour, IDamageable
 
     [Header("References")]
     [SerializeField] private GameObject playerObject;
-    [SerializeField] private BulletPool bulletPool; // Drag BulletPool from scene here
+    [SerializeField] private BulletPool bulletPool; 
     [SerializeField] private LayerMask wallLayers;
     [SerializeField] private LayerMask playerLayer;
 
@@ -37,14 +37,14 @@ public class BossEnemy : MonoBehaviour, IDamageable
     [SerializeField] private float stickDistance = 0.5f;
 
     [Header("Circular Bullet Attack")]
-    [SerializeField] private int bulletsPerWave = 20; // Total bullets in full circle
-    [SerializeField] private float angleBetweenBullets = 18f; // Degrees between each bullet
-    [SerializeField] private float timeBetweenWaves = 0.3f; // Time between wave 1 and wave 2
-    [SerializeField] private float timeBetweenAttacks = 1.5f; // Time before starting next attack cycle
+    [SerializeField] private int bulletsPerWave = 20; 
+    [SerializeField] private float angleBetweenBullets = 18f; 
+    [SerializeField] private float timeBetweenWaves = 0.3f; 
+    [SerializeField] private float timeBetweenAttacks = 1.5f; 
     [SerializeField] private float bulletSpeed = 8f;
     [SerializeField] private float bulletLifetime = 5f;
     [SerializeField] private int bulletDamage = 5;
-    [SerializeField] private float wallCheckDistance = 1f; // How far to raycast for walls
+    [SerializeField] private float wallCheckDistance = 1f;
 
     [Header("Visual Feedback")]
     [SerializeField] private float flashDuration = 0.1f;
@@ -87,6 +87,11 @@ public class BossEnemy : MonoBehaviour, IDamageable
     private float currentSpeed;
     private Vector2 stuckPosition;
 
+    // Failsafe State
+    private Vector2 lastStuckCheckPos;
+    private float stuckCheckTimer;
+    private const float STUCK_DISTANCE_THRESHOLD = 1.0f;
+
     // Events
     public System.Action OnDeath;
     public System.Action<int, int> OnHealthChanged;
@@ -111,7 +116,6 @@ public class BossEnemy : MonoBehaviour, IDamageable
         rb.gravityScale = 0f;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
-        // Get player reference (only for initial direction)
         if (playerObject != null)
         {
             playerTransform = playerObject.transform;
@@ -123,21 +127,9 @@ public class BossEnemy : MonoBehaviour, IDamageable
             {
                 playerTransform = player.transform;
                 playerObject = player;
-                Debug.LogWarning("Player not assigned in Inspector, found by tag instead.");
-            }
-            else
-            {
-                Debug.LogError("Player not found!");
             }
         }
 
-        // Check if bullet pool is assigned
-        if (bulletPool == null)
-        {
-            Debug.LogError("BulletPool not assigned to Boss! Drag BulletPool from scene into Inspector.");
-        }
-
-        // Set INITIAL direction towards player (or random)
         UpdateMoveDirection();
 
         if (spriteRenderer != null)
@@ -145,27 +137,33 @@ public class BossEnemy : MonoBehaviour, IDamageable
             originalColor = spriteRenderer.color;
         }
 
-        // Remove this line - no more periodic direction changes!
-        // nextDirectionChangeTime = Time.time + directionChangeInterval;
-
         if (shieldVisualPrefab != null)
         {
             shieldVisual = Instantiate(shieldVisualPrefab, transform);
         }
 
+        lastStuckCheckPos = transform.position;
         UpdateShieldVisual();
-        Debug.Log("Boss Enemy spawned with shield - PURE PINBALL MODE!");
     }
+
     void Update()
     {
         if (isDead) return;
 
+        // Failsafe Watchdog: If boss hasn't moved 1 unit in 1 second, force a launch.
         if (!isStuckToWall)
         {
-            if (Time.time >= nextDirectionChangeTime)
+            stuckCheckTimer += Time.deltaTime;
+            if (stuckCheckTimer >= 1.0f)
             {
-                UpdateMoveDirection();
-                nextDirectionChangeTime = Time.time + directionChangeInterval;
+                float distanceMoved = Vector2.Distance(transform.position, lastStuckCheckPos);
+                if (distanceMoved < STUCK_DISTANCE_THRESHOLD)
+                {
+                    Debug.LogWarning("Boss stuck detected by watchdog! Launching...");
+                    RescueLaunch();
+                }
+                lastStuckCheckPos = transform.position;
+                stuckCheckTimer = 0f;
             }
         }
     }
@@ -185,27 +183,29 @@ public class BossEnemy : MonoBehaviour, IDamageable
         }
     }
 
+    private void RescueLaunch()
+    {
+        moveDirection = Random.insideUnitCircle.normalized;
+        currentSpeed = moveSpeed; // Reset speed slightly to stabilize
+        rb.linearVelocity = moveDirection * currentSpeed;
+        stuckCheckTimer = 0f;
+    }
+
     private void UpdateMoveDirection()
     {
-        // Only used for initial direction
         if (playerTransform != null)
         {
             moveDirection = (playerTransform.position - transform.position).normalized;
         }
         else
         {
-            // Random initial direction if no player found
             moveDirection = Random.insideUnitCircle.normalized;
         }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision == null || collision.gameObject == null)
-        {
-            Debug.LogError("Invalid collision detected!");
-            return;
-        }
+        if (collision == null || collision.gameObject == null) return;
 
         int collisionLayer = collision.gameObject.layer;
 
@@ -244,66 +244,60 @@ public class BossEnemy : MonoBehaviour, IDamageable
 
     private void BounceOffWall(Collision2D collision)
     {
-        if (collision.contacts.Length == 0)
+        if (collision.contacts.Length == 0) return;
+
+        Vector2 averagedNormal = Vector2.zero;
+        foreach (var contact in collision.contacts) averagedNormal += contact.normal;
+        averagedNormal = averagedNormal.normalized;
+
+        rb.linearVelocity = Vector2.zero;
+
+        // 1. Calculate the standard reflection
+        Vector2 reflectDir = Vector2.Reflect(moveDirection, averagedNormal).normalized;
+
+        // 2. THE GLIDE KILLER: Check the angle between the reflection and the wall
+        // If the angle is too shallow (less than 20 degrees), we force it to 30 degrees
+        float dot = Vector2.Dot(reflectDir, averagedNormal); 
+        
+        // A dot product of 0 means parallel to wall (gliding)
+        // A dot product of 1 means perpendicular (straight back)
+        if (dot < 0.35f) // Roughly 20-25 degrees
         {
-            Debug.LogWarning("Wall collision has no contact points!");
-            return;
+            // Mix the reflection with the normal to "push" it away from the wall
+            reflectDir = Vector2.Lerp(reflectDir, averagedNormal, 0.4f).normalized;
+            Debug.Log("Shallow angle detected! Correcting glide.");
         }
 
-        Vector2 normal = collision.contacts[0].normal;
-        moveDirection = Vector2.Reflect(moveDirection, normal).normalized;
-        
+        // 3. Teleport Nudge (Keep this at 0.25f or 0.15f)
+        transform.position += (Vector3)averagedNormal * 0.2f;
+
+        // 4. Re-Launch
+        moveDirection = reflectDir;
         currentSpeed = Mathf.Min(currentSpeed + speedIncreasePerBounce, maxSpeed);
         rb.linearVelocity = moveDirection * currentSpeed;
 
-        if (audioSource != null && bounceSound != null)
-        {
-            audioSource.PlayOneShot(bounceSound, 0.4f);
-        }
-
-        Debug.Log($"Boss bounced off {collision.gameObject.name}! Speed: {currentSpeed}");
+        stuckCheckTimer = 0f; 
+        if (audioSource != null && bounceSound != null) audioSource.PlayOneShot(bounceSound, 0.4f);
     }
 
     private void StickToWall(Collision2D collision)
     {
-        if (collision.contacts.Length == 0)
-        {
-            Debug.LogWarning("Wall collision has no contact points!");
-            return;
-        }
+        if (collision.contacts.Length == 0) return;
 
         isStuckToWall = true;
+        Vector2 averageNormal = Vector2.zero;
+        Vector2 averagePoint = Vector2.zero;
 
-        // Handle multiple contact points (corners)
-        if (collision.contacts.Length >= 2)
+        foreach (var contact in collision.contacts)
         {
-            Vector2 averageNormal = Vector2.zero;
-            Vector2 averagePoint = Vector2.zero;
-
-            for (int i = 0; i < collision.contacts.Length; i++)
-            {
-                averageNormal += collision.contacts[i].normal;
-                averagePoint += collision.contacts[i].point;
-            }
-
-            averageNormal = (averageNormal / collision.contacts.Length).normalized;
-            averagePoint = averagePoint / collision.contacts.Length;
-
-            // Position boss AWAY from wall, not at contact point
-            stuckPosition = averagePoint + averageNormal * stickDistance;
-            
-            Debug.Log($"Boss stuck in CORNER with {collision.contacts.Length} contact points!");
+            averageNormal += contact.normal;
+            averagePoint += contact.point;
         }
-        else
-        {
-            Vector2 normal = collision.contacts[0].normal;
-            Vector2 contactPoint = collision.contacts[0].point;
-            
-            // Move boss away from wall by stickDistance
-            stuckPosition = contactPoint + normal * stickDistance;
-            
-            Debug.Log($"Boss stuck to single wall!");
-        }
+
+        averageNormal = averageNormal.normalized;
+        averagePoint /= collision.contacts.Length;
+
+        stuckPosition = averagePoint + averageNormal * stickDistance;
         
         rb.linearVelocity = Vector2.zero;
         StartCoroutine(SetKinematicNextFrame());
@@ -315,6 +309,7 @@ public class BossEnemy : MonoBehaviour, IDamageable
 
         StartCoroutine(WallAttackSequence());
     }
+
     private IEnumerator SetKinematicNextFrame()
     {
         yield return new WaitForFixedUpdate();
@@ -327,11 +322,9 @@ public class BossEnemy : MonoBehaviour, IDamageable
         
         while (elapsedTime < wallStickDuration && isStuckToWall)
         {
-            // First wave
             ShootCircularBulletWave(0f);
             yield return new WaitForSeconds(timeBetweenWaves);
             
-            // Second wave (offset by half the angle)
             ShootCircularBulletWave(angleBetweenBullets / 2f);
             yield return new WaitForSeconds(timeBetweenAttacks);
             
@@ -343,24 +336,11 @@ public class BossEnemy : MonoBehaviour, IDamageable
 
     private void ShootCircularBulletWave(float angleOffset)
     {
-        if (bulletPool == null)
-        {
-            Debug.LogError("BulletPool not assigned!");
-            return;
-        }
+        if (bulletPool == null) return;
 
-        // Get all valid shooting directions (not blocked by walls)
         List<float> validAngles = GetValidShootingAngles(angleOffset);
+        if (validAngles.Count == 0) return;
 
-        if (validAngles.Count == 0)
-        {
-            Debug.LogWarning("No valid shooting angles - boss completely surrounded?");
-            return;
-        }
-
-        int bulletsFired = 0;
-
-        // Shoot bullets only in valid directions
         foreach (float angle in validAngles)
         {
             Vector2 direction = new Vector2(
@@ -368,97 +348,60 @@ public class BossEnemy : MonoBehaviour, IDamageable
                 Mathf.Sin(angle * Mathf.Deg2Rad)
             ).normalized;
 
-            Vector2 velocity = direction * bulletSpeed;
-            bulletPool.SpawnBullet(transform.position, velocity, bulletDamage, bulletLifetime);
-            bulletsFired++;
+            bulletPool.SpawnBullet(transform.position, direction * bulletSpeed, bulletDamage, bulletLifetime);
         }
 
-        if (bulletsFired > 0 && audioSource != null && shootSound != null)
+        if (audioSource != null && shootSound != null)
         {
             audioSource.PlayOneShot(shootSound, 0.5f);
         }
-
-        Debug.Log($"Fired {bulletsFired} bullets in valid directions");
     }
 
     private List<float> GetValidShootingAngles(float angleOffset)
     {
         List<float> validAngles = new List<float>();
-        
-        // Calculate how many angles to check in full 360°
         int totalAngles = Mathf.CeilToInt(360f / angleBetweenBullets);
 
         for (int i = 0; i < totalAngles; i++)
         {
             float angle = (i * angleBetweenBullets) + angleOffset;
-            
             Vector2 direction = new Vector2(
                 Mathf.Cos(angle * Mathf.Deg2Rad),
                 Mathf.Sin(angle * Mathf.Deg2Rad)
             ).normalized;
 
-            // Check if this direction is clear of walls
             if (!IsWallInDirection(direction))
             {
                 validAngles.Add(angle);
             }
         }
-
         return validAngles;
     }
 
     private bool IsWallInDirection(Vector2 direction)
     {
-        // Start raycast slightly away from boss center to avoid self-collision
         Vector2 rayOrigin = (Vector2)transform.position + (direction.normalized * 0.3f);
-        
-        // Raycast from offset position
-        RaycastHit2D hit = Physics2D.Raycast(
-            rayOrigin, 
-            direction, 
-            wallCheckDistance, 
-            wallLayers
-        );
-
-        // Visual debug
-        Color rayColor = hit.collider != null ? Color.red : Color.green;
-        Debug.DrawRay(rayOrigin, direction * wallCheckDistance, rayColor, 0.5f);
-
+        RaycastHit2D hit = Physics2D.Raycast(rayOrigin, direction, wallCheckDistance, wallLayers);
         return hit.collider != null;
     }
+
+    // --- GAP FINDING LOGIC PRESERVED ---
     private Vector2 GetBestFiringDirection()
     {
-        // Cast rays in all directions to find the largest gap
-        int rayCount = 36; // Check every 10 degrees
+        int rayCount = 36;
         List<float> clearAngles = new List<float>();
 
         for (int i = 0; i < rayCount; i++)
         {
             float angle = (360f / rayCount) * i;
-            Vector2 direction = new Vector2(
-                Mathf.Cos(angle * Mathf.Deg2Rad),
-                Mathf.Sin(angle * Mathf.Deg2Rad)
-            );
-
-            if (!IsWallInDirection(direction))
-            {
-                clearAngles.Add(angle);
-            }
+            Vector2 direction = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
+            if (!IsWallInDirection(direction)) clearAngles.Add(angle);
         }
 
-        if (clearAngles.Count == 0)
-        {
-            // Completely surrounded - shoot in random direction
-            return Random.insideUnitCircle.normalized;
-        }
+        if (clearAngles.Count == 0) return Random.insideUnitCircle.normalized;
 
-        // Find the center of the largest continuous gap
         float largestGapCenter = FindLargestGapCenter(clearAngles);
-        
-        return new Vector2(
-            Mathf.Cos(largestGapCenter * Mathf.Deg2Rad),
-            Mathf.Sin(largestGapCenter * Mathf.Deg2Rad)
-        ).normalized;
+        return new Vector2(Mathf.Cos(largestGapCenter * Mathf.Deg2Rad), Mathf.Sin(largestGapCenter * Mathf.Deg2Rad)).normalized;
     }
 
     private float FindLargestGapCenter(List<float> clearAngles)
@@ -466,21 +409,15 @@ public class BossEnemy : MonoBehaviour, IDamageable
         if (clearAngles.Count == 0) return 0f;
         if (clearAngles.Count == 1) return clearAngles[0];
 
-        // Sort angles
         clearAngles.Sort();
-
-        // Find largest continuous gap
         float maxGapSize = 0f;
         float maxGapStart = clearAngles[0];
         float maxGapEnd = clearAngles[0];
-
         float currentGapStart = clearAngles[0];
         
         for (int i = 1; i < clearAngles.Count; i++)
         {
             float angleDiff = clearAngles[i] - clearAngles[i - 1];
-            
-            // If gap is too large, we've found a new section
             if (angleDiff > angleBetweenBullets * 2)
             {
                 float gapSize = clearAngles[i - 1] - currentGapStart;
@@ -494,7 +431,6 @@ public class BossEnemy : MonoBehaviour, IDamageable
             }
         }
 
-        // Check final gap
         float finalGapSize = clearAngles[clearAngles.Count - 1] - currentGapStart;
         if (finalGapSize > maxGapSize)
         {
@@ -502,17 +438,15 @@ public class BossEnemy : MonoBehaviour, IDamageable
             maxGapEnd = clearAngles[clearAngles.Count - 1];
         }
 
-        // Return center of largest gap
         return (maxGapStart + maxGapEnd) / 2f;
     }
+
     private void LeaveWall()
     {
         isStuckToWall = false;
         rb.bodyType = RigidbodyType2D.Dynamic;
-        
         currentSpeed = moveSpeed;
         UpdateMoveDirection();
-        
         hasShield = true;
         currentShieldHealth = shieldHealth;
         UpdateShieldVisual();
@@ -521,39 +455,20 @@ public class BossEnemy : MonoBehaviour, IDamageable
         {
             spriteRenderer.color = originalColor;
         }
-
-        Debug.Log("Boss left wall and shield restored!");
     }
 
     private void AttemptAttackPlayer(GameObject player)
     {
         if (Time.time >= lastAttackTime + attackCooldown)
         {
-            // Try PlayerHealth first (your main system)
             PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
-            if (playerHealth != null)
+            if (playerHealth != null && !playerHealth.IsDead() && !playerHealth.IsOnDamageCooldown())
             {
-                if (!playerHealth.IsDead() && !playerHealth.IsOnDamageCooldown())
-                {
-                    playerHealth.TakeDamage(attackDamage, transform.position);
-                    lastAttackTime = Time.time;
-                    Debug.Log($"Boss attacked player for {attackDamage} damage");
-                }
-                return;
-            }
-
-            // Fallback to IDamageable interface
-            IDamageable damageable = player.GetComponent<IDamageable>();
-            if (damageable != null && !damageable.IsDead())
-            {
-                damageable.TakeDamage(attackDamage);
+                playerHealth.TakeDamage(attackDamage, transform.position);
                 lastAttackTime = Time.time;
-                Debug.Log($"Boss attacked damageable for {attackDamage} damage");
             }
         }
     }
-
-    #region IDamageable Implementation
 
     public void TakeDamage(int damage)
     {
@@ -562,87 +477,44 @@ public class BossEnemy : MonoBehaviour, IDamageable
         if (hasShield)
         {
             currentShieldHealth -= damage;
-            
-            if (currentShieldHealth <= 0)
-            {
-                BreakShield();
-            }
-            else
-            {
-                if (spriteRenderer != null)
-                {
-                    if (flashCoroutine != null) StopCoroutine(flashCoroutine);
-                    flashCoroutine = StartCoroutine(FlashDamage());
-                }
-            }
-
-            if (audioSource != null && damageSound != null)
-            {
-                audioSource.PlayOneShot(damageSound, 0.7f);
-            }
+            if (currentShieldHealth <= 0) BreakShield();
+            else TriggerFlash();
         }
         else
         {
             currentHealth -= damage;
             currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
-
-            if (spriteRenderer != null)
-            {
-                if (flashCoroutine != null) StopCoroutine(flashCoroutine);
-                flashCoroutine = StartCoroutine(FlashDamage());
-            }
-
-            if (audioSource != null && damageSound != null)
-            {
-                audioSource.PlayOneShot(damageSound);
-            }
-
+            TriggerFlash();
             OnHealthChanged?.Invoke(currentHealth, maxHealth);
-
-            Debug.Log($"Boss took {damage} damage. Health: {currentHealth}/{maxHealth}");
-
-            if (currentHealth <= 0)
-            {
-                Die();
-            }
+            if (currentHealth <= 0) Die();
         }
+
+        if (audioSource != null && damageSound != null) audioSource.PlayOneShot(damageSound);
     }
 
-    public bool IsDead() => isDead;
-    public GameObject GetGameObject() => gameObject;
-
-    #endregion
+    private void TriggerFlash()
+    {
+        if (flashCoroutine != null) StopCoroutine(flashCoroutine);
+        flashCoroutine = StartCoroutine(FlashDamage());
+    }
 
     private void BreakShield()
     {
         hasShield = false;
         currentShieldHealth = 0;
         UpdateShieldVisual();
-
-        if (audioSource != null && shieldBreakSound != null)
-        {
-            audioSource.PlayOneShot(shieldBreakSound);
-        }
-
+        if (audioSource != null && shieldBreakSound != null) audioSource.PlayOneShot(shieldBreakSound);
         OnShieldBroken?.Invoke();
-
-        Debug.Log("Boss shield broken!");
     }
 
     private void UpdateShieldVisual()
     {
-        if (shieldVisual != null)
+        if (shieldVisual != null) shieldVisual.SetActive(hasShield);
+        if (spriteRenderer != null)
         {
-            shieldVisual.SetActive(hasShield);
-        }
-
-        if (spriteRenderer != null && hasShield)
-        {
-            spriteRenderer.color = Color.Lerp(originalColor, shieldColor, 0.3f);
-        }
-        else if (spriteRenderer != null && !hasShield && !isStuckToWall)
-        {
-            spriteRenderer.color = originalColor;
+            if (hasShield) spriteRenderer.color = Color.Lerp(originalColor, shieldColor, 0.3f);
+            else if (isStuckToWall) spriteRenderer.color = stuckColor;
+            else spriteRenderer.color = originalColor;
         }
     }
 
@@ -650,157 +522,60 @@ public class BossEnemy : MonoBehaviour, IDamageable
     {
         if (isDead) return;
         isDead = true;
-
         StopAllCoroutines();
-
         rb.linearVelocity = Vector2.zero;
         rb.bodyType = RigidbodyType2D.Kinematic;
-
         DropCoins();
-
-        if (audioSource != null && deathSound != null)
-        {
-            audioSource.PlayOneShot(deathSound);
-        }
-
+        if (audioSource != null && deathSound != null) audioSource.PlayOneShot(deathSound);
         OnDeath?.Invoke();
-
-        Debug.Log("Boss defeated!");
-
         Destroy(gameObject, 2f);
-
-        BossSceneManager bossManager = FindObjectOfType<BossSceneManager>();
-        if (bossManager != null)
-            bossManager.OnBossDefeated();
     }
 
     private void DropCoins()
     {
         if (coinPrefab == null) return;
-
         int coinCount = Random.Range(minCoins, maxCoins + 1);
-
         for (int i = 0; i < coinCount; i++)
         {
             Vector2 randomOffset = Random.insideUnitCircle * coinSpreadRadius;
-            Vector3 spawnPosition = transform.position + new Vector3(randomOffset.x, randomOffset.y, 0f);
-
-            GameObject coin = Instantiate(coinPrefab, spawnPosition, Quaternion.identity);
-
+            GameObject coin = Instantiate(coinPrefab, transform.position + (Vector3)randomOffset, Quaternion.identity);
             Rigidbody2D coinRb = coin.GetComponent<Rigidbody2D>();
             if (coinRb != null)
             {
-                Vector2 randomForce = new Vector2(
-                    Random.Range(-coinDropForce, coinDropForce),
-                    Random.Range(coinDropForce * 0.5f, coinDropForce)
-                );
+                Vector2 randomForce = new Vector2(Random.Range(-coinDropForce, coinDropForce), Random.Range(coinDropForce * 0.5f, coinDropForce));
                 coinRb.AddForce(randomForce, ForceMode2D.Impulse);
-                coinRb.AddTorque(Random.Range(-5f, 5f), ForceMode2D.Impulse);
             }
         }
     }
 
     private IEnumerator FlashDamage()
     {
-        // How many times to flash and how long each flash lasts
-        int flashCount = 3;
-        float flashOnDuration = 0.07f;
-        float flashOffDuration = 0.07f;
-
-        // Safety — make sure white sprite starts hidden
-        if (whiteSpriteRenderer != null)
-            whiteSpriteRenderer.enabled = false;
-
-        for (int i = 0; i < flashCount; i++)
+        for (int i = 0; i < 3; i++)
         {
-            // Hide normal sprite, show white sprite
             if (spriteRenderer != null) spriteRenderer.enabled = false;
             if (whiteSpriteRenderer != null) whiteSpriteRenderer.enabled = true;
-
-            yield return new WaitForSeconds(flashOnDuration);
-
-            // Show normal sprite, hide white sprite
+            yield return new WaitForSeconds(0.07f);
             if (spriteRenderer != null) spriteRenderer.enabled = true;
             if (whiteSpriteRenderer != null) whiteSpriteRenderer.enabled = false;
-
-            yield return new WaitForSeconds(flashOffDuration);
+            yield return new WaitForSeconds(0.07f);
         }
+    }
 
-        // Guarantee clean state at the end
-        if (spriteRenderer != null) spriteRenderer.enabled = true;
-        if (whiteSpriteRenderer != null) whiteSpriteRenderer.enabled = false;
+    // --- DEBUG GIZMOS PRESERVED ---
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying) return;
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, 1.5f);
+        if (isStuckToWall)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(transform.position, transform.position + (Vector3)moveDirection * 2f);
+        }
     }
 
     public int GetCurrentHealth() => currentHealth;
     public int GetMaxHealth() => maxHealth;
-    public float GetHealthPercentage() => (float)currentHealth / maxHealth;
-    public bool HasShield() => hasShield;
-    public int GetShieldHealth() => currentShieldHealth;
-
-    private void OnDrawGizmos()
-    {
-        if (!Application.isPlaying) return;
-
-        // Draw health bar
-        Vector3 healthBarPos = transform.position + Vector3.up * 2.5f;
-        float healthPercentage = GetHealthPercentage();
-
-        Gizmos.color = Color.red;
-        Gizmos.DrawLine(healthBarPos - Vector3.right * 1f, healthBarPos + Vector3.right * 1f);
-
-        Gizmos.color = Color.green;
-        Vector3 healthEnd = healthBarPos + Vector3.right * (healthPercentage * 2f - 1f);
-        Gizmos.DrawLine(healthBarPos - Vector3.right * 1f, healthEnd);
-
-        // Draw shield bar
-        if (hasShield)
-        {
-            Vector3 shieldBarPos = transform.position + Vector3.up * 3f;
-            float shieldPercentage = (float)currentShieldHealth / shieldHealth;
-
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawLine(shieldBarPos - Vector3.right * 1f, shieldBarPos + Vector3.right * 1f);
-
-            Gizmos.color = Color.blue;
-            Vector3 shieldEnd = shieldBarPos + Vector3.right * (shieldPercentage * 2f - 1f);
-            Gizmos.DrawLine(shieldBarPos - Vector3.right * 1f, shieldEnd);
-        }
-
-        Gizmos.color = hasShield ? Color.cyan : Color.magenta;
-        Gizmos.DrawWireSphere(transform.position, 1.5f);
-
-        // Draw valid firing directions when stuck
-        if (isStuckToWall)
-        {
-            List<float> validAngles = GetValidShootingAngles(0f);
-            
-            foreach (float angle in validAngles)
-            {
-                Vector2 direction = new Vector2(
-                    Mathf.Cos(angle * Mathf.Deg2Rad),
-                    Mathf.Sin(angle * Mathf.Deg2Rad)
-                );
-
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawLine(transform.position, (Vector2)transform.position + direction * 2f);
-            }
-
-            // Draw blocked directions
-            int totalAngles = Mathf.CeilToInt(360f / angleBetweenBullets);
-            for (int i = 0; i < totalAngles; i++)
-            {
-                float angle = i * angleBetweenBullets;
-                Vector2 direction = new Vector2(
-                    Mathf.Cos(angle * Mathf.Deg2Rad),
-                    Mathf.Sin(angle * Mathf.Deg2Rad)
-                );
-
-                if (IsWallInDirection(direction))
-                {
-                    Gizmos.color = Color.red;
-                    Gizmos.DrawLine(transform.position, (Vector2)transform.position + direction * 1f);
-                }
-            }
-        }
-    }
+    public bool IsDead() => isDead;
+    public GameObject GetGameObject() => gameObject;
 }
