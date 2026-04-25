@@ -16,7 +16,6 @@ GameObject:
   - component: {fileID: 6515982525806870739}
   - component: {fileID: 3527862313629942301}
   - component: {fileID: 6872814849207381837}
-  - component: {fileID: -6124115707700632550}
   - component: {fileID: 7661877037350193514}
   m_Layer: 7
   m_Name: Enemy 1
@@ -61,8 +60,8 @@ MonoBehaviour:
   damageColor: {r: 1, g: 1, b: 1, a: 1}
   bloodEffect: {fileID: 3527862313629942301}
   coinPrefab: {fileID: 5576711845111610058, guid: 6507a99d4a98a9e4a91ab2d3fd43d539, type: 3}
-  minCoins: 1
-  maxCoins: 3
+  minCoins: 4
+  maxCoins: 8
   coinDropForce: 3
   coinSpreadRadius: 0.5
   attackDamage: 25
@@ -85,30 +84,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 4
   rotationSpeed: 5
-  normalDrag: 1
-  knockbackDrag: 25
-  detectionRadius: 5
-  separationRadius: 0.2
-  leaderRadius: 5
-  minFlockSize: 6
-  alignmentWeight: 1
-  cohesionWeight: 1
-  separationWeight: 1.5
-  playerSeekWeight: 2
-  avoidanceLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  avoidanceDistance: 1.5
-  avoidanceWeight: 3
-  avoidanceRayCount: 5
-  avoidanceArcDegrees: 120
-  tileSize: 1
-  obstacleLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  pathCheckDistance: 2
-  usePathfinding: 0
-  pathUpdateInterval: 0.5
+  attackTriggerDistance: 2
+  windupDistance: 0.2
+  lungeForce: 20
+  attackCooldown: 1.5
+  lungeDrag: 5
+  spriteTransform: {fileID: 3455191515115314830}
+  squashAmount: 1.2
+  separationRadius: 1
+  separationForce: 3
 --- !u!50 &257384993561902794
 Rigidbody2D:
   serializedVersion: 5
@@ -317,7 +301,7 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &-6124115707700632550
+--- !u!114 &7661877037350193514
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -326,36 +310,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 1773204433277557146}
   m_Enabled: 0
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8ca43aa1596ebc045b3a7d5a9a49b6b8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::JumpFloodAlgorithm
-  gridWidth: 30
-  gridHeight: 30
-  cellSize: 1
-  gridOrigin: {x: 0, y: 0}
-  obstacleLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  updateInterval: 0.5
-  jumpFloodIterations: 4
-  showDebugGrid: 0
-  showFlowField: 0
---- !u!114 &7661877037350193514
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1773204433277557146}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: de3adb5a62dea9941abb54f8df37f765, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHitboxSetup
   hitboxRadius: 0.76
   hitboxOffset: {x: 0, y: 0}
   hitboxLayer: EnemyHitbox
-  showHitboxGizmo: 1
+  showHitboxGizmo: 0
   hitboxGizmoColor: {r: 0, g: 1, b: 0.25123835, a: 1}
 --- !u!1 &7865423505771993537
 GameObject:
@@ -438,7 +399,7 @@ SpriteRenderer:
   m_SortingLayer: 1
   m_SortingOrder: 5
   m_Sprite: {fileID: 21300000, guid: d002859cacf6e5740a3e4c67dd49cd9f, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.9245283, g: 0.9201673, b: 0.9201673, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0

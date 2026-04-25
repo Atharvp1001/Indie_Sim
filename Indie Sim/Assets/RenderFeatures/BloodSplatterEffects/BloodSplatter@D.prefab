@@ -224,7 +224,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 1, g: 0.0077324817, b: 0, a: 1}
+      maxColor: {r: 0.5188679, g: 0.05992033, b: 0.056292284, a: 1}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -4908,4 +4908,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9d35b6e24e8b7e1419d78bafa6c0df49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ManualGoreCollisions
-  painter: {fileID: 0}

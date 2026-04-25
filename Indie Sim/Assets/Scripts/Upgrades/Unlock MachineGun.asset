@@ -16,7 +16,7 @@ MonoBehaviour:
   description: Unlock the Machine Gun
   icon: {fileID: 0}
   cost: 10
-  upgradeType: 1
+  upgradeType: 2
   targetWeapon: 3
   damageIncrease: 0
   ammoIncrease: 0

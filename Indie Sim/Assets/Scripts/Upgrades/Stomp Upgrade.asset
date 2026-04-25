@@ -21,6 +21,6 @@ MonoBehaviour:
   damageIncrease: 25
   ammoIncrease: 0
   speedIncrease: 0
-  radiusIncrease: 0.5
+  radiusIncrease: 1
   capacityIncrease: 0
   minDungeonLevel: 1

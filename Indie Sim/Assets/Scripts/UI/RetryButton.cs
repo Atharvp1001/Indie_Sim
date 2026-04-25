@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public class RetryButton : MonoBehaviour
 {
-    [SerializeField] private string mainMenuSceneName = "MainMenu";
+    [SerializeField] private string mainMenuSceneName = "Main Menu";
     //[SerializeField] private string dungeonSceneName = "DungeonScene";
 
     /// <summary>
@@ -16,35 +16,8 @@ public class RetryButton : MonoBehaviour
     public void OnRetryClicked()
     {
         Time.timeScale = 1f;
-        DestroyPersistedObjects();
 
         // ✅ Always go to main menu — full reset regardless of which scene we're in
-        SceneManager.LoadScene("Main Menu");
-    }
-
-    private void DestroyPersistedObjects()
-    {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null) Destroy(player);
-
-        // Canvas destroys itself since this script is on it
-        Canvas canvas = FindObjectOfType<Canvas>();
-        if (canvas != null) Destroy(canvas.gameObject);
-
-        CoinManager coin = FindObjectOfType<CoinManager>();
-        if (coin != null) Destroy(coin.gameObject);
-
-        UpgradeManager upgrade = FindObjectOfType<UpgradeManager>();
-        if (upgrade != null) Destroy(upgrade.gameObject);
-
-        MusicManager music = FindObjectOfType<MusicManager>();
-        if (music != null) Destroy(music.gameObject);
-
-        EnemyKillTracker killTracker = FindObjectOfType<EnemyKillTracker>();
-        if (killTracker != null) Destroy(killTracker.gameObject);
-
-        CustomCrosshair crosshair = FindObjectOfType<CustomCrosshair>();    
-        if (crosshair != null) Destroy(crosshair.gameObject);
-
+        GameManager.Instance.LoadMenu();
     }
 }

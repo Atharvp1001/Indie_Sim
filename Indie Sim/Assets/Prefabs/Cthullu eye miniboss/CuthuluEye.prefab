@@ -58,7 +58,44 @@ MonoBehaviour:
   prisonPentagramPrefab: {fileID: 9128153691166404863, guid: 10f86d3cc3e55cb48bd86183b0c96b7b, type: 3}
   attackCooldown: 5
   escapePentagramChance: 0.5
-  maxHealth: 700
+  damageFlashColor: {r: 0.6509434, g: 0, b: 0, a: 1}
+  damageJuiceDuration: 0.15
+  damageSquashScale: 0.5
+  attackColor: {r: 0.745283, g: 0.35742056, b: 0.03163936, a: 0.7294118}
+  fadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0.007915497
+      value: 0.8860779
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.14538461
+      value: 0.98347986
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.49084473
+      value: -0.0013542175
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  maxHealth: 600
   currentHealth: 700
 --- !u!50 &1552801011318926664
 Rigidbody2D:
@@ -86,7 +123,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!58 &106523625703380184
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -121,8 +158,8 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.04, y: 0}
-  m_Radius: 0.45
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 0.6
 --- !u!1 &8719524093707640446
 GameObject:
   m_ObjectHideFlags: 0
@@ -133,6 +170,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7204223683402996234}
   - component: {fileID: 7173868993100007387}
+  - component: {fileID: 7782819616965157387}
   m_Layer: 7
   m_Name: Sprite
   m_TagString: Untagged
@@ -150,7 +188,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 2, y: 2, z: 1}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3105677229686877633}
@@ -177,10 +215,10 @@ SpriteRenderer:
   m_SmallMeshCulling: 1
   m_ForceMeshLod: -1
   m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 1
+  m_RenderingLayerMask: 4294967295
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -202,7 +240,7 @@ SpriteRenderer:
   m_SortingLayerID: -1247100275
   m_SortingLayer: 4
   m_SortingOrder: 0
-  m_Sprite: {fileID: -1404708991579655607, guid: 87eaff8eec397c1499cbd5c8779e70c1, type: 3}
+  m_Sprite: {fileID: 6657538362356859557, guid: 372d2d7a19446704c8f58af5e807c29e, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -213,3 +251,25 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &7782819616965157387
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8719524093707640446}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 411ed48fe12f4af4c962b170c246f3b8, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

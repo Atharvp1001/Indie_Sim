@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Dumb view script — handles UI only, zero upgrade math.
@@ -25,7 +26,7 @@ public class StoreManager : MonoBehaviour
     [Header("Bottom Buttons")]
     [SerializeField] private Button continueButton;
     [SerializeField] private Button rerollButton;
-
+    [SerializeField] private Canvas canvas;
     // ─────────────────────────────────────────────────────────────────
     //  PRIVATE STATE
     // ─────────────────────────────────────────────────────────────────
@@ -45,7 +46,32 @@ public class StoreManager : MonoBehaviour
         continueButton.gameObject.SetActive(false);
         storePanel.SetActive(false);
     }
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
 
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        Transform storePanelTransform = canvas.transform.Find("StorePanel"); // ← match exact name
+        if (storePanelTransform != null)
+        {
+            storePanel = storePanelTransform.gameObject;
+            continueButton = storePanelTransform.Find("nextscene")?.GetComponent<Button>();
+            rerollButton = storePanelTransform.Find("RerollButton")?.GetComponent<Button>();
+            upgradeButtonA = storePanelTransform.Find("UpgradeButtonA")?.GetComponent<UpgradeButtonUI>();
+            upgradeButtonB = storePanelTransform.Find("UpgradeButtonB")?.GetComponent<UpgradeButtonUI>();
+
+            Debug.Log($"[StoreManager] storePanel: {storePanel}, continueButton: {continueButton}");
+        }
+        else
+            Debug.LogWarning("[StoreManager] StorePanel not found in canvas!");
+    }
     private void OnDestroy()
     {
         upgradeButtonA.OnButtonClicked -= HandleCardClicked;
@@ -86,7 +112,7 @@ public class StoreManager : MonoBehaviour
         upgradeButtonB.Setup(pool.Count > 1 ? pool[1] : pool[0]);
 
         Debug.Log($"[StoreManager] Store populated: '{pool[0].upgradeName}' | " +
-                  $"'{(pool.Count > 1 ? pool[1].upgradeName : pool[0].upgradeName)}'");
+                $"'{(pool.Count > 1 ? pool[1].upgradeName : pool[0].upgradeName)}'");
     }
 
     // ─────────────────────────────────────────────────────────────────

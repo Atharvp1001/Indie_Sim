@@ -15,7 +15,8 @@ public class PrisonPentagram : MonoBehaviour
     [SerializeField] private Color glowColor = new Color(0f, 1f, 1f, 1f);        // Cyan glow
 
     [Header("Animation Settings")]
-    [SerializeField] private AnimationCurve fadeInCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [SerializeField] private float startScale = 3f; // Starting scale multiplier
+    [SerializeField] private AnimationCurve scaleInCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     [SerializeField] private float glowPulseSpeed = 2f;
     [SerializeField] private float glowIntensity = 0.3f;
 
@@ -28,6 +29,7 @@ public class PrisonPentagram : MonoBehaviour
     private bool isActive = false;
     private Vector2 prisonCenter;
     private bool hasInitialized = false;
+    private Vector3 originalScale;
 
     void Awake()
     {
@@ -66,13 +68,13 @@ public class PrisonPentagram : MonoBehaviour
 
         prisonCenter = transform.position;
 
-        // Start with transparent sprite
+        // Store original scale and set to warning color
         if (pentagramRenderer != null)
         {
-            Color startColor = warningColor;
-            startColor.a = 0f;
-            pentagramRenderer.color = startColor;
-            Debug.Log("[PrisonPentagram] Sprite renderer found and set to transparent");
+            originalScale = pentagramRenderer.transform.localScale;
+            pentagramRenderer.transform.localScale = originalScale * startScale;
+            pentagramRenderer.color = warningColor;
+            Debug.Log("[PrisonPentagram] Sprite renderer found and set to start scale");
         }
         else
         {
@@ -87,12 +89,12 @@ public class PrisonPentagram : MonoBehaviour
     {
         Debug.Log("[PrisonPentagram] Starting sequence...");
 
-        // Warning phase with fade in
+        // Warning phase with scale in
         isWarningPhase = true;
         Debug.Log("[PrisonPentagram] Warning phase started");
 
-        // Fade in during warning duration
-        yield return StartCoroutine(FadeInPentagram(warningColor, warningDuration));
+        // Scale in during warning duration
+        yield return StartCoroutine(ScaleInPentagram(warningDuration));
 
         Debug.Log("[PrisonPentagram] Warning phase complete, checking if player inside...");
 
@@ -135,36 +137,34 @@ public class PrisonPentagram : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private IEnumerator FadeInPentagram(Color targetColor, float duration)
+    private IEnumerator ScaleInPentagram(float duration)
     {
         if (pentagramRenderer == null)
         {
-            Debug.LogWarning("[PrisonPentagram] Cannot fade in - pentagramRenderer is null!");
+            Debug.LogWarning("[PrisonPentagram] Cannot scale in - pentagramRenderer is null!");
             yield break;
         }
 
         float elapsed = 0f;
-        Color startColor = targetColor;
-        startColor.a = 0f;
+        Vector3 startScaleVector = originalScale * startScale;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
             
-            // Use animation curve for smooth fade
-            float curveValue = fadeInCurve.Evaluate(t);
+            // Use animation curve for smooth scale
+            float curveValue = scaleInCurve.Evaluate(t);
             
-            Color newColor = targetColor;
-            newColor.a = curveValue;
-            pentagramRenderer.color = newColor;
+            Vector3 newScale = Vector3.Lerp(startScaleVector, originalScale, curveValue);
+            pentagramRenderer.transform.localScale = newScale;
 
             yield return null;
         }
 
-        // Ensure we end at full alpha
-        pentagramRenderer.color = targetColor;
-        Debug.Log("[PrisonPentagram] Fade in complete");
+        // Ensure we end at original scale
+        pentagramRenderer.transform.localScale = originalScale;
+        Debug.Log("[PrisonPentagram] Scale in complete");
     }
 
     private IEnumerator GlowPulse()

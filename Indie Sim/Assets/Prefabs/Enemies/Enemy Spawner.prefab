@@ -48,45 +48,52 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startingBudget: 300
-  spawnInterval: 2
+  spawnInterval: 0.7
   fodderLevel1:
     prefab: {fileID: 1773204433277557146, guid: 56da4d5d08d2d3046b2ab1d007b5174e, type: 3}
-    budgetCost: 30
-    spawnWeight: 5
-    maxAllowed: 8
+    budgetCost: 10
+    spawnWeight: 1
+    maxAllowed: 12
     currentSpawned: 0
+    spawnGroupSize: 4
   fodderLevel2:
     prefab: {fileID: 0}
     budgetCost: 0
     spawnWeight: 0
     maxAllowed: 0
     currentSpawned: 0
+    spawnGroupSize: 1
   fodderLevel3:
     prefab: {fileID: 0}
     budgetCost: 0
     spawnWeight: 0
     maxAllowed: 0
     currentSpawned: 0
+    spawnGroupSize: 1
   rangedEnemy:
-    prefab: {fileID: 0}
-    budgetCost: 0
-    spawnWeight: 0
-    maxAllowed: 0
+    prefab: {fileID: 1595180837359364782, guid: 996caeec860be5148bb93d18dff4fc61, type: 3}
+    budgetCost: 20
+    spawnWeight: 2
+    maxAllowed: 2
     currentSpawned: 0
+    spawnGroupSize: 1
   cthulhuEye:
-    prefab: {fileID: 0}
-    budgetCost: 0
-    spawnWeight: 0
-    maxAllowed: 0
+    prefab: {fileID: 6048784882248778353, guid: b8bc32b551b4ab545a865cdfecdef7c7, type: 3}
+    budgetCost: 10
+    spawnWeight: 2
+    maxAllowed: 1
     currentSpawned: 0
+    spawnGroupSize: 1
   cthulhuExclusionRadius: 25
   coinPrefab: {fileID: 5576711845111610058, guid: 6507a99d4a98a9e4a91ab2d3fd43d539, type: 3}
-  coinRewardMultiplier: 0.5
+  coinRewardMultiplier: 0.01
   coinDropForce: 2
-  maxHealth: 100
+  maxHealth: 300
   flashDuration: 0.15
   flashColor: {r: 0, g: 0, b: 0, a: 1}
+  disabledColor: {r: 0.0754717, g: 0.0751157, b: 0.0751157, a: 1}
   spawnRadius: 5
+  zoneOffset: 1
   wallLayer:
     serializedVersion: 2
     m_Bits: 256
@@ -143,8 +150,8 @@ SpriteRenderer:
   m_SortingLayerID: -1247100275
   m_SortingLayer: 4
   m_SortingOrder: 2
-  m_Sprite: {fileID: 21300000, guid: 823c56a6c33cbac4d98e4b1f8ca9f53d, type: 3}
-  m_Color: {r: 1, g: 0.04721839, b: 0, a: 1}
+  m_Sprite: {fileID: 677556133073198573, guid: d5870871c2fa39b47bb2621aacd7c763, type: 3}
+  m_Color: {r: 0.6037736, g: 0.07886912, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -206,9 +213,9 @@ MonoBehaviour:
   m_LightType: 3
   m_BlendStyleIndex: 0
   m_FalloffIntensity: 0.785
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 0.6
-  m_LightVolumeIntensity: 0.2
+  m_Color: {r: 0.6981132, g: 0, b: 0, a: 1}
+  m_Intensity: 1
+  m_LightVolumeIntensity: 0.22
   m_LightVolumeEnabled: 1
   m_ApplyToSortingLayers: 0000000035284bd1c3bb6c7e8dc2aab5bf945d6b
   m_LightCookieSprite: {fileID: 21300000, guid: 823c56a6c33cbac4d98e4b1f8ca9f53d, type: 3}
@@ -219,11 +226,11 @@ MonoBehaviour:
   m_NormalMapDistance: 3
   m_NormalMapQuality: 2
   m_UseNormalMap: 0
-  m_ShadowsEnabled: 1
+  m_ShadowsEnabled: 0
   m_ShadowIntensity: 1
   m_ShadowSoftness: 0.3
   m_ShadowSoftnessFalloffIntensity: 0.5
-  m_ShadowVolumeIntensityEnabled: 1
+  m_ShadowVolumeIntensityEnabled: 0
   m_ShadowVolumeIntensity: 1
   m_LocalBounds:
     m_Center: {x: 0, y: -0.00000011920929, z: 0}

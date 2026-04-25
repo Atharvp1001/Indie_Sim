@@ -16,7 +16,7 @@ public class RoguelikeManager : MonoBehaviour
     [Header("Demo Settings")]
     [SerializeField] private int roomsTillBoss = 3;
     [SerializeField] private string bossSceneName = "BossLevel";
-    [SerializeField] private string roguelikeScene2Name = "RoguelikeModeEmpty"; // ✅ NEW
+    [SerializeField] private string roguelikeScene2Name = "RoguelikeModeEmpty";
 
     private int dungeonsClearedCount = 0;
     private int dungeonSizeIncrement = 0;
@@ -27,13 +27,11 @@ public class RoguelikeManager : MonoBehaviour
     private WeaponInventory weaponInventory;
     private WeaponAmmoManager AmmoManager;
 
-    // ✅ NEW — singleton + persist
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -42,9 +40,6 @@ public class RoguelikeManager : MonoBehaviour
         }
     }
 
-   
-
-    // ✅ NEW — subscribe to scene load events
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
@@ -62,11 +57,34 @@ public class RoguelikeManager : MonoBehaviour
             Debug.Log("[RoguelikeManager] RoguelikeScene_2 detected — waiting for scene init...");
             StartCoroutine(InitRoguelikeScene2());
         }
+        else
+        {
+            // ✅ Re-grab storeManager for any other roguelike scene reload
+            StartCoroutine(ReinitialiseReferences());
+        }
+    }
+
+    // ✅ NEW — re-grab all scene references on reload
+    private IEnumerator ReinitialiseReferences()
+    {
+        yield return null; // wait one frame for scene to finish loading
+
+        storeManager = FindFirstObjectByType<StoreManager>();
+        dungeonGenerator = FindFirstObjectByType<DungeonMapGenerator>();
+        playerTransform = FindFirstObjectByType<PlayerController>()?.transform;
+        weaponInventory = FindFirstObjectByType<WeaponInventory>();
+        AmmoManager = FindFirstObjectByType<WeaponAmmoManager>();
+
+        Debug.Log($"[RoguelikeManager] References re-grabbed — storeManager: {storeManager}");
+        Debug.Log($"[RoguelikeManager] dungeonGenerator: {dungeonGenerator}");
+        Debug.Log($"[RoguelikeManager] playerTransform: {playerTransform}");
+
+        if (AmmoManager != null && weaponInventory != null)
+            AmmoManager.InitialiseAmmo(weaponInventory.GetAllWeapons());
     }
 
     private IEnumerator InitRoguelikeScene2()
     {
-
         yield return null;
 
         dungeonGenerator = FindFirstObjectByType<DungeonMapGenerator>();
@@ -76,8 +94,6 @@ public class RoguelikeManager : MonoBehaviour
         weaponInventory = FindFirstObjectByType<WeaponInventory>();
         AmmoManager = FindFirstObjectByType<WeaponAmmoManager>();
 
-
-        // ✅ Debug every ref so we know exactly what's null
         Debug.Log($"[RoguelikeManager] dungeonGenerator: {dungeonGenerator}");
         Debug.Log($"[RoguelikeManager] teleporter: {teleporter}");
         Debug.Log($"[RoguelikeManager] storeManager: {storeManager}");
@@ -91,19 +107,10 @@ public class RoguelikeManager : MonoBehaviour
 
         GenerateNewDungeon();
         UpdateSpawnerDifficulty();
-
-        // ✅ Directly call roguelike setup — don't reuse HandleBossSceneLoad
-        SceneTransitionHandler handler = playerTransform?.GetComponent<SceneTransitionHandler>();
-        if (handler != null)
-            handler.HandleRoguelikeSceneLoad(); // ✅ new dedicated method
-        else
-            Debug.LogWarning("[RoguelikeManager] SceneTransitionHandler not found on player!");
-
-        Debug.Log("[RoguelikeManager] RoguelikeScene_2 fully initialized!");
     }
+
     private void Start()
     {
-
         weaponInventory = FindFirstObjectByType<WeaponInventory>();
         AmmoManager = FindFirstObjectByType<WeaponAmmoManager>();
         if (weaponInventory == null)
@@ -114,7 +121,6 @@ public class RoguelikeManager : MonoBehaviour
         GenerateNewDungeon();
         UpdateSpawnerDifficulty();
         AmmoManager.InitialiseAmmo(weaponInventory.GetAllWeapons());
-
     }
 
     private int GetCurrentDungeonSize()
@@ -133,6 +139,8 @@ public class RoguelikeManager : MonoBehaviour
     public void CompleteDungeon()
     {
         dungeonsClearedCount++;
+        Debug.Log($"[RoguelikeManager] dungeonsClearedCount: {dungeonsClearedCount} / {roomsTillBoss}");
+        Debug.Log($"[RoguelikeManager] storeManager is: {storeManager}");
         UpgradeManager.Instance.AdvanceDungeonLevel();
 
         Debug.Log($"[RoguelikeManager] Dungeon #{dungeonsClearedCount} completed!");
@@ -154,14 +162,7 @@ public class RoguelikeManager : MonoBehaviour
 
     private void LoadBossLevel()
     {
-        // ✅ Player and Canvas persist themselves — no manual DontDestroyOnLoad needed here
-        SceneTransitionHandler handler = playerTransform?.GetComponent<SceneTransitionHandler>();
-        if (handler != null)
-            handler.HandleBossSceneLoad();
-        else
-            Debug.LogWarning("[RoguelikeManager] SceneTransitionHandler not found on Player!");
-
-        SceneManager.LoadScene(bossSceneName);
+        GameManager.Instance.LoadBoss();
     }
 
     private void ClearCurrentDungeon()
@@ -177,7 +178,6 @@ public class RoguelikeManager : MonoBehaviour
         GameObject[] coins = GameObject.FindGameObjectsWithTag("Coin");
         foreach (GameObject coin in coins) Destroy(coin);
         Debug.Log($"[RoguelikeManager] Cleared {coins.Length} coins");
-
     }
 
     public void ContinueDungeon()
@@ -239,7 +239,7 @@ public class RoguelikeManager : MonoBehaviour
         UpdateSpawnerDifficulty();
         DEBUG_PrintStats();
     }
-   
+
     public int GetDungeonsClearedCount() => dungeonsClearedCount;
     public int GetDungeonSizeIncrement() => dungeonSizeIncrement;
     public int GetCurrentDungeonNodeCount() => GetCurrentDungeonSize();

@@ -19,8 +19,8 @@ MonoBehaviour:
   upgradeType: 2
   targetWeapon: 3
   damageIncrease: 25
-  ammoIncrease: 1
+  ammoIncrease: 5
   speedIncrease: 0
   radiusIncrease: 0
   capacityIncrease: 0
-  minDungeonLevel: 3
+  minDungeonLevel: 1

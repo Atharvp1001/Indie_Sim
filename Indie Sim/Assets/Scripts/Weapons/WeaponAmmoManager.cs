@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class WeaponAmmoManager : MonoBehaviour
 {
@@ -31,6 +32,43 @@ public class WeaponAmmoManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        DontDestroyOnLoad(gameObject);
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        StartCoroutine(ReinitialiseUIReferences());
+    }
+
+    private IEnumerator ReinitialiseUIReferences()
+    {
+        yield return null; // wait one frame for scene to finish loading
+
+        // Re-grab UI references from new scene's canvas
+        Canvas canvas = FindFirstObjectByType<Canvas>();
+        if (canvas != null)
+        {
+            Transform ammoTextTransform = canvas.transform.Find("AmmoText"); // ← match exact name
+            Transform reloadIconTransform = canvas.transform.Find("ReloadIcon"); // ← match exact name
+
+            if (ammoTextTransform != null)
+                ammoText = ammoTextTransform.GetComponent<TMP_Text>();
+            if (reloadIconTransform != null)
+                reloadIcon = reloadIconTransform.GetComponent<Image>();
+        }
+
+        // Re-grab player shooter reference
+        playerShooter = FindFirstObjectByType<PlayerConeShooter>();
+
+        Debug.Log($"[AmmoManager] UI re-grabbed — ammoText: {ammoText}, reloadIcon: {reloadIcon}, playerShooter: {playerShooter}");
+
+        UpdateAmmoUI();
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
     }
 
     private void OnEnable()
@@ -179,23 +217,25 @@ public class WeaponAmmoManager : MonoBehaviour
             reloadCoroutine = null;
         }
 
-        // ✅ Bug 3 Fix: Save ammo for old weapon before switching
         if (currentWeapon != null)
             _currentAmmo[currentWeapon] = currentAmmoInMagazine;
 
         isReloading = false;
         currentWeapon = newWeapon;
 
-        // ✅ Restore saved ammo for new weapon, or fill to max if first time
-        if (newWeapon != null)
+        // ✅ Instantly refill ALL weapons to max on switch
+        foreach (WeaponData weapon in new List<WeaponData>(_currentAmmo.Keys))
         {
-            if (!_currentAmmo.ContainsKey(newWeapon))
-                _currentAmmo[newWeapon] = GetCurrentMaxAmmo();
-
-            currentAmmoInMagazine = _currentAmmo[newWeapon];
+            int max = UpgradeManager.Instance != null
+                ? UpgradeManager.Instance.GetFinalAmmo(weapon)
+                : weapon.magazineCapacity;
+            _currentAmmo[weapon] = max;
         }
 
-        Debug.Log($"[AmmoManager] Switched to {currentWeapon?.weaponName} - Ammo: {currentAmmoInMagazine}/{GetCurrentMaxAmmo()}");
+        if (newWeapon != null)
+            currentAmmoInMagazine = _currentAmmo[newWeapon];
+
+        Debug.Log($"[AmmoManager] Switched to {currentWeapon?.weaponName} - All weapons refilled. Ammo: {currentAmmoInMagazine}/{GetCurrentMaxAmmo()}");
         UpdateAmmoUI();
     }
 
@@ -240,7 +280,7 @@ public class WeaponAmmoManager : MonoBehaviour
     private void UpdateAmmoUI()
     {
         if (ammoText == null) return;
-        ammoText.text = $"{currentAmmoInMagazine} / {GetCurrentMaxAmmo()}";
+        ammoText.text = $"{currentAmmoInMagazine} / {GetCurrentMaxAmmo()} rounds";
     }
 
     public void InitialiseAmmo(WeaponData[] weapons)

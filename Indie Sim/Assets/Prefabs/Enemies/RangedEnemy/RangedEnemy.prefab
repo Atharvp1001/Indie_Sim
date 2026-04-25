@@ -12,6 +12,8 @@ GameObject:
   - component: {fileID: 85945937660652408}
   - component: {fileID: 3587904039974061747}
   - component: {fileID: 8491534459162846512}
+  - component: {fileID: 83561668323847905}
+  - component: {fileID: 2655099045648306405}
   m_Layer: 7
   m_Name: RangedEnemy
   m_TagString: Enemy
@@ -29,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -12.20657, y: 0.20508, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.2, y: 1.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7685886254960824145}
@@ -110,13 +112,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14af62037243c544d973fe1af639ca81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TriangleEnemy
-  maxHealth: 300
+  maxHealth: 200
   bulletPoolOverride: {fileID: 0}
   bulletDamage: 10
-  bulletSpeed: 6
-  bulletLifetime: 2
+  bulletSpeed: 4
+  bulletLifetime: 1
   fireRate: 1
-  bulletSpread: 7.5
+  bulletSpread: 10
   wallLayers:
     serializedVersion: 2
     m_Bits: 256
@@ -124,14 +126,45 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   minRange: 2
-  maxRange: 6
+  maxRange: 4
   moveSpeed: 3
   roamTurnSpeed: 90
   wanderInterval: 2
   wanderVariance: 0.5
   attackTurnSpeed: 320
   aimTolerance: 4
+  deathParticlePrefab: {fileID: 7557436764614164369, guid: d57d95bfce61f4146b424564423b8614, type: 3}
   noseLocalY: -0.45
+--- !u!114 &83561668323847905
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1595180837359364782}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 929d48c746f6cd9409d6d3f8a8cb2788, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TriangleEnemyAnimator
+--- !u!114 &2655099045648306405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1595180837359364782}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6eca00300f029584fadd284e8b508cf2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TriangleEnemyJuice
+  spriteRoot: {fileID: 7685886254960824145}
+  squeezeDuration: 0.18
+  squashAmount: 0.8
+  stretchAmount: 1.2
+  recoilForce: 6
+  recoilDrag: 5
 --- !u!1 &1665078584694915778
 GameObject:
   m_ObjectHideFlags: 0
@@ -213,7 +246,7 @@ SpriteRenderer:
   m_SortingLayerID: -1247100275
   m_SortingLayer: 4
   m_SortingOrder: 0
-  m_Sprite: {fileID: -1879864852368915752, guid: a76b54c22fc7fa747b3470f2be91ea1e, type: 3}
+  m_Sprite: {fileID: -1471128207333116761, guid: a76b54c22fc7fa747b3470f2be91ea1e, type: 3}
   m_Color: {r: 0.5924529, g: 0.5924529, b: 0.5924529, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -236,7 +269,7 @@ Animator:
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: a0cc2cd7058b92a41b718d2cd24908e0, type: 2}
   m_CullingMode: 0
-  m_UpdateMode: 0
+  m_UpdateMode: 1
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0

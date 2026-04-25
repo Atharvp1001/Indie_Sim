@@ -19,6 +19,7 @@ public class OptionsMenu : MonoBehaviour
     [SerializeField] private UnityEngine.UI.Button soundToggleButton; // Optional: to update button text/image
     [SerializeField] private UnityEngine.UI.Text soundButtonText; // Optional: to show "Sound: ON/OFF"
 
+    public string MainMenu = "Main Menu";
     // Private variables
     private bool isGamePaused = false;
     private bool isSoundEnabled = true;
@@ -189,7 +190,7 @@ public class OptionsMenu : MonoBehaviour
         // Load main menu scene
         if (!string.IsNullOrEmpty(mainMenuSceneName))
         {
-            SceneManager.LoadScene(mainMenuSceneName);
+            GameManager.Instance.LoadScene(MainMenu);
         }
         else
         {

@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fae105ae56efbcb43b8d42039a7123cb, type: 3}
   m_Name: Mapparametersso
   m_EditorClassIdentifier: Assembly-CSharp::Mapparametersso
-  nodeCount: 5
-  mainRoomSpacing: 8
+  nodeCount: 7
+  mainRoomSpacing: 6
   chanceForLTurn: 0.3
   mainArteryPositionJitter: 2
-  distributiveNodeChancePerSegment: 0.4
+  distributiveNodeChancePerSegment: 0.858
   minLeafNodesPerDistributive: 1
   maxLeafNodesPerDistributive: 3
   leafBranchLength: 6
@@ -27,10 +27,10 @@ MonoBehaviour:
   baseDistributiveRoomSize: {x: 4, y: 4}
   baseLeafRoomSize: {x: 5, y: 5}
   baseCornerRoomSize: {x: 3, y: 3}
-  roomSizeVariationPercentage: 0.2
-  minRoomDistance: 0.1
-  maxRepositionAttempts: 10
-  repositionSearchRadius: 3
+  roomSizeVariationPercentage: 0.331
+  minRoomDistance: 0
+  maxRepositionAttempts: 30
+  repositionSearchRadius: 5
   startRoomToArteryDistance: 12
   minStartToEndDistance: 40
   roomRotationChance: 0.5

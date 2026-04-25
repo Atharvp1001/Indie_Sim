@@ -74,7 +74,7 @@ public class BossSceneManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         Debug.Log($"[BossSceneManager] Loading next scene: {nextSceneName}");
-        SceneManager.LoadScene(nextSceneName);
+        GameManager.Instance.LoadGame();
         victoryPanel.SetActive(false);
     }
 

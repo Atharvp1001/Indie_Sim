@@ -50,11 +50,11 @@ Material:
     - _DecalMeshDepthBias: 0
     - _DecalMeshViewBias: 0
     - _DrawOrder: 0
-    - _blur: 0.00057
+    - _blur: 0
     - _color: 0
-    - _number_of_scan_lines: 210
-    - _scan_line_speed: 0.353
+    - _number_of_scan_lines: 0
+    - _scan_line_speed: 0
     m_Colors:
-    - _Color: {r: 5.216475, g: 5.216475, b: 5.216475, a: 1}
+    - _Color: {r: 0.7490196, g: 0.7490196, b: 0.7490196, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

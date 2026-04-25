@@ -20,7 +20,7 @@ MonoBehaviour:
   targetWeapon: 0
   damageIncrease: 0
   ammoIncrease: 0
-  speedIncrease: 2
+  speedIncrease: 1
   radiusIncrease: 0
   capacityIncrease: 0
   minDungeonLevel: 1

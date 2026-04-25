@@ -10,12 +10,12 @@ public class MainMenu : MonoBehaviour
 
     public void LoadScene1 ()
     {
-        SceneManager.LoadScene(Scene1);
+        GameManager.Instance.LoadScene(Scene1);
     }
 
     public void LoadScene2 ()
     {
-        SceneManager.LoadScene(Scene2);
+        GameManager.Instance.LoadScene(Scene2);
     }
 
 }

@@ -431,9 +431,9 @@ public class DungeonMapGenerator : MonoBehaviour
             return;
         }
 
-        if (floorTiles == null || floorTiles.Length == 0 || wallTiles == null || wallTiles.Length < 16)
+        if (floorTiles == null || floorTiles.Length == 0 || wallTiles == null || wallTiles.Length < 18)
         {
-            Debug.LogError("Tiles not assigned! Wall tiles array must have 16 entries.");
+            Debug.LogError("Tiles not assigned! Wall tiles array must have 18 entries.");
             return;
         }
 
@@ -448,8 +448,64 @@ public class DungeonMapGenerator : MonoBehaviour
 
         Debug.Log($"Painting {mapData.floorTiles.Count} floor tiles and {mapData.wallTiles.Count} wall tiles");
 
-        // Paint floor tiles
-        foreach (var floorPos in mapData.floorTiles)
+        // Create a set to track all positions where floor should be painted
+        HashSet<Vector2Int> allFloorPositions = new HashSet<Vector2Int>(mapData.floorTiles);
+
+        // Paint floor tiles under walls
+        foreach (var wallPos in mapData.wallTiles)
+        {
+            allFloorPositions.Add(wallPos);
+        }
+
+        // Add randomized spill tiles around walls (minimum 1, up to 2-3 units outside)
+        HashSet<Vector2Int> spillPositions = new HashSet<Vector2Int>();
+        foreach (var wallPos in mapData.wallTiles)
+        {
+            // Random spill distance (2-3 units total, with minimum 1 guaranteed)
+            int maxSpillDistance = UnityEngine.Random.Range(2, 4);
+            
+            // Try all four cardinal directions
+            Vector2Int[] directions = new Vector2Int[]
+            {
+                new Vector2Int(0, 1),   // North
+                new Vector2Int(0, -1),  // South
+                new Vector2Int(1, 0),   // East
+                new Vector2Int(-1, 0)   // West
+            };
+
+            foreach (var direction in directions)
+            {
+                // Check if this direction leads away from the dungeon (no wall AND no floor)
+                Vector2Int checkPos = wallPos + direction;
+                if (!mapData.wallTiles.Contains(checkPos) && !mapData.floorTiles.Contains(checkPos))
+                {
+                    // This direction is outside, create spill
+                    // First tile is ALWAYS placed (minimum 1 unit)
+                    spillPositions.Add(checkPos);
+                    
+                    // Then randomly continue for 1-2 more tiles
+                    for (int i = 2; i <= maxSpillDistance; i++)
+                    {
+                        Vector2Int spillPos = wallPos + (direction * i);
+                        
+                        // Random chance to stop early for irregular edges (70% chance to continue)
+                        if (UnityEngine.Random.value < 0.3f)
+                            break;
+                        
+                        spillPositions.Add(spillPos);
+                    }
+                }
+            }
+        }
+
+        // Add spill positions to all floor positions
+        foreach (var spillPos in spillPositions)
+        {
+            allFloorPositions.Add(spillPos);
+        }
+
+        // Paint all floor tiles (original floors + under walls + spill)
+        foreach (var floorPos in allFloorPositions)
         {
             floorTilemap.SetTile((Vector3Int)floorPos, GetRandomFloorTile());
 
@@ -459,7 +515,7 @@ public class DungeonMapGenerator : MonoBehaviour
             }
         }
 
-        // Paint wall tiles with autotiling logic
+        // Paint wall tiles with autotiling logic (painted AFTER floors so they appear on top)
         foreach (var wallPos in mapData.wallTiles)
         {
             TileBase selectedWallTile = GetWallTileForPosition(wallPos, mapData.floorTiles, mapData.wallTiles);
@@ -473,14 +529,8 @@ public class DungeonMapGenerator : MonoBehaviour
 
     private TileBase GetWallTileForPosition(Vector2Int pos, HashSet<Vector2Int> floorTiles, HashSet<Vector2Int> wallTiles)
     {
-        if (this.wallTiles == null || this.wallTiles.Length < 16)
+        if (this.wallTiles == null || this.wallTiles.Length < 18)
             return null;
-        
-        // Check floor neighbors (cardinal directions)
-        bool floorN = floorTiles.Contains(new Vector2Int(pos.x, pos.y + 1));
-        bool floorS = floorTiles.Contains(new Vector2Int(pos.x, pos.y - 1));
-        bool floorE = floorTiles.Contains(new Vector2Int(pos.x + 1, pos.y));
-        bool floorW = floorTiles.Contains(new Vector2Int(pos.x - 1, pos.y));
         
         // Check wall neighbors (cardinal directions)
         bool wallN = wallTiles.Contains(new Vector2Int(pos.x, pos.y + 1));
@@ -488,69 +538,64 @@ public class DungeonMapGenerator : MonoBehaviour
         bool wallE = wallTiles.Contains(new Vector2Int(pos.x + 1, pos.y));
         bool wallW = wallTiles.Contains(new Vector2Int(pos.x - 1, pos.y));
         
-        int floorCount = (floorN ? 1 : 0) + (floorS ? 1 : 0) + (floorE ? 1 : 0) + (floorW ? 1 : 0);
+        // Check floor neighbors (cardinal directions)
+        bool floorN = floorTiles.Contains(new Vector2Int(pos.x, pos.y + 1));
+        bool floorS = floorTiles.Contains(new Vector2Int(pos.x, pos.y - 1));
+        bool floorE = floorTiles.Contains(new Vector2Int(pos.x + 1, pos.y));
+        bool floorW = floorTiles.Contains(new Vector2Int(pos.x - 1, pos.y));
+        
         int wallCount = (wallN ? 1 : 0) + (wallS ? 1 : 0) + (wallE ? 1 : 0) + (wallW ? 1 : 0);
         
-        // --- NEW: Two opposite floors (straight corridor walls) ---
-        if (floorCount == 2)
-        {
-            if (floorN && floorS && !floorE && !floorW) return this.wallTiles[0]; // Horizontal bar
-            if (floorE && floorW && !floorN && !floorS) return this.wallTiles[1]; // Vertical bar
-        }
-        
-        // --- PRIORITY 1: Single floor neighbor (edge tiles) ---
-        if (floorCount == 1)
-        {
-            if (floorN || floorS) return this.wallTiles[0]; // Horizontal bar
-            if (floorE || floorW) return this.wallTiles[1]; // Vertical bar
-        }
-        
-        // --- PRIORITY 2: Four walls (cross junction) ---
+        // --- PRIORITY 1: Four walls (cross junction) ---
         if (wallCount == 4)
         {
             return this.wallTiles[14]; // Cross junction
         }
         
-        // --- PRIORITY 3: Three walls (T-junctions) ---
+        // --- PRIORITY 2: Three walls (T-junctions) ---
         if (wallCount == 3)
         {
             if (!wallN) return this.wallTiles[6]; // T-junction up (missing north wall)
             if (!wallS) return this.wallTiles[7]; // T-junction down (missing south wall)
-            if (!wallW) return this.wallTiles[8]; // T-junction left (missing west wall)
-            if (!wallE) return this.wallTiles[9]; // T-junction right (missing east wall)
+            if (!wallE) return this.wallTiles[8]; // T-junction left (missing east wall)
+            if (!wallW) return this.wallTiles[9]; // T-junction right (missing west wall)
         }
         
-        // --- PRIORITY 4: Two walls (corners) ---
+        // --- PRIORITY 3: Two walls (corners and straight corridors) ---
         if (wallCount == 2)
         {
-            if (wallS && wallE) return this.wallTiles[2]; // Top-left corner
-            if (wallS && wallW) return this.wallTiles[3]; // Top-right corner
-            if (wallN && wallE) return this.wallTiles[4]; // Bottom-left corner
-            if (wallN && wallW) return this.wallTiles[5]; // Bottom-right corner
+            // Adjacent walls (corners)
+            if (wallN && wallE) return this.wallTiles[10]; // Bottom-left corner
+            if (wallN && wallW) return this.wallTiles[11]; // Bottom-right corner
+            if (wallS && wallE) return this.wallTiles[12]; // Top-left corner
+            if (wallS && wallW) return this.wallTiles[13]; // Top-right corner
             
-            // Opposite walls (straight corridors) — treat as edges
-            if (wallN && wallS) return this.wallTiles[0]; // Horizontal bar
-            if (wallE && wallW) return this.wallTiles[1]; // Vertical bar
+            // Opposite walls (straight corridors) - check floor to determine facing
+            if (wallN && wallS)
+            {
+                if (floorE) return this.wallTiles[0]; // Vertical wall facing right (floor on east)
+                if (floorW) return this.wallTiles[1]; // Vertical wall facing left (floor on west)
+                return this.wallTiles[0]; // Default vertical
+            }
+            if (wallE && wallW)
+            {
+                if (floorN) return this.wallTiles[2]; // Horizontal wall facing up (floor on north)
+                if (floorS) return this.wallTiles[3]; // Horizontal wall facing down (floor on south)
+                return this.wallTiles[2]; // Default horizontal
+            }
         }
         
-        // --- PRIORITY 5: Three floor neighbors + one wall (end caps) ---
-        if (floorCount == 3)
-        {
-            if (wallS) return this.wallTiles[10]; // Cap facing up
-            if (wallN) return this.wallTiles[11]; // Cap facing down
-            if (wallE) return this.wallTiles[12]; // Cap facing left
-            if (wallW) return this.wallTiles[13]; // Cap facing right
-        }
-        
-        // --- PRIORITY 6: One wall (use edge logic) ---
+        // --- PRIORITY 4: One wall (end caps) ---
         if (wallCount == 1)
         {
-            if (wallN || wallS) return this.wallTiles[0]; // Horizontal bar
-            if (wallE || wallW) return this.wallTiles[1]; // Vertical bar
+            if (wallN) return this.wallTiles[15]; // Cap facing down (wall above)
+            if (wallS) return this.wallTiles[16]; // Cap facing up (wall below)
+            if (wallE) return this.wallTiles[4]; // Cap facing left (wall to right)
+            if (wallW) return this.wallTiles[5]; // Cap facing right (wall to left)
         }
         
         // --- FALLBACK: Isolated tile ---
-        return this.wallTiles[15];
+        return this.wallTiles[17];
     }
 
     private bool ShouldSpawnFoliage(Vector2Int position, MapData mapData)

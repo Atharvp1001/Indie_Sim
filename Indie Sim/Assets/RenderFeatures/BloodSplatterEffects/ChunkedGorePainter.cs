@@ -20,11 +20,16 @@ public class ChunkedGorePainter : MonoBehaviour
     public Color bloodColor = new Color(0.6f, 0.05f, 0.05f, 1f);
     
     [Header("Display Settings")]
-    // --- THIS IS THE MISSING VARIABLE ---
     public Transform chunkDisplayParent; 
     [Tooltip("Type the exact name of your Sorting Layer (e.g., 'Floor' or 'Gore')")]
     public string sortingLayerName = "Default"; 
-    public int sortingOrder = 5; 
+    public int sortingOrder = 5;
+    
+    [Header("Preloading")]
+    [Tooltip("Transform to center chunk preloading around (e.g., player or camera)")]
+    public Transform preloadTarget;
+    [Tooltip("Number of chunks to preload in each direction from the target (e.g., 5 = 11x11 grid)")]
+    public int preloadRadius = 5;
     
     private Dictionary<Vector2Int, BloodChunk> loadedChunks = new Dictionary<Vector2Int, BloodChunk>();
     private Material splatMaterial;
@@ -47,13 +52,49 @@ public class ChunkedGorePainter : MonoBehaviour
             parent.transform.localPosition = Vector3.zero;
             chunkDisplayParent = parent.transform;
         }
+        
+        // Preload chunks on start
+        PreloadChunks();
+    }
+
+    void Update()
+    {
+        // Continuously update preloaded chunks as the target moves
+        if (preloadTarget != null)
+        {
+            PreloadChunks();
+        }
+    }
+
+    /// <summary>
+    /// Preloads chunks in a grid around the preloadTarget.
+    /// Creates new chunks that don't exist, keeps existing ones.
+    /// </summary>
+    void PreloadChunks()
+    {
+        if (preloadTarget == null) return;
+        
+        Vector2Int centerChunk = WorldToChunkCoord(preloadTarget.position);
+        
+        for (int x = centerChunk.x - preloadRadius; x <= centerChunk.x + preloadRadius; x++)
+        {
+            for (int y = centerChunk.y - preloadRadius; y <= centerChunk.y + preloadRadius; y++)
+            {
+                Vector2Int coord = new Vector2Int(x, y);
+                
+                // Only create if it doesn't already exist
+                if (!loadedChunks.ContainsKey(coord))
+                {
+                    BloodChunk newChunk = new BloodChunk(coord, chunkResolution, displayShader);
+                    CreateChunkDisplay(newChunk);
+                    loadedChunks[coord] = newChunk;
+                }
+            }
+        }
     }
 
     public void PaintSplat(Vector3 worldPos)
     {
-        // Check if there is a ground tile here (permissive check)
-        Collider2D hit = Physics2D.OverlapPoint(worldPos);
-        
         float randomSize = Random.Range(splatSizeRange.x, splatSizeRange.y);
         float splatUVSize = randomSize / chunkSize;
         float radius = randomSize * 0.5f;
@@ -72,7 +113,10 @@ public class ChunkedGorePainter : MonoBehaviour
 
     private void ExecutePaintOnChunk(Vector2Int coord, Vector3 worldPos, float uvSize)
     {
-        BloodChunk chunk = GetOrCreateChunk(coord);
+        // Only paint if chunk already exists (preloaded)
+        if (!loadedChunks.TryGetValue(coord, out BloodChunk chunk))
+            return;
+        
         Vector2 chunkWorldOrigin = ChunkCoordToWorldOrigin(coord);
         
         Vector2 localPos = new Vector2(worldPos.x - chunkWorldOrigin.x, worldPos.y - chunkWorldOrigin.y);
@@ -89,23 +133,11 @@ public class ChunkedGorePainter : MonoBehaviour
         RenderTexture.ReleaseTemporary(tempRT);
     }
     
-    BloodChunk GetOrCreateChunk(Vector2Int chunkCoord)
-    {
-        if (loadedChunks.TryGetValue(chunkCoord, out BloodChunk existingChunk))
-            return existingChunk;
-        
-        BloodChunk newChunk = new BloodChunk(chunkCoord, chunkResolution, displayShader);
-        CreateChunkDisplay(newChunk);
-        loadedChunks[chunkCoord] = newChunk;
-        return newChunk;
-    }
-    
     void CreateChunkDisplay(BloodChunk chunk)
     {
         GameObject displayObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
         displayObj.name = $"Chunk_{chunk.chunkCoord.x}_{chunk.chunkCoord.y}";
         
-        // This line was causing your error because chunkDisplayParent wasn't defined
         displayObj.transform.SetParent(chunkDisplayParent);
         
         if (displayObj.TryGetComponent<Collider>(out var col)) Destroy(col);

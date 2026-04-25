@@ -85,7 +85,7 @@ public class TriangleEnemy : MonoBehaviour, IDamageable
 
     [Tooltip("Degrees from perfect aim at which shooting begins.")]
     [SerializeField] private float aimTolerance = 4f;
-
+    [SerializeField] private GameObject deathParticlePrefab; // Assign in Inspector
     [Header("── NosePoint Offset ─────────────────────────────")]
     [Tooltip("Local -Y offset for the NosePoint (bullet spawn). Adjust to match " +
              "wherever your triangle sprite's flat base centre sits in local space.")]
@@ -200,7 +200,10 @@ public class TriangleEnemy : MonoBehaviour, IDamageable
             EnemyKillTracker.Instance.RegisterEnemyKill();
 
         Debug.Log($"TriangleEnemy died!");
-
+        if (deathParticlePrefab != null)
+        {
+            Instantiate(deathParticlePrefab, transform.position, Quaternion.identity);
+        }
         // Let EnemyDeath script handle visuals/cleanup if present, otherwise just destroy
         EnemyDeath deathHandler = GetComponent<EnemyDeath>();
         if (deathHandler != null)
@@ -353,6 +356,7 @@ public class TriangleEnemy : MonoBehaviour, IDamageable
 
     private void FireTwoBullets()
     {
+        GetComponent<TriangleEnemyJuice>().OnFired();
         if (bulletPool == null) return;
 
         Vector2 buttDir = -(Vector2)transform.up;

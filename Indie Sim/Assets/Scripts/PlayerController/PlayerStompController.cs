@@ -27,7 +27,7 @@ public class PlayerStompController : MonoBehaviour
     // ✅ UI Reference — drag your light icon Image here in Inspector
     [Header("Cooldown UI")]
     [SerializeField] private Image lightIcon; // Image Type: Filled, Radial360, Top
-
+    [SerializeField] private SpriteRenderer stompReadyOverlay; // Drag the overlay sprite here
     private PlayerController playerController;
     private PlayerControls inputActions;
     private bool canStomp = true;
@@ -189,8 +189,15 @@ public class PlayerStompController : MonoBehaviour
     {
         if (lightIcon != null)
             lightIcon.fillAmount = amount;
-    }
 
+        if (stompReadyOverlay != null)
+        {
+            // Invisible during cooldown, full visibility when ready
+            Color c = stompReadyOverlay.color;
+            c.a = (amount >= 1f) ? 1f : 0f;
+            stompReadyOverlay.color = c;
+        }
+    }
     public bool CanStomp() => canStomp && !(playerController != null && playerController.IsDashing());
 
     private void OnDrawGizmosSelected()

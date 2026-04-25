@@ -15,7 +15,8 @@ public class EscapePentagram : MonoBehaviour
     [SerializeField] private Color glowColor = new Color(1f, 0.5f, 0f, 1f);   // Orange glow
 
     [Header("Animation Settings")]
-    [SerializeField] private AnimationCurve fadeInCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+    [SerializeField] private float startScale = 3f; // Starting scale multiplier
+    [SerializeField] private AnimationCurve scaleInCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     [SerializeField] private float glowPulseSpeed = 2f;
     [SerializeField] private float glowIntensity = 0.3f;
 
@@ -26,6 +27,7 @@ public class EscapePentagram : MonoBehaviour
 
     private bool isWarningPhase = true;
     private bool isActive = false;
+    private Vector3 originalScale;
 
     void Start()
     {
@@ -56,12 +58,12 @@ public class EscapePentagram : MonoBehaviour
             }
         }
 
-        // Start with transparent sprite
+        // Store original scale and set to warning color
         if (pentagramRenderer != null)
         {
-            Color startColor = warningColor;
-            startColor.a = 0f;
-            pentagramRenderer.color = startColor;
+            originalScale = pentagramRenderer.transform.localScale;
+            pentagramRenderer.transform.localScale = originalScale * startScale;
+            pentagramRenderer.color = warningColor;
         }
 
         // Start sequence
@@ -70,12 +72,12 @@ public class EscapePentagram : MonoBehaviour
 
     private IEnumerator EscapePentagramSequence()
     {
-        // Warning phase with fade in
+        // Warning phase with scale in
         isWarningPhase = true;
         Debug.Log("[EscapePentagram] Warning phase started");
 
-        // Fade in during warning duration
-        yield return StartCoroutine(FadeInPentagram(warningColor, warningDuration));
+        // Scale in during warning duration
+        yield return StartCoroutine(ScaleInPentagram(warningDuration));
 
         // Activate
         isWarningPhase = false;
@@ -96,31 +98,29 @@ public class EscapePentagram : MonoBehaviour
         Destroy(gameObject);
     }
 
-    private IEnumerator FadeInPentagram(Color targetColor, float duration)
+    private IEnumerator ScaleInPentagram(float duration)
     {
         if (pentagramRenderer == null) yield break;
 
         float elapsed = 0f;
-        Color startColor = targetColor;
-        startColor.a = 0f;
+        Vector3 startScaleVector = originalScale * startScale;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
             
-            // Use animation curve for smooth fade
-            float curveValue = fadeInCurve.Evaluate(t);
+            // Use animation curve for smooth scale
+            float curveValue = scaleInCurve.Evaluate(t);
             
-            Color newColor = targetColor;
-            newColor.a = curveValue;
-            pentagramRenderer.color = newColor;
+            Vector3 newScale = Vector3.Lerp(startScaleVector, originalScale, curveValue);
+            pentagramRenderer.transform.localScale = newScale;
 
             yield return null;
         }
 
-        // Ensure we end at full alpha
-        pentagramRenderer.color = targetColor;
+        // Ensure we end at original scale
+        pentagramRenderer.transform.localScale = originalScale;
     }
 
     private IEnumerator GlowPulse()

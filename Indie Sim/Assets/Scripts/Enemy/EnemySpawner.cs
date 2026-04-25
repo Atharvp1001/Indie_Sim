@@ -10,6 +10,8 @@ public class SpawnableEnemy
     public float spawnWeight;
     public int maxAllowed = 0; // 0 = infinite
     [HideInInspector] public int currentSpawned = 0;
+    [Tooltip("How many to spawn at once. 1 = single. Use 3-4 for fodder enemies.")]
+    public int spawnGroupSize = 1;
 }
 
 public class EnemySpawner : MonoBehaviour, IDamageable
@@ -21,21 +23,19 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     private float nextSpawnTime;
 
     [Header("Enemy Roster (Set Weights & Costs)")]
-    [Tooltip("Easy weight, low cost")] public SpawnableEnemy fodderLevel1;
-    [Tooltip("Easy weight, low cost")] public SpawnableEnemy fodderLevel2;
-    [Tooltip("Easy weight, low cost")] public SpawnableEnemy fodderLevel3;
-    [Tooltip("Mid weight, mid cost")] public SpawnableEnemy rangedEnemy;
+    public SpawnableEnemy fodderLevel1;
+    public SpawnableEnemy fodderLevel2;
+    public SpawnableEnemy fodderLevel3;
+    public SpawnableEnemy rangedEnemy;
 
     [Header("Cthulhu Eye Settings")]
-    [Tooltip("Low weight, high cost, max 1")] public SpawnableEnemy cthulhuEye;
+    public SpawnableEnemy cthulhuEye;
     public float cthulhuExclusionRadius = 25f;
     private static HashSet<Vector3> globalCthulhuLocations = new HashSet<Vector3>();
 
     [Header("Coin Rewards")]
     public GameObject coinPrefab;
-    [Tooltip("Coins = Budget Remaining * Multiplier")]
     public float coinRewardMultiplier = 0.5f;
-    [Tooltip("Keep low so coins don't clip through walls")]
     public float coinDropForce = 2f;
 
     [Header("Health & Visuals")]
@@ -43,6 +43,7 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     private int currentHealth;
     public float flashDuration = 0.15f;
     public Color flashColor = Color.white;
+    [SerializeField] private Color disabledColor = new Color(0.3f, 0.3f, 0.3f, 1f);
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
     private bool isFlashing = false;
@@ -50,6 +51,8 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
     [Header("Spawning Logistics")]
     public float spawnRadius = 5f;
+    [Tooltip("How far from center the zone starts")]
+    public float zoneOffset = 1.5f; 
     public LayerMask wallLayer;
     public bool requiresActivation = true;
     private bool isActivated = false;
@@ -84,10 +87,8 @@ public class EnemySpawner : MonoBehaviour, IDamageable
             AttemptSpawn();
         }
 
-        // Auto-Destroy when empty
         if (currentBudget <= 0)
         {
-            // Die normally, but because budget is 0, it drops 0 coins
             Die();
         }
     }
@@ -109,19 +110,34 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
         if (chosenEnemy != null)
         {
-            // 1. Pay the cost
-            currentBudget -= chosenEnemy.budgetCost;
-            chosenEnemy.currentSpawned++;
+            // Determine how many to spawn this wave.
+            // Group size only applies if budget can cover the full group;
+            // otherwise clamp to however many we can afford.
+            int groupSize = chosenEnemy.spawnGroupSize;
+            int affordable = (chosenEnemy.budgetCost > 0)
+                ? Mathf.Min(groupSize, currentBudget / chosenEnemy.budgetCost)
+                : groupSize;
+            groupSize = Mathf.Max(1, affordable);
 
-            // 2. Special check for Cthulhu tracking
-            if (chosenEnemy == cthulhuEye)
+            // Also respect maxAllowed cap
+            if (chosenEnemy.maxAllowed > 0)
+                groupSize = Mathf.Min(groupSize, chosenEnemy.maxAllowed - chosenEnemy.currentSpawned);
+
+            if (groupSize <= 0) return;
+
+            for (int i = 0; i < groupSize; i++)
             {
-                globalCthulhuLocations.Add(transform.position);
-            }
+                Vector2 safePosition = GetValidSpawnPosition();
+                if (safePosition == (Vector2)transform.position) continue;
 
-            // 3. Find a safe spot and spawn
-            Vector2 safePosition = GetValidSpawnPosition();
-            Instantiate(chosenEnemy.prefab, safePosition, Quaternion.identity);
+                currentBudget -= chosenEnemy.budgetCost;
+                chosenEnemy.currentSpawned++;
+
+                if (chosenEnemy == cthulhuEye)
+                    globalCthulhuLocations.Add(transform.position);
+
+                Instantiate(chosenEnemy.prefab, safePosition, Quaternion.identity);
+            }
 
             nextSpawnTime = Time.time + spawnInterval;
         }
@@ -132,7 +148,6 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         List<SpawnableEnemy> validEnemies = new List<SpawnableEnemy>();
         float totalWeight = 0f;
 
-        // Put all enemies into an array to easily loop through them
         SpawnableEnemy[] allEnemies = { fodderLevel1, fodderLevel2, fodderLevel3, rangedEnemy, cthulhuEye };
 
         foreach (var enemy in allEnemies)
@@ -142,7 +157,6 @@ public class EnemySpawner : MonoBehaviour, IDamageable
             bool canAfford = enemy.budgetCost <= currentBudget;
             bool underCap = enemy.maxAllowed == 0 || enemy.currentSpawned < enemy.maxAllowed;
 
-            // Special Cthulhu Check
             bool isCthulhuSafe = true;
             if (enemy == cthulhuEye) isCthulhuSafe = !IsCthulhuTooClose();
 
@@ -155,7 +169,6 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
         if (validEnemies.Count == 0) return null;
 
-        // Weighted Random Selection
         float randomVal = Random.Range(0f, totalWeight);
         float cumulative = 0f;
 
@@ -171,37 +184,28 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     #region Physics & Wall Detection
     private Vector2 GetValidSpawnPosition()
     {
-        // 1. Define the 4 cardinal directions (North, South, East, West)
-        Vector2[] checkDirections = { Vector2.up, Vector2.down, Vector2.left, Vector2.right };
-        List<Vector2> validDirections = new List<Vector2>();
+        Vector2[] zoneCenters = {
+            (Vector2)transform.position + Vector2.up * zoneOffset,
+            (Vector2)transform.position + Vector2.down * zoneOffset,
+            (Vector2)transform.position + Vector2.left * zoneOffset,
+            (Vector2)transform.position + Vector2.right * zoneOffset
+        };
 
-        // We use the spawner's scale to ensure the "sensor" width matches the sprite.
-        // Shrinking slightly (0.9f) helps prevent getting stuck on corner-tiles.
-        Vector2 boxSize = transform.localScale * 0.9f;
+        List<Vector2> validZones = new List<Vector2>();
+        Vector2 zoneSize = transform.localScale * 0.95f;
 
-        foreach (Vector2 dir in checkDirections)
+        foreach (Vector2 center in zoneCenters)
         {
-            // BoxCast checks an entire square area in that direction for walls.
-            RaycastHit2D hit = Physics2D.BoxCast(transform.position, boxSize, 0f, dir, spawnRadius, wallLayer);
-
-            // If the side is open or the wall is far enough away, it's valid.
-            if (hit.collider == null || hit.distance > 1.5f)
+            Collider2D hit = Physics2D.OverlapBox(center, zoneSize, 0f, wallLayer);
+            if (hit == null)
             {
-                validDirections.Add(dir);
+                validZones.Add(center);
             }
         }
 
-        // 2. Fallback: If totally surrounded, spawn at spawner position.
-        if (validDirections.Count == 0) return transform.position;
+        if (validZones.Count == 0) return transform.position;
 
-        // 3. Choose an open direction and find the specific spawn distance.
-        Vector2 chosenDir = validDirections[Random.Range(0, validDirections.Count)];
-        RaycastHit2D finalHit = Physics2D.BoxCast(transform.position, boxSize, 0f, chosenDir, spawnRadius, wallLayer);
-        
-        float maxDist = (finalHit.collider != null) ? finalHit.distance - 0.5f : spawnRadius;
-        float finalDist = Random.Range(1f, Mathf.Max(1.1f, maxDist));
-
-        return (Vector2)transform.position + (chosenDir * finalDist);
+        return validZones[Random.Range(0, validZones.Count)];
     }
 
     private bool IsCthulhuTooClose()
@@ -238,7 +242,6 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         if (audioSource && deathSound) audioSource.PlayOneShot(deathSound);
         OnDeath?.Invoke();
 
-        // The Piñata Drop!
         DropCoins();
 
         StartCoroutine(DeathSequence());
@@ -254,7 +257,6 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         {
             GameObject coin = Instantiate(coinPrefab, transform.position, Quaternion.identity);
 
-            // Apply a very gentle force so they pop out but don't clip through walls
             Rigidbody2D rb = coin.GetComponent<Rigidbody2D>();
             if (rb != null)
             {
@@ -267,8 +269,18 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     private IEnumerator DeathSequence()
     {
         if (!isFlashing) StartCoroutine(FlashWhite());
-        yield return new WaitForSeconds(0.2f);
-        Destroy(gameObject);
+        yield return new WaitForSeconds(flashDuration);
+        
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = disabledColor;
+            originalColor = disabledColor;
+        }
+
+        Collider2D col = GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        Debug.Log("[EnemySpawner] Spawner Disabled and turned Grey.");
     }
     #endregion
 
@@ -293,7 +305,11 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, spawnRadius);
+        Vector2 zoneSize = transform.localScale * 0.95f;
+        Gizmos.DrawWireCube((Vector2)transform.position + Vector2.up * zoneOffset, zoneSize);
+        Gizmos.DrawWireCube((Vector2)transform.position + Vector2.down * zoneOffset, zoneSize);
+        Gizmos.DrawWireCube((Vector2)transform.position + Vector2.left * zoneOffset, zoneSize);
+        Gizmos.DrawWireCube((Vector2)transform.position + Vector2.right * zoneOffset, zoneSize);
 
         if (cthulhuEye != null && cthulhuEye.prefab != null)
         {
@@ -303,52 +319,24 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     }
     #endregion
 
-    // Interface required methods
     public bool IsDead() => isDead;
     public GameObject GetGameObject() => gameObject;
 
-    #region Legacy API Bridge (Fixes for Managers and Activators)
+    #region Legacy API Bridge
+    public bool RequiresActivation() { return requiresActivation; }
+    public bool IsActivated() { return isActivated; }
 
-    // --- Fixes for ActivateEnemySpawner.cs ---
-    public bool RequiresActivation()
-    {
-        return requiresActivation;
-    }
-
-    public bool IsActivated()
-    {
-        return isActivated;
-    }
-
-    // --- Fixes for DungeonMapGenerator.cs ---
     public int maxEnemies = 8;
+    public void SetDungeonGenerator(MonoBehaviour generator) { }
 
-    public void SetDungeonGenerator(MonoBehaviour generator)
-    {
-        // Intentionally left blank to satisfy compiler
-    }
-
-    // --- Fixes for RoguelikeManager.cs ---
-    public void SetDungeonLevel(int level)
-    {
-        UpdateDifficultyForLevel(level);
-    }
+    public void SetDungeonLevel(int level) { UpdateDifficultyForLevel(level); }
 
     public void UpdateDifficultyForLevel(int currentLevel)
     {
         if (currentLevel <= 1) return;
-
         startingBudget += (currentLevel * 50);
-
-        if (currentBudget > 0 && currentHealth == maxHealth)
-        {
-            currentBudget = startingBudget;
-        }
-
+        if (currentBudget > 0 && currentHealth == maxHealth) currentBudget = startingBudget;
         spawnInterval = Mathf.Max(0.5f, spawnInterval - (currentLevel * 0.15f));
-
-        Debug.Log($"[EnemySpawner] Upgraded for Level {currentLevel}. New Budget: {startingBudget}");
     }
-
     #endregion
 }

@@ -1,109 +1,182 @@
 using UnityEngine;
-using System.Collections.Generic;
+using System.Collections;
 
 public class EnemyMovement : MonoBehaviour
 {
-    [Header("Movement & Boids")]
+    [Header("Movement")]
     public float speed = 2.5f;
     public float rotationSpeed = 5f;
-    [SerializeField] private float detectionRadius = 5f;
-    [SerializeField] private float separationRadius = 1.2f;
-    
-    [Header("Weights")]
-    [SerializeField] private float playerSeekWeight = 2f;
-    [SerializeField] private float separationWeight = 1.5f;
-    [SerializeField] private float alignmentWeight = 1f;
-    [SerializeField] private float cohesionWeight = 1f;
 
-    [Header("Optimization")]
-    [SerializeField] private float gridCellSize = 5f;
+    [Header("Spring Attack Settings")]
+    [SerializeField] private float attackTriggerDistance = 3f;
+    [SerializeField] private float windupDistance = 0.5f;
+    [SerializeField] private float lungeForce = 15f;
+    [SerializeField] private float attackCooldown = 1.5f;
+    [SerializeField] private float lungeDrag = 5f;
+
+    [Header("Juice Settings")]
+    [SerializeField] private Transform spriteTransform;
+    [SerializeField] private float squashAmount = 0.7f;
+
+    [Header("Separation")]
+    [SerializeField] private float separationRadius = 1.2f;   // How close before pushing away
+    [SerializeField] private float separationForce = 3f;      // How hard they push each other
 
     private Rigidbody2D rb;
     private Transform player;
     private bool isActivated = false;
-    private Vector2 currentGridKey;
+    private bool isAttacking = false;
+    private float nextAttackTime = 0f;
+    private Vector3 originalScale;
 
-    // Spatial Partitioning Structure
-    private static Dictionary<Vector2, List<EnemyMovement>> spatialGrid = new Dictionary<Vector2, List<EnemyMovement>>();
+    // Set explicitly by PlayerController each frame it bulldozes this enemy.
+    // Using an explicit flag instead of a velocity heuristic avoids script
+    // execution order races where FixedUpdate could stomp the pushed velocity.
+    private bool isExternallyPushed = false;
+    private int externalPushFramesRemaining = 0;
+    private const int PUSH_LINGER_FRAMES = 3;
 
     void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
         rb = GetComponent<Rigidbody2D>();
-        UpdateGridPosition();
+
+        if (spriteTransform == null) spriteTransform = transform;
+        originalScale = spriteTransform.localScale;
     }
 
-    void OnDisable() => RemoveFromGrid(currentGridKey);
+    /// <summary>
+    /// Called by PlayerController every FixedUpdate frame it is bulldozing this enemy.
+    /// </summary>
+    public void NotifyBulldozed()
+    {
+        isExternallyPushed = true;
+        externalPushFramesRemaining = PUSH_LINGER_FRAMES;
+    }
 
     void FixedUpdate()
     {
-        // Sync with your activation system
         if (ActivateEnemies.Instance != null)
             isActivated = ActivateEnemies.Instance.IsEnemyActivated(gameObject);
 
         if (!isActivated || player == null) return;
 
-        UpdateGridPosition();
-        
-        Vector2 boidForce = CalculateSpatialBoids();
-        Vector2 seekForce = ((Vector2)player.position - (Vector2)transform.position).normalized * playerSeekWeight;
-
-        rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, (boidForce + seekForce).normalized * speed, Time.fixedDeltaTime * 5f);
-        RotateTowards(rb.linearVelocity);
-    }
-
-    private void UpdateGridPosition()
-    {
-        Vector2 newKey = new Vector2(Mathf.Floor(transform.position.x / gridCellSize), Mathf.Floor(transform.position.y / gridCellSize));
-        
-        if (newKey != currentGridKey)
+        // Count down linger frames so the push has time to actually move the enemy
+        // before we hand control back to chase AI.
+        if (externalPushFramesRemaining > 0)
         {
-            RemoveFromGrid(currentGridKey);
-            currentGridKey = newKey;
-            if (!spatialGrid.ContainsKey(newKey)) spatialGrid[newKey] = new List<EnemyMovement>();
-            spatialGrid[newKey].Add(this);
+            externalPushFramesRemaining--;
+            isExternallyPushed = true;
         }
-    }
-
-    private void RemoveFromGrid(Vector2 key)
-    {
-        if (spatialGrid.ContainsKey(key)) spatialGrid[key].Remove(this);
-    }
-
-    private Vector2 CalculateSpatialBoids()
-    {
-        Vector2 separation = Vector2.zero;
-        Vector2 alignment = Vector2.zero;
-        Vector2 cohesion = Vector2.zero;
-        int neighbors = 0;
-
-        // Only check current cell + 8 surrounding cells
-        for (int x = -1; x <= 1; x++)
+        else
         {
-            for (int y = -1; y <= 1; y++)
+            isExternallyPushed = false;
+        }
+
+        if (isAttacking || isExternallyPushed) return;
+
+        Vector2 direction = ((Vector2)player.position - (Vector2)transform.position).normalized;
+        float distanceToPlayer = Vector2.Distance(transform.position, player.position);
+
+        if (distanceToPlayer <= attackTriggerDistance && Time.time >= nextAttackTime)
+        {
+            StartCoroutine(SpringAttack(direction));
+            return;
+        }
+
+        ApplySeparation();
+        rb.linearVelocity = direction * speed;
+        RotateTowards(direction);
+    }
+
+    private IEnumerator SpringAttack(Vector2 dirToPlayer)
+    {
+        isAttacking = true;
+        rb.linearVelocity = Vector2.zero;
+
+        // --- 1. Wind-up with Squash Juice ---
+        Vector2 startPos = transform.position;
+        Vector2 windupPos = (Vector2)transform.position - (dirToPlayer * windupDistance);
+        float elapsed = 0f;
+        float windupDuration = 0.4f;
+
+        while (elapsed < windupDuration)
+        {
+            // Bulldozed mid-windup — abort cleanly
+            if (isExternallyPushed)
             {
-                Vector2 checkKey = currentGridKey + new Vector2(x, y);
-                if (spatialGrid.ContainsKey(checkKey))
-                {
-                    foreach (var other in spatialGrid[checkKey])
-                    {
-                        if (other == this) continue;
-                        float d2 = (other.transform.position - transform.position).sqrMagnitude;
-                        if (d2 < detectionRadius * detectionRadius)
-                        {
-                            neighbors++;
-                            alignment += other.rb.linearVelocity.normalized;
-                            cohesion += (Vector2)other.transform.position;
-                            if (d2 < separationRadius * separationRadius)
-                                separation += ((Vector2)transform.position - (Vector2)other.transform.position).normalized;
-                        }
-                    }
-                }
+                if (spriteTransform != null) spriteTransform.localScale = originalScale;
+                isAttacking = false;
+                nextAttackTime = Time.time + attackCooldown * 0.5f;
+                yield break;
             }
+
+            float t = elapsed / windupDuration;
+
+            rb.MovePosition(Vector2.Lerp(startPos, windupPos, t));
+
+            if (spriteTransform != null)
+            {
+                spriteTransform.localScale = new Vector3(
+                    originalScale.x * (1 + (1 - squashAmount) * t),
+                    originalScale.y * Mathf.Lerp(1f, squashAmount, t),
+                    originalScale.z
+                );
+            }
+
+            elapsed += Time.fixedDeltaTime;
+            yield return new WaitForFixedUpdate();
         }
 
-        if (neighbors == 0) return Vector2.zero;
-        return (alignment.normalized * alignmentWeight + (cohesion / neighbors - (Vector2)transform.position).normalized * cohesionWeight + separation * separationWeight);
+        // --- 2. Lunge ---
+        spriteTransform.localScale = originalScale;
+
+        Vector2 lungeDir = ((Vector2)player.position - (Vector2)transform.position).normalized;
+        rb.AddForce(lungeDir * lungeForce, ForceMode2D.Impulse);
+
+        // --- 3. Deceleration ---
+        float lungeTimer = 0f;
+        float maxLungeDuration = 0.6f;
+
+        while (lungeTimer < maxLungeDuration)
+        {
+            // Bulldozed mid-lunge — yield and let the push take over
+            if (isExternallyPushed)
+            {
+                isAttacking = false;
+                nextAttackTime = Time.time + attackCooldown;
+                yield break;
+            }
+
+            rb.linearVelocity = Vector2.Lerp(rb.linearVelocity, Vector2.zero, Time.fixedDeltaTime * lungeDrag);
+
+            lungeTimer += Time.fixedDeltaTime;
+            yield return new WaitForFixedUpdate();
+        }
+
+        rb.linearVelocity = Vector2.zero;
+        nextAttackTime = Time.time + attackCooldown;
+        isAttacking = false;
+    }
+
+    private void ApplySeparation()
+    {
+        // Push away from any other enemy that is too close
+        Collider2D[] neighbours = Physics2D.OverlapCircleAll(transform.position, separationRadius);
+        foreach (Collider2D col in neighbours)
+        {
+            if (col.gameObject == gameObject) continue;
+            if (col.GetComponent<EnemyMovement>() == null) continue;
+
+            Vector2 away = (Vector2)(transform.position - col.transform.position);
+            float dist = away.magnitude;
+            if (dist < 0.01f) away = Random.insideUnitCircle.normalized; // exact overlap fallback
+            else away /= dist; // normalize
+
+            // Stronger push the closer they are
+            float strength = Mathf.InverseLerp(separationRadius, 0f, dist);
+            rb.AddForce(away * separationForce * strength, ForceMode2D.Force);
+        }
     }
 
     private void RotateTowards(Vector2 dir)
@@ -115,6 +188,10 @@ public class EnemyMovement : MonoBehaviour
 
     public void ApplyKnockback(Vector2 force)
     {
+        StopAllCoroutines();
+        isAttacking = false;
+        if (spriteTransform != null) spriteTransform.localScale = originalScale;
+
         rb.linearVelocity = Vector2.zero;
         rb.AddForce(force, ForceMode2D.Impulse);
     }

@@ -70,7 +70,7 @@ public class CoinUI : MonoBehaviour
     {
         // ── Text ─────────────────────────────────────────────────────
         if (coinText != null)
-            coinText.text = $"{current} / {max}";
+            coinText.text = $"COINS:{current} / {max}";
 
         // ── Fill bar ─────────────────────────────────────────────────
         if (fillImage != null)

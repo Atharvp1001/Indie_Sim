@@ -29,6 +29,6 @@ MonoBehaviour:
   muzzleFlashEffect: {fileID: 0}
   hitEffect: {fileID: 0}
   magazineCapacity: 6
-  reloadTime: 2
+  reloadTime: 1
   hasInfiniteReserve: 1
   maxPierceCount: 3

@@ -36,7 +36,6 @@ public class AchievementManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
 
         InitializeAchievements();
         LoadUnlockedAchievements();
