@@ -21,9 +21,6 @@ public class CustomCrosshair : MonoBehaviour
     [SerializeField] private float hitScaleMultiplier = 1.3f;
     [SerializeField] private AnimationCurve scaleCurve = AnimationCurve.EaseInOut(0, 1, 1, 1);
 
-    [Header("Scene Settings")]
-    [SerializeField] private string mainMenuSceneName = "Main Menu"; // ← match exact name
-
     private bool isShowingHitFeedback = false;
 
     private void Awake()
@@ -43,8 +40,7 @@ public class CustomCrosshair : MonoBehaviour
 
     private void Start()
     {
-        bool isMenuScene = SceneManager.GetActiveScene().name == mainMenuSceneName;
-        SetCursorAndCrosshair(isMenuScene);
+        ApplyForScene(SceneManager.GetActiveScene());
 
         if (hitmarkerObject != null)
             hitmarkerObject.SetActive(false);
@@ -52,7 +48,15 @@ public class CustomCrosshair : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        bool isMenuScene = scene.name == mainMenuSceneName;
+        ApplyForScene(scene);
+    }
+
+    // Whether the crosshair graphic should render is a rendering concern of
+    // this script; Cursor.visible/lockState is CursorController's job now.
+    private void ApplyForScene(Scene scene)
+    {
+        SceneUIMode uiMode = FindFirstObjectByType<SceneUIMode>();
+        bool isMenuScene = uiMode != null && uiMode.ShowCursor;
 
         if (!isMenuScene)
         {
@@ -78,29 +82,18 @@ public class CustomCrosshair : MonoBehaviour
                 Debug.LogWarning("[Crosshair] Canvas not found in scene!");
         }
 
-        SetCursorAndCrosshair(isMenuScene);
-
-        Debug.Log($"[Crosshair] Scene: {scene.name}, isMenu: {isMenuScene}, cursor: {Cursor.visible}, crosshairImage: {crosshairImage}");
-    }
-
-    private void SetCursorAndCrosshair(bool isMenuScene)
-    {
-        // Menu — show cursor, hide crosshair
-        // Game — hide cursor, show crosshair
-        Cursor.visible = isMenuScene;
-        Cursor.lockState = isMenuScene ? CursorLockMode.None : CursorLockMode.Confined;
-
         if (crosshairImage != null)
             crosshairImage.gameObject.SetActive(!isMenuScene);
 
         if (hitmarkerObject != null)
             hitmarkerObject.SetActive(false);
+
+        Debug.Log($"[Crosshair] Scene: {scene.name}, isMenu: {isMenuScene}, crosshairImage: {crosshairImage}");
     }
 
     private void OnDestroy()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
-        Cursor.visible = true;
     }
 
     void Update()
