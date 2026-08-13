@@ -87,7 +87,6 @@ public class CinemachineCursorLead : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -105,16 +104,34 @@ public class CinemachineCursorLead : MonoBehaviour
         Debug.Log($"Main Camera found: {mainCamera != null}");
 
         if (player == null)
-            player = GameObject.FindGameObjectWithTag("Player").transform;
-
-        if (player == null)
-            Debug.LogError("PLAYER NOT ASSIGNED!");
+        {
+            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerObject != null)
+                player = playerObject.transform;
+        }
 
         if (player == null)
         {
-            Debug.LogError("PLAYER NOT ASSIGNED!");
+            // Not an error: CameraTargetBinder will call BindPlayer() once the
+            // player exists (it may not be in the scene yet at author time).
+            Debug.Log("[CinemachineCursorLead] No player found at Start — waiting for CameraTargetBinder.");
             return;
         }
+
+        BindPlayer(player);
+    }
+
+    /// <summary>
+    /// Assigns the player to follow and sets up the vcam's Follow target.
+    /// Callable once, either from Start() (player already present) or later
+    /// from CameraTargetBinder (player found/spawned after this vcam's Start()).
+    /// </summary>
+    public void BindPlayer(Transform playerTransform)
+    {
+        if (cameraTarget != null)
+            return; // already bound
+
+        player = playerTransform;
 
         // Create a new GameObject to act as the camera's follow target
         cameraTarget = new GameObject("CameraFollowTarget");
@@ -150,6 +167,11 @@ public class CinemachineCursorLead : MonoBehaviour
 
     void LateUpdate()
     {
+        // Resolve lazily, not once in Start: the persistent camera lives in Boot
+        // and is not guaranteed to exist yet on the first frames when this scene
+        // is entered directly (additive scene loads complete at end of frame).
+        if (mainCamera == null) mainCamera = Camera.main;
+
         if (cameraTarget == null || player == null || mainCamera == null || followComponent == null)
             return;
 

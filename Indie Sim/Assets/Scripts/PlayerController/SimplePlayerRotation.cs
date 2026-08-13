@@ -51,6 +51,10 @@ public class SimplePlayerRotation : MonoBehaviour
     /// </summary>
     private void UpdateWorldMousePosition()
     {
+        // Resolve lazily, not once in Awake: the persistent camera lives in Boot
+        // and is not guaranteed to exist yet on the first frames when this scene
+        // is entered directly (additive scene loads complete at end of frame).
+        if (mainCamera == null) mainCamera = Camera.main;
         if (mainCamera == null) return;
 
         // Create a ray from camera through mouse position

@@ -2,18 +2,47 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Place in every non-Boot scene so pressing Play directly on that scene still
-/// gets the [Persistent] root (GameSession, GameManager, etc.) instead of NPEing
-/// on GameSession.Instance. If Boot has already run this session, this is a no-op.
+/// Editor-only convenience: pressing Play directly on a non-Boot scene still
+/// needs the [Persistent] root (GameSession, GameManager, the render camera...).
+/// Real builds always start at Boot.unity (build index 0) and never need this,
+/// hence UNITY_EDITOR — so a real launch can never double-load Boot.
+///
+/// IMPORTANT — this cannot make the persistent objects exist before the entered
+/// scene's Awake()/Start(). SceneManager.LoadScene never completes synchronously;
+/// an additive load queued here still finishes at the end of the frame. Scripts
+/// that depend on persistent objects (e.g. anything reading Camera.main) must
+/// therefore resolve them lazily at point of use rather than caching once in
+/// Awake/Start. Do not "fix" ordering problems by moving this earlier — there is
+/// nothing earlier; fix the consumer instead.
 /// </summary>
-public class SceneBootstrapGuard : MonoBehaviour
+public static class SceneBootstrapGuard
 {
-    private void Awake()
+#if UNITY_EDITOR
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void Install()
     {
-        if (GameSession.Instance == null)
-        {
-            SceneManager.LoadScene("Boot", LoadSceneMode.Additive);
-            SceneManager.UnloadSceneAsync("Boot");
-        }
+        SceneManager.sceneLoaded += OnFirstSceneLoaded;
     }
+
+    private static void OnFirstSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        SceneManager.sceneLoaded -= OnFirstSceneLoaded;
+
+        if (scene.name == "Boot") return;          // Boot bootstraps itself
+        if (GameSession.Instance != null) return;  // already bootstrapped
+
+        SceneManager.sceneLoaded += UnloadBootShell;
+        SceneManager.LoadScene("Boot", LoadSceneMode.Additive);
+    }
+
+    // The [Persistent] root DontDestroyOnLoad's itself as Boot loads, so the
+    // leftover Boot scene shell can be dropped once that has actually happened.
+    private static void UnloadBootShell(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name != "Boot") return;
+
+        SceneManager.sceneLoaded -= UnloadBootShell;
+        SceneManager.UnloadSceneAsync(scene);
+    }
+#endif
 }

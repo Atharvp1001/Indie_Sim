@@ -4,6 +4,10 @@ using UnityEngine.UI; // ✅ needed for Button
 
 public class BossSceneManager : MonoBehaviour
 {
+    [Header("Boss (D1 — data-driven, not scene-baked)")]
+    [SerializeField] private BossDefinition bossDefinition;
+    [SerializeField] private Transform bossSpawnPoint;
+
     [Header("Victory Settings")]
     [SerializeField] private string victoryPanelName = "VictoryPanel";
     [SerializeField] private string continueButtonName = "nextscene"; // ✅ must match button's GameObject name
@@ -14,7 +18,21 @@ public class BossSceneManager : MonoBehaviour
 
     private void Start()
     {
+        SpawnBoss();
         FindPersistedCanvas();
+    }
+
+    private void SpawnBoss()
+    {
+        if (bossDefinition == null || bossDefinition.bossPrefab == null)
+        {
+            Debug.LogError("[BossSceneManager] No BossDefinition/bossPrefab assigned!");
+            return;
+        }
+
+        Vector3 spawnPosition = bossSpawnPoint != null ? bossSpawnPoint.position : Vector3.zero;
+        Quaternion spawnRotation = bossSpawnPoint != null ? bossSpawnPoint.rotation : Quaternion.identity;
+        Instantiate(bossDefinition.bossPrefab, spawnPosition, spawnRotation);
     }
 
     private void FindPersistedCanvas()

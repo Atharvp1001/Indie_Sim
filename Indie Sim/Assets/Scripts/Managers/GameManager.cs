@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
     [Header("Scene Names")]
     public string mainMenuScene = "Main Menu";
     public string gameScene = "RoguelikeScene";
-    public string bossScene = "BossRoom1Scene";
+    public string bossScene = "BossArena";
 
     private void Awake()
     {

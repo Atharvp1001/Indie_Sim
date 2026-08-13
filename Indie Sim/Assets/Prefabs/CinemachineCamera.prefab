@@ -18,6 +18,8 @@ GameObject:
   - component: {fileID: 1549514872079181653}
   - component: {fileID: 7729778012047720023}
   - component: {fileID: 7014232313412104012}
+  - component: {fileID: 6099185550975481321}
+  - component: {fileID: 6099185550975481322}
   m_Layer: 0
   m_Name: CinemachineCamera
   m_TagString: Untagged
@@ -231,5 +233,36 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1a8a05de0ac134f4f9d01bef6b9da077, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachinePixelPerfect
+--- !u!114 &6099185550975481321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4196980307767495623}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 98eb405c5734a894cabf943ec4766490, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::CameraZoomOnSpeed
+  player: {fileID: 0}
+  minZoom: 5
+  maxZoom: 12
+  firingZoom: 8
+  zoomDamp: 1
+--- !u!114 &6099185550975481322
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4196980307767495623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13b1c6ce46a3a46feff76cdc7ef28dd6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  cameraLead: {fileID: 6708281412618753690}
+  pollInterval: 0.1

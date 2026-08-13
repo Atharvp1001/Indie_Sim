@@ -716,6 +716,10 @@ public class PlayerConeShooter : MonoBehaviour
     /// </summary>
     private Vector2 GetMouseAimDirection()
     {
+        // Resolve lazily, not once in Awake: the persistent camera lives in Boot
+        // and is not guaranteed to exist yet on the first frames when this scene
+        // is entered directly (additive scene loads complete at end of frame).
+        if (mainCamera == null) mainCamera = Camera.main;
         if (mainCamera == null || firePoint == null) return Vector2.zero;
 
         Vector3 mouseScreenPos = Input.mousePosition;

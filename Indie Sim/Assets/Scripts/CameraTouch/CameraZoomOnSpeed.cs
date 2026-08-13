@@ -22,7 +22,11 @@ public class CameraZoomOnSpeed : MonoBehaviour
 
     void Start()
     {
-
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
 
         vcam = GetComponent<CinemachineCamera>();

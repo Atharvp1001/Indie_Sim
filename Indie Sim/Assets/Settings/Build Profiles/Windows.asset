@@ -21,11 +21,13 @@ MonoBehaviour:
   m_OverrideGlobalSceneList: 1
   m_Scenes:
   - m_enabled: 1
+    m_path: Assets/Scenes/Boot.unity
+  - m_enabled: 1
     m_path: Assets/Scenes/Main menu.unity
   - m_enabled: 1
     m_path: Assets/Scenes/RoguelikeMode.unity
   - m_enabled: 1
-    m_path: Assets/Scenes/BossRoom1Scene.unity
+    m_path: Assets/Scenes/BossArena.unity
   m_ScriptingDefines: []
   m_PlayerSettingsYaml:
     m_Settings:

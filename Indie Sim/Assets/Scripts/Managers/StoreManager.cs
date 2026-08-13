@@ -58,6 +58,12 @@ public class StoreManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        if (canvas == null)
+        {
+            Debug.LogWarning("[StoreManager] canvas not assigned in the Inspector — skipping StorePanel lookup.");
+            return;
+        }
+
         Transform storePanelTransform = canvas.transform.Find("StorePanel"); // ← match exact name
         if (storePanelTransform != null)
         {
