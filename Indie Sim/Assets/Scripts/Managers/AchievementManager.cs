@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections.Generic;
 using TMPro;
 
@@ -14,13 +14,8 @@ public class AchievementManager : MonoBehaviour
     private TextMeshProUGUI killAchievementTitleCount;
     private TextMeshProUGUI CoinAchievementTitleCount;
 
-
-    // PlayerPrefs keys for persistent data
-    private const string TOTAL_COINS_KEY = "TotalCoinsEverCollected";
-    private const string TOTAL_KILLS_KEY = "TotalEnemiesKilled";
-    private const string ACHIEVEMENTS_KEY = "UnlockedAchievements"; // Stores comma-separated achievement IDs
-
-    // Achievement definitions
+    // Achievement definitions. Unlock STATE is not stored here — it lives
+    // solely in GameSession.Persistent.UnlockedAchievementIds (see IsUnlocked).
     private List<AchievementData> allAchievements = new List<AchievementData>();
 
     // Events for UI
@@ -38,7 +33,6 @@ public class AchievementManager : MonoBehaviour
         Instance = this;
 
         InitializeAchievements();
-        LoadUnlockedAchievements();
     }
 
     /// <summary>
@@ -83,36 +77,11 @@ public class AchievementManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Load which achievements have been unlocked from PlayerPrefs
-    /// </summary>
-    private void LoadUnlockedAchievements()
+    /// <summary>Sole source of truth for unlock state — GameSession.Persistent.</summary>
+    private bool IsUnlocked(AchievementData achievement)
     {
-        string unlockedIDs = PlayerPrefs.GetString(ACHIEVEMENTS_KEY, "");
-
-        if (string.IsNullOrEmpty(unlockedIDs))
-        {
-            if (showDebugLogs)
-            {
-                Debug.Log("[AchievementManager] No achievements unlocked yet");
-            }
-            return;
-        }
-
-        string[] ids = unlockedIDs.Split(',');
-        foreach (string id in ids)
-        {
-            AchievementData achievement = allAchievements.Find(a => a.id == id);
-            if (achievement != null)
-            {
-                achievement.isUnlocked = true;
-            }
-        }
-
-        if (showDebugLogs)
-        {
-            Debug.Log($"[AchievementManager] Loaded {ids.Length} unlocked achievements");
-        }
+        return GameSession.Instance != null
+            && GameSession.Instance.Persistent.UnlockedAchievementIds.Contains(achievement.id);
     }
 
     /// <summary>
@@ -121,15 +90,17 @@ public class AchievementManager : MonoBehaviour
     /// </summary>
     public void UpdateAchievementUI()
     {
+        if (GameSession.Instance == null) return;
+
         // Update Kill Achievement UI
         if (killAchievementTitleCount != null)
         {
-            int currentKills = PlayerPrefs.GetInt(TOTAL_KILLS_KEY, 0);
+            int currentKills = GameSession.Instance.Persistent.TotalEnemiesKilled;
             AchievementData killAchievement = allAchievements.Find(a => a.type == AchievementType.TotalKills);
 
             if (killAchievement != null)
             {
-                if (killAchievement.isUnlocked)
+                if (IsUnlocked(killAchievement))
                 {
                     killAchievementTitleCount.text = $"{killAchievement.requiredAmount}/{killAchievement.requiredAmount}";
                 }
@@ -148,12 +119,12 @@ public class AchievementManager : MonoBehaviour
         // Update Coin Achievement UI
         if (CoinAchievementTitleCount != null)
         {
-            int currentCoins = PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
+            int currentCoins = GameSession.Instance.Persistent.TotalCoinsEverCollected;
             AchievementData coinAchievement = allAchievements.Find(a => a.type == AchievementType.TotalCoins);
 
             if (coinAchievement != null)
             {
-                if (coinAchievement.isUnlocked)
+                if (IsUnlocked(coinAchievement))
                 {
                     CoinAchievementTitleCount.text = $"{coinAchievement.requiredAmount}/{coinAchievement.requiredAmount}";
                 }
@@ -168,8 +139,6 @@ public class AchievementManager : MonoBehaviour
                 Debug.Log($"[AchievementManager] Updated Coin UI: {currentCoins}");
             }
         }
-
-       
     }
 
     /// <summary>
@@ -194,10 +163,11 @@ public class AchievementManager : MonoBehaviour
     /// </summary>
     public void CheckKillAchievements()
     {
-        int totalKills = PlayerPrefs.GetInt(TOTAL_KILLS_KEY, 0);
+        if (GameSession.Instance == null) return;
+        int totalKills = GameSession.Instance.Persistent.TotalEnemiesKilled;
 
         AchievementData killAchievement = allAchievements.Find(a => a.type == AchievementType.TotalKills);
-        if (killAchievement != null && !killAchievement.isUnlocked)
+        if (killAchievement != null && !IsUnlocked(killAchievement))
         {
             if (totalKills >= killAchievement.requiredAmount)
             {
@@ -212,10 +182,11 @@ public class AchievementManager : MonoBehaviour
     /// </summary>
     public void CheckCoinAchievements()
     {
-        int totalCoins = PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
+        if (GameSession.Instance == null) return;
+        int totalCoins = GameSession.Instance.Persistent.TotalCoinsEverCollected;
 
         AchievementData coinAchievement = allAchievements.Find(a => a.type == AchievementType.TotalCoins);
-        if (coinAchievement != null && !coinAchievement.isUnlocked)
+        if (coinAchievement != null && !IsUnlocked(coinAchievement))
         {
             if (totalCoins >= coinAchievement.requiredAmount)
             {
@@ -236,7 +207,7 @@ public class AchievementManager : MonoBehaviour
 
         // Check if achievement is already unlocked
         AchievementData relicAchievement = allAchievements.Find(a => a.id == "relic_all_complete");
-        if (relicAchievement != null && relicAchievement.isUnlocked)
+        if (relicAchievement != null && IsUnlocked(relicAchievement))
         {
             if (showDebugLogs)
             {
@@ -248,7 +219,7 @@ public class AchievementManager : MonoBehaviour
         // Check if all 8 relics collected
         if (totalRelicsInRun >= 8)
         {
-            if (relicAchievement != null && !relicAchievement.isUnlocked)
+            if (relicAchievement != null && !IsUnlocked(relicAchievement))
             {
                 UnlockAchievement(relicAchievement);
             }
@@ -260,26 +231,13 @@ public class AchievementManager : MonoBehaviour
     /// </summary>
     private void UnlockAchievement(AchievementData achievement)
     {
-        if (achievement.isUnlocked)
+        if (GameSession.Instance == null || IsUnlocked(achievement))
         {
-            return; // Already unlocked
+            return; // Already unlocked (or no session to unlock into)
         }
 
-        achievement.isUnlocked = true;
-
-        // Save to PlayerPrefs
-        string currentUnlocked = PlayerPrefs.GetString(ACHIEVEMENTS_KEY, "");
-        if (string.IsNullOrEmpty(currentUnlocked))
-        {
-            currentUnlocked = achievement.id;
-        }
-        else
-        {
-            currentUnlocked += "," + achievement.id;
-        }
-
-        PlayerPrefs.SetString(ACHIEVEMENTS_KEY, currentUnlocked);
-        PlayerPrefs.Save();
+        GameSession.Instance.Persistent.UnlockedAchievementIds.Add(achievement.id);
+        GameSession.Instance.Save();
 
         // Notify listeners (for UI popup)
         OnAchievementUnlocked?.Invoke(achievement);
@@ -335,21 +293,23 @@ public class AchievementManager : MonoBehaviour
     /// </summary>
     public float GetAchievementProgress(AchievementData achievement)
     {
-        if (achievement.isUnlocked)
+        if (IsUnlocked(achievement))
         {
             return 1f;
         }
+
+        if (GameSession.Instance == null) return 0f;
 
         int currentValue = 0;
 
         switch (achievement.type)
         {
             case AchievementType.TotalKills:
-                currentValue = PlayerPrefs.GetInt(TOTAL_KILLS_KEY, 0);
+                currentValue = GameSession.Instance.Persistent.TotalEnemiesKilled;
                 break;
 
             case AchievementType.TotalCoins:
-                currentValue = PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
+                currentValue = GameSession.Instance.Persistent.TotalCoinsEverCollected;
                 break;
 
             case AchievementType.RelicRun:
@@ -365,21 +325,20 @@ public class AchievementManager : MonoBehaviour
     /// </summary>
     public int GetCurrentProgressValue(AchievementData achievement)
     {
+        if (GameSession.Instance == null) return 0;
+
         switch (achievement.type)
         {
             case AchievementType.TotalKills:
-                return PlayerPrefs.GetInt(TOTAL_KILLS_KEY, 0);
+                return GameSession.Instance.Persistent.TotalEnemiesKilled;
 
             case AchievementType.TotalCoins:
-                return PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0);
+                return GameSession.Instance.Persistent.TotalCoinsEverCollected;
 
             default:
                 return 0;
         }
     }
-
-
-   
 
     /// <summary>
     /// Check if a specific achievement is unlocked
@@ -388,7 +347,7 @@ public class AchievementManager : MonoBehaviour
     public bool IsAchievementUnlocked(string achievementId)
     {
         AchievementData achievement = allAchievements.Find(a => a.id == achievementId);
-        return achievement != null && achievement.isUnlocked;
+        return achievement != null && IsUnlocked(achievement);
     }
 
     /// <summary>
@@ -396,13 +355,10 @@ public class AchievementManager : MonoBehaviour
     /// </summary>
     public void DEBUG_ResetAllAchievements()
     {
-        PlayerPrefs.DeleteKey(ACHIEVEMENTS_KEY);
-        PlayerPrefs.Save();
+        if (GameSession.Instance == null) return;
 
-        foreach (AchievementData achievement in allAchievements)
-        {
-            achievement.isUnlocked = false;
-        }
+        GameSession.Instance.Persistent.UnlockedAchievementIds.Clear();
+        GameSession.Instance.Save();
 
         if (showDebugLogs)
         {
@@ -415,14 +371,16 @@ public class AchievementManager : MonoBehaviour
     /// </summary>
     public void DEBUG_PrintAchievementStatus()
     {
+        if (GameSession.Instance == null) return;
+
         Debug.Log("========== ACHIEVEMENT STATUS ==========");
-        Debug.Log($"Total Kills: {PlayerPrefs.GetInt(TOTAL_KILLS_KEY, 0)}");
-        Debug.Log($"Total Coins: {PlayerPrefs.GetInt(TOTAL_COINS_KEY, 0)}");
+        Debug.Log($"Total Kills: {GameSession.Instance.Persistent.TotalEnemiesKilled}");
+        Debug.Log($"Total Coins: {GameSession.Instance.Persistent.TotalCoinsEverCollected}");
         Debug.Log($"Unlocked Achievements:");
 
         foreach (AchievementData achievement in allAchievements)
         {
-            string status = achievement.isUnlocked ? "✓ UNLOCKED" : "✗ LOCKED";
+            string status = IsUnlocked(achievement) ? "✓ UNLOCKED" : "✗ LOCKED";
             string progress = achievement.type == AchievementType.RelicRun ? "Per Run" : $"{GetCurrentProgressValue(achievement)}/{achievement.requiredAmount}";
             Debug.Log($"  {status} - {achievement.name} ({progress})");
         }
@@ -442,7 +400,6 @@ public class AchievementData
     public string description;
     public AchievementType type;
     public int requiredAmount;
-    public bool isUnlocked;
     public string rewardDescription; // Optional: What player gets for unlocking this
 
     public AchievementData(string id, string name, string description, AchievementType type, int requiredAmount, string rewardDescription = "")
@@ -452,7 +409,6 @@ public class AchievementData
         this.description = description;
         this.type = type;
         this.requiredAmount = requiredAmount;
-        this.isUnlocked = false;
         this.rewardDescription = rewardDescription;
     }
 }

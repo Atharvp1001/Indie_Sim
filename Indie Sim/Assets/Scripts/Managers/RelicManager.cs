@@ -125,10 +125,10 @@ public class RelicManager : MonoBehaviour
         // TODO: Add coins to player's currency
         // Example: CoinManager.Instance.AddCoins(coinsForDuplicateRelic);
 
-        // For now, increment PlayerPrefs for testing
-        int currentCoins = PlayerPrefs.GetInt("TotalCoinsEverCollected", 0);
-        PlayerPrefs.SetInt("TotalCoinsEverCollected", currentCoins + coinsForDuplicateRelic);
-        PlayerPrefs.Save();
+        // BEHAVIOR CHANGE (Phase 4): routed through GameSession instead of a
+        // direct PlayerPrefs write. Phase 7 converts this to an event.
+        if (GameSession.Instance != null)
+            GameSession.Instance.Persistent.TotalCoinsEverCollected += coinsForDuplicateRelic;
 
         // Also check coin achievements
         if (AchievementManager.Instance != null)

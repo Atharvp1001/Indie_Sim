@@ -10,7 +10,9 @@ public class MainMenu : MonoBehaviour
 
     public void LoadScene1 ()
     {
-        GameManager.Instance.LoadScene(Scene1);
+        // "Play" — funnels through StartNewRun() so GameSession actually
+        // resets for the new run (it previously didn't at all).
+        GameManager.Instance.StartNewRun();
     }
 
     public void LoadScene2 ()

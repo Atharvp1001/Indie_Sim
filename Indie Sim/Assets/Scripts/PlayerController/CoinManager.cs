@@ -28,7 +28,6 @@ public class CoinManager : MonoBehaviour
     // ─────────────────────────────────────────────────────────────────
     private int _currentCoins;
     private int _coinsCollectedThisRun;
-    private int _totalCoinsEverCollected; // persists across runs in memory
     private int _maxCoins;
     // ─────────────────────────────────────────────────────────────────
     //  EVENTS
@@ -62,7 +61,6 @@ public class CoinManager : MonoBehaviour
         _currentCoins = startingCoins;
         _coinsCollectedThisRun = 0;
         _maxCoins = startingMaxCoins;
-        // _totalCoinsEverCollected intentionally NOT reset
         Debug.Log($"[CoinManager] Initialised — {_currentCoins}/{_maxCoins}");
     }
 
@@ -81,7 +79,8 @@ public class CoinManager : MonoBehaviour
     public int GetCoinsCollectedThisRun() => _coinsCollectedThisRun;
 
     /// <summary>Lifetime coins across all runs (for PlayerHealth death screen).</summary>
-    public int GetTotalCoinsEverCollected() => _totalCoinsEverCollected;
+    public int GetTotalCoinsEverCollected() =>
+        GameSession.Instance != null ? GameSession.Instance.Persistent.TotalCoinsEverCollected : 0;
 
     /// <summary>Returns true if the player can afford the given amount.</summary>
     public bool HasEnoughCoins(int amount) => _currentCoins >= amount;
@@ -108,7 +107,9 @@ public class CoinManager : MonoBehaviour
 
         _currentCoins += actual;
         _coinsCollectedThisRun += actual;
-        _totalCoinsEverCollected += actual;
+
+        if (GameSession.Instance != null)
+            GameSession.Instance.Persistent.TotalCoinsEverCollected += actual;
 
         Debug.Log($"[CoinManager] +{actual} coins → {_currentCoins}/{_maxCoins}");
         OnCoinsChanged?.Invoke(_currentCoins);

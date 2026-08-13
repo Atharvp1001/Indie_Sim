@@ -33,6 +33,11 @@ public class PlayerStompController : MonoBehaviour
     private bool canStomp = true;
     private Coroutine fillCoroutine;
 
+    // Gates stomp while a menu (e.g. the upgrade store) is open.
+    // Set via SetInputEnabled(), routed through RoguelikeManager.SetGameplayInputEnabled().
+    private bool gameplayInputEnabled = true;
+    public void SetInputEnabled(bool enabled) => gameplayInputEnabled = enabled;
+
     private void Awake()
     {
         playerController = GetComponent<PlayerController>();
@@ -51,6 +56,8 @@ public class PlayerStompController : MonoBehaviour
 
     private void TryStomp()
     {
+        if (!gameplayInputEnabled) return;
+
         bool isDashing = playerController != null && playerController.IsDashing();
         if (!canStomp || isDashing)
         {
@@ -198,7 +205,7 @@ public class PlayerStompController : MonoBehaviour
             stompReadyOverlay.color = c;
         }
     }
-    public bool CanStomp() => canStomp && !(playerController != null && playerController.IsDashing());
+    public bool CanStomp() => gameplayInputEnabled && canStomp && !(playerController != null && playerController.IsDashing());
 
     private void OnDrawGizmosSelected()
     {

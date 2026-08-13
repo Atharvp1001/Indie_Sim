@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.Audio;
 
 public class OptionsMenu : MonoBehaviour
@@ -170,8 +169,9 @@ public class OptionsMenu : MonoBehaviour
         // Resume time before reloading scene
         Time.timeScale = originalTimeScale;
 
-        // Reload current scene
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        // The dungeon clears in place — there's no separate "level" scene to
+        // reload, so restarting the level means restarting the run (D2).
+        GameManager.Instance.RetryRun();
     }
 
     /// <summary>
@@ -187,15 +187,9 @@ public class OptionsMenu : MonoBehaviour
         // Resume time before changing scenes
         Time.timeScale = originalTimeScale;
 
-        // Load main menu scene
-        if (!string.IsNullOrEmpty(mainMenuSceneName))
-        {
-            GameManager.Instance.LoadScene(MainMenu);
-        }
-        else
-        {
-            Debug.LogError("Main Menu scene name not set! Please assign it in the inspector.");
-        }
+        // Return to main menu — funnels through ReturnToMainMenu() so the
+        // abandoned run is folded into lifetime stats (D2 abort path).
+        GameManager.Instance.ReturnToMainMenu();
     }
 
     #endregion

@@ -41,6 +41,11 @@ public class PlayerConeShooter : MonoBehaviour
     [SerializeField] private WeaponVFXHandler vfxHandler; // Handles all visual/audio effects
     [SerializeField] private WeaponInventory weaponInventory; // Knows what weapon we're holding
 
+    // Gates firing while a menu (e.g. the upgrade store) is open.
+    // Set via SetInputEnabled(), routed through RoguelikeManager.SetGameplayInputEnabled().
+    private bool gameplayInputEnabled = true;
+    public void SetInputEnabled(bool enabled) => gameplayInputEnabled = enabled;
+
     // Runtime state
     private WeaponData currentWeapon;
     private float nextFireTime = 0f;
@@ -124,7 +129,7 @@ public class PlayerConeShooter : MonoBehaviour
         // Check if we can shoot (has ammo, aiming in valid direction)
         bool hasAmmo = ammoManager != null ? ammoManager.CanShoot() : true;
         bool isAiming = shootDirection.magnitude > aimDeadZone;
-        bool shouldShoot = isFiring && isAiming && hasAmmo;
+        bool shouldShoot = gameplayInputEnabled && isFiring && isAiming && hasAmmo;
 
         if (shouldShoot)
         {

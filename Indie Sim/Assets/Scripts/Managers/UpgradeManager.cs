@@ -277,7 +277,9 @@ public class UpgradeManager : MonoBehaviour
         bonusMachineGunAmmo = 0;
         bonusSpeed = 0f;
         bonusStompRadius = 0f;
+        bonusStompDamage = 0;
         bonusCoinCapacity = 0;
+        CurrentDungeonLevel = 1;
 
         // Restore speed to base
         if (playerMovement != null)

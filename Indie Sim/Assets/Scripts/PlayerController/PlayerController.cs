@@ -46,6 +46,11 @@ public class PlayerController : MonoBehaviour
 
     public static PlayerController Instance;
 
+    // Gates movement/dash while a menu (e.g. the upgrade store) is open.
+    // Set via SetInputEnabled(), routed through RoguelikeManager.SetGameplayInputEnabled().
+    private bool gameplayInputEnabled = true;
+    public void SetInputEnabled(bool enabled) => gameplayInputEnabled = enabled;
+
     void Awake()
     {
 
@@ -108,7 +113,7 @@ public class PlayerController : MonoBehaviour
 
     private void TryDash()
     {
-        if (!canDash || isDashing || moveInput.magnitude < 0.1f)
+        if (!gameplayInputEnabled || !canDash || isDashing || moveInput.magnitude < 0.1f)
             return;
 
         dashDirection = moveInput.normalized;
@@ -196,6 +201,12 @@ public class PlayerController : MonoBehaviour
     void FixedUpdate()
     {
         if (isDashing) return;
+
+        if (!gameplayInputEnabled)
+        {
+            rb.linearVelocity = Vector2.zero;
+            return;
+        }
 
         rb.linearVelocity = moveInput * currentMoveSpeed;
 

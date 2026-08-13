@@ -139,6 +139,12 @@ public class RoguelikeManager : MonoBehaviour
     public void CompleteDungeon()
     {
         dungeonsClearedCount++;
+
+        // Kept in sync so GameSession.EndRun()'s BestRunDungeonsCleared means
+        // something; full RunStats wiring is Phase 6.
+        if (GameSession.Instance != null)
+            GameSession.Instance.CurrentRun.DungeonsClearedThisRun = dungeonsClearedCount;
+
         Debug.Log($"[RoguelikeManager] dungeonsClearedCount: {dungeonsClearedCount} / {roomsTillBoss}");
         Debug.Log($"[RoguelikeManager] storeManager is: {storeManager}");
         UpgradeManager.Instance.AdvanceDungeonLevel();
@@ -162,7 +168,7 @@ public class RoguelikeManager : MonoBehaviour
 
     private void LoadBossLevel()
     {
-        GameManager.Instance.LoadBoss();
+        GameManager.Instance.AdvanceToBoss();
     }
 
     private void ClearCurrentDungeon()
@@ -238,6 +244,24 @@ public class RoguelikeManager : MonoBehaviour
         GenerateNewDungeon();
         UpdateSpawnerDifficulty();
         DEBUG_PrintStats();
+    }
+
+    /// <summary>
+    /// Single flag movement/shooting/dash/stomp all respect. Routed through
+    /// by the upgrade menu's open/close instead of scattered per-script flags.
+    /// </summary>
+    public void SetGameplayInputEnabled(bool enabled)
+    {
+        if (playerTransform == null) return;
+
+        PlayerController pc = playerTransform.GetComponent<PlayerController>();
+        if (pc != null) pc.SetInputEnabled(enabled);
+
+        PlayerConeShooter shooter = playerTransform.GetComponent<PlayerConeShooter>();
+        if (shooter != null) shooter.SetInputEnabled(enabled);
+
+        PlayerStompController stomp = playerTransform.GetComponent<PlayerStompController>();
+        if (stomp != null) stomp.SetInputEnabled(enabled);
     }
 
     public int GetDungeonsClearedCount() => dungeonsClearedCount;

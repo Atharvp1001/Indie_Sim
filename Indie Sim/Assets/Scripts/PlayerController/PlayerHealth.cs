@@ -60,6 +60,36 @@ public class PlayerHealth : MonoBehaviour
 
     private Coroutine hitFlashCoroutine;
 
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    // The player is still DontDestroyOnLoad, but deathUIPanel is wired as a
+    // direct reference to an object inside a specific scene's canvas instance
+    // (only ever overridden for RoguelikeMode — confirmed no equivalent
+    // override exists for BossArena). When that scene unloads, the reference
+    // goes stale/missing and the death UI silently never appears. Re-acquire
+    // it every scene load via RetryButton, which lives on the same object.
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        RetryButton retryButton = FindFirstObjectByType<RetryButton>(FindObjectsInactive.Include);
+        if (retryButton != null)
+        {
+            deathUIPanel = retryButton.gameObject;
+            Debug.Log($"[PlayerHealth] Re-acquired deathUIPanel in scene '{scene.name}': {deathUIPanel.name}");
+        }
+        else
+        {
+            Debug.LogWarning($"[PlayerHealth] No RetryButton found in scene '{scene.name}' — deathUIPanel may be stale!");
+        }
+    }
+
     void Start()
     {
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
@@ -247,7 +277,7 @@ public class PlayerHealth : MonoBehaviour
         if (isDead) return;
 
         isDead = true;
-        Debug.Log("Player died! (Out of coins)");
+        Debug.Log($"[PlayerHealth] Die() called on {gameObject.name} (instance {GetInstanceID()}) in scene '{gameObject.scene.name}'. deathUIPanel currently: {(deathUIPanel != null ? deathUIPanel.name : "NULL")}");
 
         StopAllCoroutines();
 
@@ -281,14 +311,55 @@ public class PlayerHealth : MonoBehaviour
         {
             deathUIPanel.SetActive(true);
             Time.timeScale = 0f;
-            Debug.Log("Death UI shown");
+            Debug.Log($"[PlayerHealth] Death UI shown: {deathUIPanel.name}");
         }
+        else
+        {
+            Debug.LogWarning("[PlayerHealth] ShowDeathUI() ran but deathUIPanel is NULL — no Retry UI will appear!");
+        }
+    }
+
+    /// <summary>
+    /// Reverses Die(). Needed because the player is still DontDestroyOnLoad
+    /// (D4/Phase 6 not done yet) — the same dead GameObject survives a
+    /// RetryRun()/StartNewRun() scene reload instead of being replaced, so
+    /// without this the player stays dead (disabled input, death sprite,
+    /// disabled collider) after every retry.
+    /// </summary>
+    public void ResetForNewRun()
+    {
+        Debug.Log($"[PlayerHealth] ResetForNewRun() called on {gameObject.name} (instance {GetInstanceID()}). Was dead: {isDead}");
+        isDead = false;
+        nextDamageTime = 0f;
+
+        if (playerController != null) playerController.enabled = true;
+        if (playerRotation != null) playerRotation.enabled = true;
+        if (playerAutoAimShooter != null) playerAutoAimShooter.enabled = true;
+        if (playerConeShooter != null) playerConeShooter.enabled = true;
+
+        if (spriteRenderer != null)
+        {
+            if (aliveSprite != null) spriteRenderer.sprite = aliveSprite;
+            spriteRenderer.color = originalColor;
+        }
+
+        if (rb != null)
+        {
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.linearVelocity = Vector2.zero;
+        }
+
+        if (playerCollider != null) playerCollider.enabled = true;
+
+        if (deathUIPanel != null) deathUIPanel.SetActive(false);
+
+        Time.timeScale = 1f;
     }
 
     public void GoToMainMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenu");
+        GameManager.Instance.ReturnToMainMenu();
         Debug.Log("Going to main menu");
     }
 

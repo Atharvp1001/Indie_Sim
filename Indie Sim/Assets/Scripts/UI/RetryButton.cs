@@ -15,9 +15,11 @@ public class RetryButton : MonoBehaviour
     /// </summary>
     public void OnRetryClicked()
     {
+        Debug.Log($"[RetryButton] OnRetryClicked() on {gameObject.name} in scene '{gameObject.scene.name}'.");
         Time.timeScale = 1f;
 
-        // ✅ Always go to main menu — full reset regardless of which scene we're in
-        GameManager.Instance.LoadMenu();
+        // Restarts the run in place — works identically whether death
+        // happened in RoguelikeMode or BossArena (D2).
+        GameManager.Instance.RetryRun();
     }
 }

@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement; // ✅ NEW — needed for boss scene loading
 
 public class Teleporter : MonoBehaviour
 {
@@ -156,17 +155,11 @@ public class Teleporter : MonoBehaviour
         Debug.Log("Teleportation completed successfully");
     }
 
-    // ✅ NEW — loads the boss scene by name
+    // Funnels through AdvanceToBoss() so CurrentRun carries over intact (D2).
     private void LoadBossLevel()
     {
-        if (string.IsNullOrEmpty(bossSceneName))
-        {
-            Debug.LogError("[Teleporter] Boss Level scene name is empty! Set it in the Inspector.");
-            return;
-        }
-
-        Debug.Log($"<color=red>Loading Boss Level: {bossSceneName}</color>");
-        SceneManager.LoadScene(bossSceneName);
+        Debug.Log("<color=red>Loading Boss Level</color>");
+        GameManager.Instance.AdvanceToBoss();
     }
 
     // ✅ NEW — existing dungeon completion logic, extracted into its own method

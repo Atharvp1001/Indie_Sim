@@ -95,6 +95,8 @@ public class StoreManager : MonoBehaviour
 
         PopulateCards();
         storePanel.SetActive(true);
+
+        RoguelikeManager.Instance?.SetGameplayInputEnabled(false);
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -201,6 +203,8 @@ public class StoreManager : MonoBehaviour
         _selectedButton = null;
         continueButton.gameObject.SetActive(false);
         Debug.Log("[StoreManager] Store closed.");
+
+        RoguelikeManager.Instance?.SetGameplayInputEnabled(true);
     }
 
     // ─────────────────────────────────────────────────────────────────

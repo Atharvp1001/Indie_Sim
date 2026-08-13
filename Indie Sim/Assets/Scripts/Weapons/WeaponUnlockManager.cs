@@ -79,6 +79,13 @@ public class WeaponUnlockManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Call at the start of each new run to clear unlocks back to just the
+    /// starter weapon. Named to match CoinManager/EnemyKillTracker's sibling
+    /// reset methods (temporary bridge from GameManager.StartNewRun(), Phase 4).
+    /// </summary>
+    public void ResetForNewRun() => InitializeUnlockSystem();
+
+    /// <summary>
     /// ✅ CORE METHOD: Unlocks a weapon by adding it to the list.
     /// This is the ONLY method UpgradeManager should call.
     /// </summary>

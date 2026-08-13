@@ -7,12 +7,7 @@ public class EnemyKillTracker : MonoBehaviour
 
     
 
-    [Header("Kill Statistics")]
-    [SerializeField] private int totalEnemiesKilled = 0; // across all runs (saved)
     [SerializeField] private int killsThisRun = 0;
-
-    // Key used to save/load data from PlayerPrefs
-    private const string KILL_COUNT_KEY = "TotalEnemiesKilled";
 
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
@@ -28,9 +23,6 @@ public class EnemyKillTracker : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject); // Persists across scene changes
-
-        // Load saved kill count when game starts
-        LoadKillCount();
     }
 
     /// <summary>
@@ -38,13 +30,16 @@ public class EnemyKillTracker : MonoBehaviour
     /// </summary>
     public void RegisterEnemyKill()
     {
-        totalEnemiesKilled++;
-        killsThisRun++; // ✅ NEW
+        killsThisRun++;
+
+        if (GameSession.Instance != null)
+        {
+            GameSession.Instance.Persistent.TotalEnemiesKilled++;
+            GameSession.Instance.Save();
+        }
 
         if (showDebugLogs)
-            Debug.Log($"Enemy killed! Run kills: {killsThisRun} | Total: {totalEnemiesKilled}");
-
-        SaveKillCount();
+            Debug.Log($"Enemy killed! Run kills: {killsThisRun} | Total: {GetTotalKills()}");
 
         if (AchievementManager.Instance != null)
             AchievementManager.Instance.CheckKillAchievements();
@@ -61,41 +56,11 @@ public class EnemyKillTracker : MonoBehaviour
     }
 
     /// <summary>
-    /// Get the current total enemy kill count
+    /// Get the current total enemy kill count (lifetime, GameSession.Persistent).
     /// </summary>
     public int GetTotalKills()
     {
-        return totalEnemiesKilled;
-    }
-
-   
-
-
-    /// <summary>
-    /// Manually save kill count to persistent storage
-    /// </summary>
-    public void SaveKillCount()
-    {
-        PlayerPrefs.SetInt(KILL_COUNT_KEY, totalEnemiesKilled);
-        PlayerPrefs.Save(); // Force save immediately
-
-        if (showDebugLogs)
-        {
-            Debug.Log($"Kill count saved: {totalEnemiesKilled}");
-        }
-    }
-
-    /// <summary>
-    /// Load kill count from persistent storage
-    /// </summary>
-    private void LoadKillCount()
-    {
-        totalEnemiesKilled = PlayerPrefs.GetInt(KILL_COUNT_KEY, 0);
-
-        if (showDebugLogs)
-        {
-            Debug.Log($"Kill count loaded: {totalEnemiesKilled}");
-        }
+        return GameSession.Instance != null ? GameSession.Instance.Persistent.TotalEnemiesKilled : 0;
     }
 
     /// <summary>
@@ -103,8 +68,10 @@ public class EnemyKillTracker : MonoBehaviour
     /// </summary>
     public void ResetKillCount()
     {
-        totalEnemiesKilled = 0;
-        SaveKillCount();
+        if (GameSession.Instance == null) return;
+
+        GameSession.Instance.Persistent.TotalEnemiesKilled = 0;
+        GameSession.Instance.Save();
 
         if (showDebugLogs)
         {
@@ -115,7 +82,7 @@ public class EnemyKillTracker : MonoBehaviour
     // Auto-save when application quits
     private void OnApplicationQuit()
     {
-        SaveKillCount();
+        GameSession.Instance?.Save();
     }
 
     // Auto-save when application loses focus (for mobile/alt-tab)
@@ -123,7 +90,7 @@ public class EnemyKillTracker : MonoBehaviour
     {
         if (pauseStatus)
         {
-            SaveKillCount();
+            GameSession.Instance?.Save();
         }
     }
 
@@ -133,7 +100,7 @@ public class EnemyKillTracker : MonoBehaviour
     public void DEBUG_PrintKillStatus()
     {
         Debug.Log($"========== KILL STATUS ==========");
-        Debug.Log($"Total Enemies Killed: {totalEnemiesKilled}");
+        Debug.Log($"Total Enemies Killed: {GetTotalKills()}");
         Debug.Log($"=================================");
     }
 }
