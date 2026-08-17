@@ -32,7 +32,6 @@ public class WeaponAmmoManager : MonoBehaviour
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
@@ -45,18 +44,26 @@ public class WeaponAmmoManager : MonoBehaviour
     {
         yield return null; // wait one frame for scene to finish loading
 
-        // Re-grab UI references from new scene's canvas
-        Canvas canvas = FindFirstObjectByType<Canvas>();
-        if (canvas != null)
+        // Re-grab UI references from the HUD canvas specifically. Scenes can
+        // now have more than one Canvas (e.g. BossArena's DemoCompleteCanvas
+        // alongside the HUD), so FindFirstObjectByType<Canvas>() is no longer
+        // reliable — it can return whichever canvas happens to exist first,
+        // not necessarily the one with AmmoText/ReloadIcon as children.
+        // Search all canvases for the one that actually has them.
+        Transform ammoTextTransform = null;
+        Transform reloadIconTransform = null;
+        foreach (Canvas c in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
         {
-            Transform ammoTextTransform = canvas.transform.Find("AmmoText"); // ← match exact name
-            Transform reloadIconTransform = canvas.transform.Find("ReloadIcon"); // ← match exact name
-
-            if (ammoTextTransform != null)
-                ammoText = ammoTextTransform.GetComponent<TMP_Text>();
-            if (reloadIconTransform != null)
-                reloadIcon = reloadIconTransform.GetComponent<Image>();
+            ammoTextTransform = c.transform.Find("AmmoText"); // ← match exact name
+            reloadIconTransform = c.transform.Find("ReloadIcon"); // ← match exact name
+            if (ammoTextTransform != null || reloadIconTransform != null)
+                break;
         }
+
+        if (ammoTextTransform != null)
+            ammoText = ammoTextTransform.GetComponent<TMP_Text>();
+        if (reloadIconTransform != null)
+            reloadIcon = reloadIconTransform.GetComponent<Image>();
 
         // Re-grab player shooter reference
         playerShooter = FindFirstObjectByType<PlayerConeShooter>();
@@ -86,6 +93,15 @@ public class WeaponAmmoManager : MonoBehaviour
         if (playerShooter == null)
             playerShooter = GetComponent<PlayerConeShooter>();
 
+        // Scene-local (Phase 6) — resume ammo counts carried over from this
+        // run's previous scene instance (RoguelikeMode -> BossArena) before
+        // falling back to a full magazine for anything not seen yet.
+        if (GameSession.Instance != null)
+        {
+            foreach (KeyValuePair<WeaponData, int> saved in GameSession.Instance.CurrentRun.WeaponAmmo)
+                _currentAmmo[saved.Key] = saved.Value;
+        }
+
         if (playerShooter != null)
         {
             currentWeapon = playerShooter.GetCurrentWeapon();
@@ -96,9 +112,18 @@ public class WeaponAmmoManager : MonoBehaviour
                     _currentAmmo[currentWeapon] = GetCurrentMaxAmmo();
 
                 currentAmmoInMagazine = _currentAmmo[currentWeapon];
+                SyncAmmoToRunStats(currentWeapon);
                 UpdateAmmoUI();
             }
         }
+    }
+
+    // Mirrors one weapon's ammo count into GameSession.CurrentRun so it
+    // survives this object being destroyed on the next scene load.
+    private void SyncAmmoToRunStats(WeaponData weapon)
+    {
+        if (GameSession.Instance == null || weapon == null) return;
+        GameSession.Instance.CurrentRun.WeaponAmmo[weapon] = _currentAmmo[weapon];
     }
 
     private void Update()
@@ -138,7 +163,10 @@ public class WeaponAmmoManager : MonoBehaviour
 
             // ✅ Keep dictionary in sync so weapon switch restores correct count
             if (currentWeapon != null)
+            {
                 _currentAmmo[currentWeapon] = currentAmmoInMagazine;
+                SyncAmmoToRunStats(currentWeapon);
+            }
 
             Debug.Log($"[AmmoManager] Ammo: {currentAmmoInMagazine}/{GetCurrentMaxAmmo()}");
             UpdateAmmoUI();
@@ -196,7 +224,10 @@ public class WeaponAmmoManager : MonoBehaviour
 
         // ✅ Keep dictionary in sync
         if (currentWeapon != null)
+        {
             _currentAmmo[currentWeapon] = currentAmmoInMagazine;
+            SyncAmmoToRunStats(currentWeapon);
+        }
 
         isReloading = false;
         Debug.Log($"[AmmoManager] Reload complete! Ammo: {currentAmmoInMagazine}/{maxAmmo}");
@@ -218,7 +249,10 @@ public class WeaponAmmoManager : MonoBehaviour
         }
 
         if (currentWeapon != null)
+        {
             _currentAmmo[currentWeapon] = currentAmmoInMagazine;
+            SyncAmmoToRunStats(currentWeapon);
+        }
 
         isReloading = false;
         currentWeapon = newWeapon;
@@ -230,6 +264,7 @@ public class WeaponAmmoManager : MonoBehaviour
                 ? UpgradeManager.Instance.GetFinalAmmo(weapon)
                 : weapon.magazineCapacity;
             _currentAmmo[weapon] = max;
+            SyncAmmoToRunStats(weapon);
         }
 
         if (newWeapon != null)
@@ -253,6 +288,7 @@ public class WeaponAmmoManager : MonoBehaviour
             : weapon.magazineCapacity;
 
         _currentAmmo[weapon] = newMax;
+        SyncAmmoToRunStats(weapon);
 
         // If the upgraded weapon is currently equipped, update the live counter too
         if (currentWeapon == weapon)

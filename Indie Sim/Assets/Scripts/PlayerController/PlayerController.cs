@@ -44,8 +44,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask collisionMask;
     [SerializeField] private float wallCheckDistance = 0.5f;
 
-    public static PlayerController Instance;
-
     // Gates movement/dash while a menu (e.g. the upgrade store) is open.
     // Set via SetInputEnabled(), routed through RoguelikeManager.SetGameplayInputEnabled().
     private bool gameplayInputEnabled = true;
@@ -53,19 +51,6 @@ public class PlayerController : MonoBehaviour
 
     void Awake()
     {
-
-
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         rb = GetComponent<Rigidbody2D>();
         inputActions = new PlayerControls();
 

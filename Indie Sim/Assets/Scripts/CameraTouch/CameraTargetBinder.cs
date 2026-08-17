@@ -5,8 +5,10 @@ using System.Collections;
 /// Scene-local. Finds the player at runtime and hands it to CinemachineCursorLead
 /// (CameraLead), which owns the actual vcam Follow-target setup. Needed because
 /// the player isn't guaranteed to exist in the scene when this vcam's own Start()
-/// runs — it may still be arriving via DontDestroyOnLoad today, or be
-/// runtime-spawned later (post Phase 6). Polls until a player exists, binds once.
+/// runs — RoguelikeMode's player is scene-baked (fine either way) but
+/// BossArena's is runtime-spawned by PlayerSpawner (Phase 6), so this can't
+/// assume the player already exists at Start(). Polls until a player exists,
+/// binds once.
 /// </summary>
 public class CameraTargetBinder : MonoBehaviour
 {

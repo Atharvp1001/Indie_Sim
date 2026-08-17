@@ -28,7 +28,6 @@ public class CustomCrosshair : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
             SceneManager.sceneLoaded += OnSceneLoaded;
         }
         else
@@ -60,26 +59,36 @@ public class CustomCrosshair : MonoBehaviour
 
         if (!isMenuScene)
         {
-            // Re-grab canvas and crosshair references from new game scene
-            canvas = FindFirstObjectByType<Canvas>();
-
-            if (canvas != null)
+            // Re-grab canvas and crosshair references from new game scene.
+            // Scenes can have more than one Canvas (e.g. BossArena's
+            // DemoCompleteCanvas alongside the HUD), so checking only the
+            // first Canvas found isn't reliable — it can silently grab the
+            // wrong one (crosshairImage/crosshairRect then keep their stale
+            // references to the previous scene's now-destroyed canvas,
+            // freezing the crosshair in place). Search all canvases for the
+            // one that actually has a "Crosshair" child.
+            Transform crosshairTransform = null;
+            foreach (Canvas c in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
             {
-                Transform crosshairTransform = canvas.transform.Find("Crosshair"); // ← match exact name
+                crosshairTransform = c.transform.Find("Crosshair"); // ← match exact name
                 if (crosshairTransform != null)
                 {
-                    crosshairImage = crosshairTransform.GetComponent<Image>();
-                    crosshairRect = crosshairTransform.GetComponent<RectTransform>();
-
-                    // Re-grab hitmarker from crosshair's children
-                    if (hitmarkerObject == null)
-                        hitmarkerObject = crosshairTransform.Find("Hitmarker")?.gameObject; // ← match exact name
+                    canvas = c;
+                    break;
                 }
-                else
-                    Debug.LogWarning("[Crosshair] Crosshair transform not found in canvas!");
+            }
+
+            if (crosshairTransform != null)
+            {
+                crosshairImage = crosshairTransform.GetComponent<Image>();
+                crosshairRect = crosshairTransform.GetComponent<RectTransform>();
+
+                // Re-grab hitmarker from crosshair's children
+                if (hitmarkerObject == null)
+                    hitmarkerObject = crosshairTransform.Find("Hitmarker")?.gameObject; // ← match exact name
             }
             else
-                Debug.LogWarning("[Crosshair] Canvas not found in scene!");
+                Debug.LogWarning("[Crosshair] No canvas with a Crosshair child found in this scene!");
         }
 
         if (crosshairImage != null)

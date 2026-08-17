@@ -63,6 +63,41 @@ public class WeaponVFXHandler : MonoBehaviour
 
         // Validate particle systems are set to manual emission
         ValidateParticleSystems();
+
+        // Scene-local player (Phase 6) — weaponButton is normally wired
+        // directly in the Inspector on the scene-baked RoguelikeMode player
+        // instance, but BossArena's player is runtime-spawned from the prefab
+        // asset, which carries no scene-specific override. Re-acquire from
+        // that scene's own HUD canvas, same pattern as
+        // WeaponAmmoManager.ReinitialiseUIReferences(). This object is itself
+        // scene-local now (destroyed/recreated per scene load), so a single
+        // Start()-time lookup is sufficient — no ongoing subscription needed.
+        if (weaponButton == null)
+        {
+            // Scenes can have more than one Canvas (e.g. BossArena's
+            // DemoCompleteCanvas alongside the HUD), so checking only the
+            // first Canvas found isn't reliable — search all of them for the
+            // one that actually has this button as a child.
+            Transform found = null;
+            foreach (Canvas c in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+            {
+                // Two names seen in the HUD prefab for this button across its
+                // history — try both rather than guessing wrong and doing nothing.
+                found = c.transform.Find("Switch weapon BTN") ?? c.transform.Find("Change Weapon");
+                if (found != null) break;
+            }
+
+            if (found != null)
+            {
+                weaponButton = found.GetComponent<Button>();
+                if (weaponButton != null)
+                    Debug.Log($"[WeaponVFXHandler] Re-acquired weaponButton: {weaponButton.name}");
+            }
+            else
+            {
+                Debug.LogWarning("[WeaponVFXHandler] No weapon-switch button found in this scene's HUD — weapon icon UI will not update (cosmetic only).");
+            }
+        }
     }
 
     #endregion

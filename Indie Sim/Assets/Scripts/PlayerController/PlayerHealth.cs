@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -61,43 +60,29 @@ public class PlayerHealth : MonoBehaviour
 
     private Coroutine hitFlashCoroutine;
 
-    private void OnEnable()
+    void Start()
     {
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
-
-    private void OnDisable()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
-
-    // The player is still DontDestroyOnLoad, but deathUIPanel is wired as a
-    // direct reference to an object inside a specific scene's canvas instance
-    // (only ever overridden for RoguelikeMode — confirmed no equivalent
-    // override exists for BossArena). When that scene unloads, the reference
-    // goes stale/missing and the death UI silently never appears. Re-acquire
-    // it every scene load via RetryButton.DeathPanel — RetryButton's own
-    // GameObject is the HUD canvas root, not the death panel itself.
-    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
+        // Scene-local (Phase 6) — this object is now destroyed and recreated
+        // fresh every scene load (RoguelikeMode baked instance recreated on
+        // reload, BossArena instance runtime-spawned by PlayerSpawner), so
+        // resolving deathUIPanel once here in Start() is sufficient; the old
+        // per-scene-load re-acquisition subscription is no longer needed —
+        // there's no surviving instance left to go stale.
         RetryButton retryButton = FindFirstObjectByType<RetryButton>(FindObjectsInactive.Include);
         if (retryButton != null && retryButton.DeathPanel != null)
         {
             deathUIPanel = retryButton.DeathPanel;
-            Debug.Log($"[PlayerHealth] Re-acquired deathUIPanel in scene '{scene.name}': {deathUIPanel.name}");
+            Debug.Log($"[PlayerHealth] Acquired deathUIPanel in scene '{gameObject.scene.name}': {deathUIPanel.name}");
         }
         else if (retryButton != null)
         {
-            Debug.LogWarning($"[PlayerHealth] RetryButton found in scene '{scene.name}' but its DeathPanel is unassigned in the Inspector — deathUIPanel may be stale!");
+            Debug.LogWarning($"[PlayerHealth] RetryButton found in scene '{gameObject.scene.name}' but its DeathPanel is unassigned in the Inspector — deathUIPanel may be stale!");
         }
         else
         {
-            Debug.LogWarning($"[PlayerHealth] No RetryButton found in scene '{scene.name}' — deathUIPanel may be stale!");
+            Debug.LogWarning($"[PlayerHealth] No RetryButton found in scene '{gameObject.scene.name}' — deathUIPanel may be stale!");
         }
-    }
 
-    void Start()
-    {
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         playerController = GetComponent<PlayerController>();
         playerCollider = GetComponent<Collider2D>();
@@ -335,66 +320,6 @@ public class PlayerHealth : MonoBehaviour
         {
             Debug.LogWarning("[PlayerHealth] ShowDeathUI() ran but deathUIPanel is NULL — no Retry UI will appear!");
         }
-    }
-
-    /// <summary>
-    /// Reverses Die(). Needed because the player is still DontDestroyOnLoad
-    /// (D4/Phase 6 not done yet) — the same dead GameObject survives a
-    /// RetryRun()/StartNewRun() scene reload instead of being replaced, so
-    /// without this the player stays dead (disabled input, death sprite,
-    /// disabled collider) after every retry.
-    /// </summary>
-    public void ResetForNewRun()
-    {
-        Debug.Log($"[PlayerHealth] ResetForNewRun() called on {gameObject.name} (instance {GetInstanceID()}). Was dead: {isDead}");
-        isDead = false;
-        nextDamageTime = 0f;
-
-        if (playerController != null) playerController.enabled = true;
-        if (playerRotation != null) playerRotation.enabled = true;
-        if (playerAutoAimShooter != null) playerAutoAimShooter.enabled = true;
-        if (playerConeShooter != null) playerConeShooter.enabled = true;
-
-        // Must happen BEFORE the Animator is re-enabled below. The Animator
-        // Controller's idle state has Write Defaults on with no sprite
-        // keyframe of its own, so on re-enable Unity captures whatever the
-        // SpriteRenderer's sprite is AT THAT INSTANT as its new "default" and
-        // keeps re-applying it every frame the idle state is active. If the
-        // Animator comes back on first, it captures deathSprite and stomps
-        // aliveSprite right back to it the moment the player stops moving.
-        if (spriteRenderer != null)
-        {
-            if (aliveSprite != null) spriteRenderer.sprite = aliveSprite;
-            spriteRenderer.color = originalColor;
-        }
-
-        if (playerAnimationController != null)
-        {
-            playerAnimationController.enabled = true;
-            if (playerAnimationController.Animator != null)
-                playerAnimationController.Animator.enabled = true;
-        }
-
-        if (rb != null)
-        {
-            rb.bodyType = RigidbodyType2D.Dynamic;
-            rb.linearVelocity = Vector2.zero;
-        }
-
-        if (playerCollider != null) playerCollider.enabled = true;
-
-        if (deathUIPanel != null) deathUIPanel.SetActive(false);
-
-        // TEMP (Phase 5, same class as GameSession.BridgeLegacyManagerResets):
-        // player is still DontDestroyOnLoad, so it keeps whatever position it
-        // died at instead of returning to the scene's spawn. RoguelikeMode's
-        // authored player-prefab position is (0,0,0) — confirmed from
-        // Temp -Player.prefab's root transform. Phase 6's PlayerSpawner
-        // replaces this with a proper per-scene PlayerSpawnPoint.
-        if (rb != null) rb.position = Vector2.zero;
-        else transform.position = Vector3.zero;
-
-        Time.timeScale = 1f;
     }
 
     public void GoToMainMenu()

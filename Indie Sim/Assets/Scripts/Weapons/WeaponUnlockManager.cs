@@ -71,19 +71,31 @@ public class WeaponUnlockManager : MonoBehaviour
             return;
         }
 
+        // Scene-local (Phase 6) — restore from GameSession.CurrentRun if this
+        // run already has unlocks (carried over RoguelikeMode -> BossArena, or
+        // a fresh instance mid-run). Otherwise fall through to starter weapon.
+        List<string> carriedOver = GameSession.Instance != null
+            ? GameSession.Instance.CurrentRun.UnlockedWeaponNames
+            : null;
+
+        if (carriedOver != null && carriedOver.Count > 0)
+        {
+            foreach (WeaponData weapon in allWeaponsInGame)
+            {
+                if (weapon != null && carriedOver.Contains(weapon.weaponName))
+                    unlockedWeaponNames.Add(weapon.weaponName);
+            }
+            Debug.Log($"[WeaponUnlockManager] Restored {unlockedWeaponNames.Count} unlock(s) from GameSession.CurrentRun");
+            PrintUnlockStatus();
+            return;
+        }
+
         // ✅ NORMAL MODE: Only unlock starter weapon
         UnlockWeapon(allWeaponsInGame[0]);
         Debug.Log($"[WeaponUnlockManager] 🔄 RESET - Starter weapon unlocked: {allWeaponsInGame[0].weaponName}");
 
         PrintUnlockStatus();
     }
-
-    /// <summary>
-    /// Call at the start of each new run to clear unlocks back to just the
-    /// starter weapon. Named to match CoinManager/EnemyKillTracker's sibling
-    /// reset methods (temporary bridge from GameManager.StartNewRun(), Phase 4).
-    /// </summary>
-    public void ResetForNewRun() => InitializeUnlockSystem();
 
     /// <summary>
     /// ✅ CORE METHOD: Unlocks a weapon by adding it to the list.
@@ -108,6 +120,10 @@ public class WeaponUnlockManager : MonoBehaviour
         }
 
         unlockedWeaponNames.Add(weapon.weaponName);
+
+        if (GameSession.Instance != null && !GameSession.Instance.CurrentRun.UnlockedWeaponNames.Contains(weapon.weaponName))
+            GameSession.Instance.CurrentRun.UnlockedWeaponNames.Add(weapon.weaponName);
+
         Debug.Log($"[WeaponUnlockManager] ✅ UNLOCKED: {weapon.weaponName} (THIS RUN ONLY)");
     }
 

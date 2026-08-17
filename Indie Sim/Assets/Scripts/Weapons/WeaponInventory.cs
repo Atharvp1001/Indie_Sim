@@ -99,6 +99,19 @@ public class WeaponInventory : MonoBehaviour
             return;
         }
 
+        // Scene-local (Phase 6) — resume the weapon equipped when this run's
+        // previous scene instance was destroyed, if it's still unlocked.
+        WeaponData carriedOver = GameSession.Instance != null ? GameSession.Instance.CurrentRun.EquippedWeapon : null;
+        if (carriedOver != null && WeaponUnlockManager.Instance.IsWeaponUnlocked(carriedOver))
+        {
+            int carriedIndex = System.Array.IndexOf(availableWeapons, carriedOver);
+            if (carriedIndex != -1)
+            {
+                SwitchToWeapon(carriedIndex);
+                return;
+            }
+        }
+
         // Find first unlocked weapon
         int firstUnlockedIndex = -1;
         for (int i = 0; i < availableWeapons.Length; i++)
@@ -150,6 +163,9 @@ public class WeaponInventory : MonoBehaviour
         // Switch to the weapon
         currentWeaponIndex = weaponIndex;
         currentWeapon = targetWeapon;
+
+        if (GameSession.Instance != null)
+            GameSession.Instance.CurrentRun.EquippedWeapon = currentWeapon;
 
         Debug.Log($"[WeaponInventory] ✅ Switched to: {currentWeapon.weaponName}");
 

@@ -22,7 +22,11 @@ public class EnemyKillTracker : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject); // Persists across scene changes
+
+        // Scene-local (Phase 6) — reads starting state from GameSession.CurrentRun
+        // so a fresh run resets by construction (this object is new).
+        if (GameSession.Instance != null)
+            killsThisRun = GameSession.Instance.CurrentRun.KillsThisRun;
     }
 
     /// <summary>
@@ -34,6 +38,7 @@ public class EnemyKillTracker : MonoBehaviour
 
         if (GameSession.Instance != null)
         {
+            GameSession.Instance.CurrentRun.KillsThisRun = killsThisRun;
             GameSession.Instance.Persistent.TotalEnemiesKilled++;
             GameSession.Instance.Save();
         }
@@ -47,13 +52,6 @@ public class EnemyKillTracker : MonoBehaviour
 
     // ✅ NEW — getter for this run only
     public int GetKillsThisRun() => killsThisRun;
-
-    // ✅ NEW — call this on retry/new run
-    public void ResetRunKills()
-    {
-        killsThisRun = 0;
-        Debug.Log("[EnemyKillTracker] Run kills reset");
-    }
 
     /// <summary>
     /// Get the current total enemy kill count (lifetime, GameSession.Persistent).

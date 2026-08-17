@@ -38,6 +38,12 @@ public class RunStats
     // Weapons (WeaponUnlockManager)
     public List<string> UnlockedWeaponNames = new List<string>();
 
+    // Weapon loadout + ammo (WeaponInventory, WeaponAmmoManager). WeaponData
+    // is a ScriptableObject asset — stable reference across scene loads, safe
+    // as a dictionary key. Never JSON-serialized (only PersistentStats is).
+    public WeaponData EquippedWeapon;
+    public Dictionary<WeaponData, int> WeaponAmmo = new Dictionary<WeaponData, int>();
+
     // Dungeon progression (UpgradeManager.CurrentDungeonLevel, RoguelikeManager.dungeonsClearedCount)
     public int CurrentDungeonLevel = 1;
     public int DungeonsClearedThisRun;

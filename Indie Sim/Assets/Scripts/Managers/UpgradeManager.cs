@@ -27,7 +27,9 @@ public class UpgradeManager : MonoBehaviour
     //  RUNTIME BONUS VARIABLES
     //  These are NEVER saved to disk and NEVER touch a ScriptableObject.
     //  They live only while the game is running.
-    //  ResetRunData() wipes them all back to zero on death / new run.
+    //  Scene-local (Phase 6) — mirrored into GameSession.CurrentRun via
+    //  SyncToRunStats() so they survive this object being destroyed on the
+    //  next scene load; reset happens by construction on a new run.
     // ─────────────────────────────────────────────────────────────────
     private int bonusPistolDamage;
     private int bonusPistolAmmo;
@@ -49,7 +51,6 @@ public class UpgradeManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -62,13 +63,61 @@ public class UpgradeManager : MonoBehaviour
         if (weaponInventory == null)
             weaponInventory = FindObjectOfType<WeaponInventory>();
 
-        
+
 
         ValidateReferences();
 
-        // Always start a fresh run with zeroed bonuses.
-        // When the player dies, the death handler calls ResetRunData() explicitly.
-        ResetRunData();
+        // Scene-local (Phase 6) — reads bonuses from GameSession.CurrentRun
+        // instead of always zeroing. A genuinely fresh run's RunStats already
+        // has every bonus at its zero default, so this is safe unconditionally.
+        InitialiseFromRunStats();
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    //  RUN STATE — read/write GameSession.CurrentRun (Phase 6)
+    // ═════════════════════════════════════════════════════════════════
+    private void InitialiseFromRunStats()
+    {
+        if (GameSession.Instance == null)
+        {
+            CurrentDungeonLevel = 1;
+            return;
+        }
+
+        RunStats run = GameSession.Instance.CurrentRun;
+        bonusPistolDamage = run.BonusPistolDamage;
+        bonusPistolAmmo = run.BonusPistolAmmo;
+        bonusShotgunDamage = run.BonusShotgunDamage;
+        bonusShotgunAmmo = run.BonusShotgunAmmo;
+        bonusMachineGunDamage = run.BonusMachineGunDamage;
+        bonusMachineGunAmmo = run.BonusMachineGunAmmo;
+        bonusSpeed = run.BonusSpeed;
+        bonusStompRadius = run.BonusStompRadius;
+        bonusStompDamage = run.BonusStompDamage;
+        bonusCoinCapacity = run.BonusCoinCapacity;
+        CurrentDungeonLevel = run.CurrentDungeonLevel > 0 ? run.CurrentDungeonLevel : 1;
+
+        if (playerMovement != null)
+            playerMovement.SetSpeed(basePlayerSpeed + bonusSpeed);
+
+        PrintUpgradeStats();
+    }
+
+    private void SyncToRunStats()
+    {
+        if (GameSession.Instance == null) return;
+        RunStats run = GameSession.Instance.CurrentRun;
+        run.BonusPistolDamage = bonusPistolDamage;
+        run.BonusPistolAmmo = bonusPistolAmmo;
+        run.BonusShotgunDamage = bonusShotgunDamage;
+        run.BonusShotgunAmmo = bonusShotgunAmmo;
+        run.BonusMachineGunDamage = bonusMachineGunDamage;
+        run.BonusMachineGunAmmo = bonusMachineGunAmmo;
+        run.BonusSpeed = bonusSpeed;
+        run.BonusStompRadius = bonusStompRadius;
+        run.BonusStompDamage = bonusStompDamage;
+        run.BonusCoinCapacity = bonusCoinCapacity;
+        run.CurrentDungeonLevel = CurrentDungeonLevel;
     }
 
     // ═════════════════════════════════════════════════════════════════
@@ -127,6 +176,7 @@ public class UpgradeManager : MonoBehaviour
                 break;
         }
 
+        SyncToRunStats();
         PrintUpgradeStats();
     }
 
@@ -265,31 +315,6 @@ public class UpgradeManager : MonoBehaviour
     }
 
     // ═════════════════════════════════════════════════════════════════
-    //  RESET (call this on player death / new run start)
-    // ═════════════════════════════════════════════════════════════════
-    public void ResetRunData()
-    {
-        bonusPistolDamage = 0;
-        bonusPistolAmmo = 0;
-        bonusShotgunDamage = 0;
-        bonusShotgunAmmo = 0;
-        bonusMachineGunDamage = 0;
-        bonusMachineGunAmmo = 0;
-        bonusSpeed = 0f;
-        bonusStompRadius = 0f;
-        bonusStompDamage = 0;
-        bonusCoinCapacity = 0;
-        CurrentDungeonLevel = 1;
-
-        // Restore speed to base
-        if (playerMovement != null)
-            playerMovement.SetSpeed(basePlayerSpeed);
-
-        Debug.Log("[UpgradeManager] 🔄 Run data reset — all bonuses cleared to zero.");
-        PrintUpgradeStats();
-    }
-
-    // ═════════════════════════════════════════════════════════════════
     //  STAT GETTERS
     //  PlayerConeShooter, AmmoSystem, StompAbility etc. call these
     //  to get the REAL current stat = (base from SO) + (bonus from run).
@@ -302,6 +327,7 @@ public class UpgradeManager : MonoBehaviour
     public void AdvanceDungeonLevel()
     {
         CurrentDungeonLevel++;
+        SyncToRunStats();
         Debug.Log($"[UpgradeManager] Dungeon level advanced to {CurrentDungeonLevel}");
     }
 
@@ -517,9 +543,6 @@ public class UpgradeManager : MonoBehaviour
         Debug.Log($"Coin Capacity bonus: +{bonusCoinCapacity}");
         Debug.Log("═════════════════════════════════════════════════");
     }
-
-    [ContextMenu("DEBUG - Reset Run Data")]
-    public void DEBUG_ResetRunData() => ResetRunData();
 
     [ContextMenu("DEBUG - Show Weapon Unlock Status")]
     public void DEBUG_ShowWeaponStatus() => WeaponUnlockManager.Instance?.PrintUnlockStatus();

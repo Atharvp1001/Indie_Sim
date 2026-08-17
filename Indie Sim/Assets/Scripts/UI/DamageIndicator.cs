@@ -36,10 +36,18 @@ public class DamageIndicator : MonoBehaviour
 
     private void Start()
     {
+        // Scene-local player (Phase 6) — postProcessVolume is normally wired
+        // directly in the Inspector on the scene-baked RoguelikeMode player
+        // instance, but BossArena's player is runtime-spawned from the prefab
+        // asset, which carries no scene-specific override. Re-acquire from
+        // this scene's own global Volume (there's only one per scene today).
+        if (postProcessVolume == null)
+            postProcessVolume = FindFirstObjectByType<Volume>();
+
         // Get the Vignette effect from the Volume
         if (postProcessVolume == null)
         {
-            Debug.LogError("[DamageIndicator] Post Process Volume is not assigned!");
+            Debug.LogWarning("[DamageIndicator] No Post Process Volume found in this scene — damage vignette will not appear (cosmetic only).");
             return;
         }
 

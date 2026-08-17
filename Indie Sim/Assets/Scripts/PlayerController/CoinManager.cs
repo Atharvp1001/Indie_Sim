@@ -11,7 +11,9 @@ using System;
 ///   - HasEnoughCoins()          → PlayerStompController uses this
 ///   - GetCoinsCollectedThisRun()→ StatTracker uses this for end screen
 ///   - GetTotalCoinsEverCollected() → PlayerHealth uses this (lifetime stat)
-///   - ResetForNewRun()          → RoguelikeManager calls this at run start
+///
+/// Scene-local (Phase 6) — reads/writes GameSession.CurrentRun continuously
+/// so state survives this object being destroyed on the next scene load.
 /// </summary>
 public class CoinManager : MonoBehaviour
 {
@@ -52,21 +54,46 @@ public class CoinManager : MonoBehaviour
         }
         Instance = this;
 
-        DontDestroyOnLoad(gameObject);
         InitialiseRun();
     }
 
+    // Scene-local (Phase 6) — reads starting state from GameSession.CurrentRun
+    // so a fresh run resets by construction (this object is new) instead of
+    // via an external reset call. Falls back to the Inspector starting values
+    // only when GameSession isn't present (e.g. play-directly-on-this-scene
+    // testing with no Boot bootstrap).
     private void InitialiseRun()
     {
-        _currentCoins = startingCoins;
-        _coinsCollectedThisRun = 0;
-        _maxCoins = startingMaxCoins;
+        // GameSession.StartNewRun() constructs a fresh RunStats() with every
+        // field zeroed, so MaxCoins == 0 is the signal that this is a genuinely
+        // new run (not a carry-over from RoguelikeMode -> BossArena) and the
+        // Inspector starting values should be used instead of RunStats.
+        RunStats run = GameSession.Instance != null ? GameSession.Instance.CurrentRun : null;
+        if (run != null && run.MaxCoins > 0)
+        {
+            _currentCoins = run.CurrentCoins;
+            _coinsCollectedThisRun = run.CoinsCollectedThisRun;
+            _maxCoins = run.MaxCoins;
+        }
+        else
+        {
+            _currentCoins = startingCoins;
+            _coinsCollectedThisRun = 0;
+            _maxCoins = startingMaxCoins;
+        }
+        SyncToRunStats();
         Debug.Log($"[CoinManager] Initialised — {_currentCoins}/{_maxCoins}");
     }
 
-    private void Start()
+    // Mirrors state into GameSession.CurrentRun after every mutation so it
+    // survives this object being destroyed on the next scene load.
+    private void SyncToRunStats()
     {
-        //ResetForNewRun();
+        if (GameSession.Instance == null) return;
+        RunStats run = GameSession.Instance.CurrentRun;
+        run.CurrentCoins = _currentCoins;
+        run.CoinsCollectedThisRun = _coinsCollectedThisRun;
+        run.MaxCoins = _maxCoins;
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -111,6 +138,7 @@ public class CoinManager : MonoBehaviour
         if (GameSession.Instance != null)
             GameSession.Instance.Persistent.TotalCoinsEverCollected += actual;
 
+        SyncToRunStats();
         Debug.Log($"[CoinManager] +{actual} coins → {_currentCoins}/{_maxCoins}");
         OnCoinsChanged?.Invoke(_currentCoins);
     }
@@ -130,6 +158,7 @@ public class CoinManager : MonoBehaviour
         }
 
         _currentCoins -= amount;
+        SyncToRunStats();
         Debug.Log($"[CoinManager] -{amount} coins → {_currentCoins} remaining");
         OnCoinsChanged?.Invoke(_currentCoins);
         return true;
@@ -143,24 +172,9 @@ public class CoinManager : MonoBehaviour
     {
         if (amount <= 0) return;
         _maxCoins += amount;
+        SyncToRunStats();
         Debug.Log($"[CoinManager] Max coins increased to {_maxCoins}");
         OnMaxCoinsChanged?.Invoke(_maxCoins);
         OnCoinsChanged?.Invoke(_currentCoins); // refresh UI fill bar
-    }
-
-
-    /// <summary>
-    /// Call at the start of each new run to reset per-run counters.
-    /// Lifetime total is NOT reset.
-    /// </summary>
-    public void ResetForNewRun()
-    {
-        _currentCoins = startingCoins;
-        _coinsCollectedThisRun = 0;
-        _maxCoins = startingMaxCoins;  // ← add this line
-
-        Debug.Log($"[CoinManager] Run reset — {_currentCoins}/{_maxCoins}");
-        OnCoinsChanged?.Invoke(_currentCoins);
-        OnMaxCoinsChanged?.Invoke(_maxCoins);
     }
 }

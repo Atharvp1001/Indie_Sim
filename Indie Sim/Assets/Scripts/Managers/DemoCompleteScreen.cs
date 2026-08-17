@@ -48,9 +48,10 @@ public class DemoCompleteScreen : MonoBehaviour
         Time.timeScale = 0f;
     }
 
-    // Reads straight from the still-persistent (DontDestroyOnLoad) managers,
-    // same as StatTracker's death-screen summary — GameSession.CurrentRun's
-    // equivalent fields aren't live-written yet (that's Phase 6).
+    // Reads via the managers' own Instance singletons, same as StatTracker's
+    // death-screen summary. Scene-local since Phase 6, but Instance still
+    // resolves correctly — it's just reset fresh per scene now instead of
+    // persisting. GameSession.CurrentRun holds the same values underneath.
     private string BuildSummary()
     {
         int kills = EnemyKillTracker.Instance != null ? EnemyKillTracker.Instance.GetKillsThisRun() : 0;

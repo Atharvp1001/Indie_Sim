@@ -29,37 +29,20 @@ public class GameSession : MonoBehaviour
 
     public void Save() => SaveSystem.Save(Persistent);
 
-    /// <summary>One call site for resetting run-scoped data (core principle).</summary>
+    /// <summary>
+    /// The only reset in the project (Phase 6). Every manager that used to
+    /// need an external reset call (CoinManager, EnemyKillTracker,
+    /// UpgradeManager, WeaponUnlockManager) and the player itself are now
+    /// scene-local — resetting a fresh RunStats here is sufficient because
+    /// each of them reads its starting state from CurrentRun in its own
+    /// Awake()/Start() when the next scene load recreates them.
+    /// </summary>
     public void StartNewRun()
     {
         Debug.Log("[GameSession] StartNewRun() called.");
         CurrentRun = new RunStats();
         Persistent.TotalRuns++;
         _runEnding = false;
-
-        BridgeLegacyManagerResets();
-    }
-
-    // TEMP (Phase 5): the managers below are still DontDestroyOnLoad, so their
-    // own Awake()-time resets never re-fire after the first run (AUDIT.md §5.4).
-    // Bridges directly to their reset methods until Phase 6 makes them
-    // scene-local, at which point reset happens naturally because the objects
-    // are new and this method goes away entirely.
-    private void BridgeLegacyManagerResets()
-    {
-        Debug.Log($"[GameSession] BridgeLegacyManagerResets() — CoinManager.Instance:{CoinManager.Instance != null}, EnemyKillTracker.Instance:{EnemyKillTracker.Instance != null}, UpgradeManager.Instance:{UpgradeManager.Instance != null}, WeaponUnlockManager.Instance:{WeaponUnlockManager.Instance != null}");
-
-        CoinManager.Instance?.ResetForNewRun();
-        EnemyKillTracker.Instance?.ResetRunKills();
-        UpgradeManager.Instance?.ResetRunData();
-        WeaponUnlockManager.Instance?.ResetForNewRun();
-
-        // The player is also still DontDestroyOnLoad — the same dead
-        // GameObject would otherwise survive the retry (found via testing,
-        // same bug class, not in the plan's original four-manager list).
-        PlayerHealth playerHealth = FindFirstObjectByType<PlayerHealth>(FindObjectsInactive.Include);
-        Debug.Log($"[GameSession] BridgeLegacyManagerResets() — PlayerHealth found: {playerHealth != null}");
-        playerHealth?.ResetForNewRun();
     }
 
     /// <summary>
