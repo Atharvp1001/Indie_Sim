@@ -10,6 +10,7 @@ public class PlayerAnimationController : MonoBehaviour
     [Header("References")]
     [SerializeField] private Transform spriteTransform; // The sprite child GameObject
     [SerializeField] private Animator animator;          // Animator on the sprite child
+    public Animator Animator => animator;
 
     [Header("Rotation Settings")]
     [SerializeField] private float rotationSpeed = 15f;  // Higher = snappier

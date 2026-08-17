@@ -3164,8 +3164,6 @@ GameObject:
   - component: {fileID: 184661103504098119}
   - component: {fileID: 1696581166811876563}
   - component: {fileID: 1621340129999305326}
-  - component: {fileID: 4632607192028825980}
-  - component: {fileID: 5123329597244053848}
   m_Layer: 5
   m_Name: Unlock MachineGun btn
   m_TagString: Untagged
@@ -3299,39 +3297,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &4632607192028825980
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4244309918232250996}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bc3e94d34ea581459b1164ab2ff9faf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradeButton
-  upgradeCost: 0
-  button: {fileID: 1621340129999305326}
-  costText: {fileID: 0}
-  insufficientCoinsText: {fileID: 0}
-  storeManager: {fileID: 3050763777859321885}
-  messageDisplayDuration: 2
---- !u!114 &5123329597244053848
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4244309918232250996}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dc00fab1803f49458680fd34cdb1d3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePreviewDisplay
-  upgradeType: 5
-  upgradeManager: {fileID: 0}
-  previewText: {fileID: 9620933989681485}
 --- !u!1 &4532474408049611677
 GameObject:
   m_ObjectHideFlags: 0
@@ -3344,8 +3309,6 @@ GameObject:
   - component: {fileID: 2787016047245968231}
   - component: {fileID: 7697456380573664533}
   - component: {fileID: 6560302496082326433}
-  - component: {fileID: 5073564095924149919}
-  - component: {fileID: 2177513049609795977}
   m_Layer: 5
   m_Name: Playerspeed btn
   m_TagString: Untagged
@@ -3479,39 +3442,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &5073564095924149919
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4532474408049611677}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bc3e94d34ea581459b1164ab2ff9faf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradeButton
-  upgradeCost: 0
-  button: {fileID: 6560302496082326433}
-  costText: {fileID: 0}
-  insufficientCoinsText: {fileID: 0}
-  storeManager: {fileID: 3050763777859321885}
-  messageDisplayDuration: 2
---- !u!114 &2177513049609795977
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4532474408049611677}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dc00fab1803f49458680fd34cdb1d3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePreviewDisplay
-  upgradeType: 0
-  upgradeManager: {fileID: 0}
-  previewText: {fileID: 2330312948251510961}
 --- !u!1 &4604241502115628197
 GameObject:
   m_ObjectHideFlags: 0
@@ -4420,8 +4350,6 @@ GameObject:
   - component: {fileID: 3890950980141587911}
   - component: {fileID: 3720008034307687834}
   - component: {fileID: 5244942046173256187}
-  - component: {fileID: 4234865244574281687}
-  - component: {fileID: 2884640086147869988}
   m_Layer: 5
   m_Name: MachineGun Upg btn
   m_TagString: Untagged
@@ -4555,39 +4483,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &4234865244574281687
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5298353505390322534}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bc3e94d34ea581459b1164ab2ff9faf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradeButton
-  upgradeCost: 0
-  button: {fileID: 5244942046173256187}
-  costText: {fileID: 0}
-  insufficientCoinsText: {fileID: 0}
-  storeManager: {fileID: 3050763777859321885}
-  messageDisplayDuration: 2
---- !u!114 &2884640086147869988
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5298353505390322534}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dc00fab1803f49458680fd34cdb1d3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePreviewDisplay
-  upgradeType: 4
-  upgradeManager: {fileID: 0}
-  previewText: {fileID: 5239418248939351499}
 --- !u!1 &5335255149479001506
 GameObject:
   m_ObjectHideFlags: 0
@@ -4738,8 +4633,6 @@ GameObject:
   - component: {fileID: 64344852814419812}
   - component: {fileID: 159173557620030682}
   - component: {fileID: 8906282317341461364}
-  - component: {fileID: 3106258669653506328}
-  - component: {fileID: 6431476104317088134}
   m_Layer: 5
   m_Name: Unlcok Shotgun Btn
   m_TagString: Untagged
@@ -4873,39 +4766,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &3106258669653506328
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5389823491955881408}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bc3e94d34ea581459b1164ab2ff9faf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradeButton
-  upgradeCost: 0
-  button: {fileID: 8906282317341461364}
-  costText: {fileID: 0}
-  insufficientCoinsText: {fileID: 0}
-  storeManager: {fileID: 3050763777859321885}
-  messageDisplayDuration: 2
---- !u!114 &6431476104317088134
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5389823491955881408}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dc00fab1803f49458680fd34cdb1d3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePreviewDisplay
-  upgradeType: 4
-  upgradeManager: {fileID: 0}
-  previewText: {fileID: 4836219000163334803}
 --- !u!1 &5613832040204722526
 GameObject:
   m_ObjectHideFlags: 0
@@ -5188,7 +5048,6 @@ GameObject:
   - component: {fileID: 4492750835674025685}
   - component: {fileID: 9158482997139052265}
   - component: {fileID: 7559768706053786747}
-  - component: {fileID: 63211309789546098}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -5316,21 +5175,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!114 &63211309789546098
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5759273158034579489}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dc00fab1803f49458680fd34cdb1d3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePreviewDisplay
-  upgradeType: 3
-  upgradeManager: {fileID: 0}
-  previewText: {fileID: 7559768706053786747}
 --- !u!1 &5783558506638884814
 GameObject:
   m_ObjectHideFlags: 0
@@ -5598,8 +5442,6 @@ GameObject:
   - component: {fileID: 6390827470987529892}
   - component: {fileID: 7874858708088347392}
   - component: {fileID: 8191146439749508342}
-  - component: {fileID: 8207540986244852077}
-  - component: {fileID: 3696390084934407041}
   m_Layer: 5
   m_Name: 'Pistol Upg '
   m_TagString: Untagged
@@ -5733,39 +5575,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &8207540986244852077
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6056044931841387177}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bc3e94d34ea581459b1164ab2ff9faf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradeButton
-  upgradeCost: 0
-  button: {fileID: 8191146439749508342}
-  costText: {fileID: 0}
-  insufficientCoinsText: {fileID: 0}
-  storeManager: {fileID: 3050763777859321885}
-  messageDisplayDuration: 2
---- !u!114 &3696390084934407041
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6056044931841387177}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dc00fab1803f49458680fd34cdb1d3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePreviewDisplay
-  upgradeType: 1
-  upgradeManager: {fileID: 0}
-  previewText: {fileID: 3025854339381282535}
 --- !u!1 &6106623767755764148
 GameObject:
   m_ObjectHideFlags: 0
@@ -6049,7 +5858,6 @@ GameObject:
   - component: {fileID: 4560719987666531417}
   - component: {fileID: 4741093893102790476}
   - component: {fileID: 3025854339381282535}
-  - component: {fileID: 7803879102771820656}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -6177,21 +5985,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!114 &7803879102771820656
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7114669991163441554}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dc00fab1803f49458680fd34cdb1d3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePreviewDisplay
-  upgradeType: 2
-  upgradeManager: {fileID: 0}
-  previewText: {fileID: 3025854339381282535}
 --- !u!1 &7129523075723917856
 GameObject:
   m_ObjectHideFlags: 0
@@ -6477,7 +6270,6 @@ GameObject:
   - component: {fileID: 5334781412572680983}
   - component: {fileID: 8002353671910783491}
   - component: {fileID: 2330312948251510961}
-  - component: {fileID: 3964843084570136518}
   m_Layer: 5
   m_Name: Text (TMP)
   m_TagString: Untagged
@@ -6605,21 +6397,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!114 &3964843084570136518
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7381517851817593303}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dc00fab1803f49458680fd34cdb1d3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePreviewDisplay
-  upgradeType: 0
-  upgradeManager: {fileID: 0}
-  previewText: {fileID: 2330312948251510961}
 --- !u!1 &7492768296390849518
 GameObject:
   m_ObjectHideFlags: 0
@@ -7418,22 +7195,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StoreManager
   storePanel: {fileID: 4130604429644417467}
-  upgradesPanel: {fileID: 382944436407691351}
+  upgradeButtonA: {fileID: 0}
+  upgradeButtonB: {fileID: 0}
   continueButton: {fileID: 7146967262688525571}
   rerollButton: {fileID: 6132589580764782935}
-  allUpgradeButtons:
-  - {fileID: 1621340129999305326}
-  - {fileID: 5244942046173256187}
-  - {fileID: 6560302496082326433}
-  - {fileID: 8906282317341461364}
-  - {fileID: 1413324184551328863}
-  - {fileID: 8191146439749508342}
-  shotgunUpgradeButton: {fileID: 1413324184551328863}
-  machineGunUpgradeButton: {fileID: 5244942046173256187}
-  unlockShotgunButton: {fileID: 8906282317341461364}
-  unlockMachineGunButton: {fileID: 1621340129999305326}
-  weaponInventory: {fileID: 0}
-  buttonsToEnable: 2
+  canvas: {fileID: 0}
 --- !u!1 &8318118542089151643
 GameObject:
   m_ObjectHideFlags: 0
@@ -7446,8 +7212,6 @@ GameObject:
   - component: {fileID: 8766397366513903847}
   - component: {fileID: 3271034133265037271}
   - component: {fileID: 1413324184551328863}
-  - component: {fileID: 1235998684387599805}
-  - component: {fileID: 5166916457070607353}
   m_Layer: 5
   m_Name: 'Shotgun Upg '
   m_TagString: Untagged
@@ -7581,39 +7345,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &1235998684387599805
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8318118542089151643}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bc3e94d34ea581459b1164ab2ff9faf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradeButton
-  upgradeCost: 0
-  button: {fileID: 1413324184551328863}
-  costText: {fileID: 0}
-  insufficientCoinsText: {fileID: 0}
-  storeManager: {fileID: 3050763777859321885}
-  messageDisplayDuration: 2
---- !u!114 &5166916457070607353
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8318118542089151643}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dc00fab1803f49458680fd34cdb1d3d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UpgradePreviewDisplay
-  upgradeType: 2
-  upgradeManager: {fileID: 0}
-  previewText: {fileID: 7559768706053786747}
 --- !u!1 &8467849775810770511
 GameObject:
   m_ObjectHideFlags: 0
@@ -8344,6 +8075,11 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 4669041933925150134, guid: c7c7561f00316e848b74de9261037559, type: 3}
   m_PrefabInstance: {fileID: 8953204964034520948}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &5715508341889909259 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3679930128972637567, guid: c7c7561f00316e848b74de9261037559, type: 3}
+  m_PrefabInstance: {fileID: 8953204964034520948}
+  m_PrefabAsset: {fileID: 0}
 --- !u!224 &5803599700310884520 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 3227580473938192348, guid: c7c7561f00316e848b74de9261037559, type: 3}
@@ -8394,6 +8130,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RetryButton
   mainMenuSceneName: Main Menu
+  deathPanel: {fileID: 5715508341889909259}
 --- !u!1 &8968360789390848603 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 15244615299126575, guid: c7c7561f00316e848b74de9261037559, type: 3}
@@ -8412,3 +8149,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CoinUI
   coinText: {fileID: 229058664614076936}
+  fillImage: {fileID: 0}
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  flashCount: 3
+  flashInterval: 0.15

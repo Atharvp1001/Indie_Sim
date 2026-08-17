@@ -10,6 +10,14 @@ public class RetryButton : MonoBehaviour
     [SerializeField] private string mainMenuSceneName = "Main Menu";
     //[SerializeField] private string dungeonSceneName = "DungeonScene";
 
+    // This script lives on the HUD canvas root (alongside StatTracker), not on
+    // the actual death/retry UI. PlayerHealth needs the real panel — the
+    // separate "DeathUIPanel" child that holds the Retry button and kill/coin
+    // text and is hidden by default — not this GameObject. Assign it in the
+    // Inspector on the prefab.
+    [SerializeField] private GameObject deathPanel;
+    public GameObject DeathPanel => deathPanel;
+
     /// <summary>
     /// Wire this to the button's OnClick in the Inspector
     /// </summary>

@@ -21,6 +21,8 @@ public class DemoCompleteScreen : MonoBehaviour
 
         if (mainMenuButton != null)
             mainMenuButton.onClick.AddListener(OnMainMenuClicked);
+
+        Debug.Log($"[DemoCompleteScreen] Awake() on {gameObject.name}. panel: {(panel != null ? panel.name : "NULL")}, mainMenuButton: {(mainMenuButton != null ? mainMenuButton.name : "NULL")}");
     }
 
     /// <summary>
@@ -34,6 +36,14 @@ public class DemoCompleteScreen : MonoBehaviour
 
         if (panel != null)
             panel.SetActive(true);
+
+        // BossArena is a gameplay scene, so CursorController's per-scene
+        // SceneUIMode has the cursor hidden/confined — no scene change
+        // happens here to flip that, so without this the button is
+        // unclickable-by-eye (cursor invisible) even though it's technically
+        // interactable.
+        if (CursorController.Instance != null)
+            CursorController.Instance.SetCursorOverride(true);
 
         Time.timeScale = 0f;
     }
@@ -52,6 +62,7 @@ public class DemoCompleteScreen : MonoBehaviour
 
     private void OnMainMenuClicked()
     {
+        Debug.Log($"[DemoCompleteScreen] OnMainMenuClicked() fired. GameManager.Instance: {(GameManager.Instance != null)}");
         Time.timeScale = 1f;
         GameManager.Instance.ReturnToMainMenu();
     }

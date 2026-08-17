@@ -57,6 +57,7 @@ public class PlayerHealth : MonoBehaviour
     private SimplePlayerRotation playerRotation;
     private PlayerAutoAimShooter playerAutoAimShooter;
     private PlayerConeShooter playerConeShooter;
+    private PlayerAnimationController playerAnimationController;
 
     private Coroutine hitFlashCoroutine;
 
@@ -75,14 +76,19 @@ public class PlayerHealth : MonoBehaviour
     // (only ever overridden for RoguelikeMode — confirmed no equivalent
     // override exists for BossArena). When that scene unloads, the reference
     // goes stale/missing and the death UI silently never appears. Re-acquire
-    // it every scene load via RetryButton, which lives on the same object.
+    // it every scene load via RetryButton.DeathPanel — RetryButton's own
+    // GameObject is the HUD canvas root, not the death panel itself.
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         RetryButton retryButton = FindFirstObjectByType<RetryButton>(FindObjectsInactive.Include);
-        if (retryButton != null)
+        if (retryButton != null && retryButton.DeathPanel != null)
         {
-            deathUIPanel = retryButton.gameObject;
+            deathUIPanel = retryButton.DeathPanel;
             Debug.Log($"[PlayerHealth] Re-acquired deathUIPanel in scene '{scene.name}': {deathUIPanel.name}");
+        }
+        else if (retryButton != null)
+        {
+            Debug.LogWarning($"[PlayerHealth] RetryButton found in scene '{scene.name}' but its DeathPanel is unassigned in the Inspector — deathUIPanel may be stale!");
         }
         else
         {
@@ -98,6 +104,7 @@ public class PlayerHealth : MonoBehaviour
         playerRotation = GetComponent<SimplePlayerRotation>();
         playerAutoAimShooter = GetComponent<PlayerAutoAimShooter>();
         playerConeShooter = GetComponent<PlayerConeShooter>();
+        playerAnimationController = GetComponent<PlayerAnimationController>();
         rb = GetComponent<Rigidbody2D>();
 
         if (spriteRenderer != null)
@@ -285,6 +292,17 @@ public class PlayerHealth : MonoBehaviour
         if (playerRotation != null) playerRotation.enabled = false;
         if (playerAutoAimShooter != null) playerAutoAimShooter.enabled = false;
         if (playerConeShooter != null) playerConeShooter.enabled = false;
+        // Disabling the controller alone only stops it from updating the
+        // IsMoving parameter — the Animator component itself keeps evaluating
+        // its current state and re-writing sprite keyframes every frame
+        // regardless, which was overwriting deathSprite/aliveSprite the
+        // moment the player moved again after retry. Disable both.
+        if (playerAnimationController != null)
+        {
+            playerAnimationController.enabled = false;
+            if (playerAnimationController.Animator != null)
+                playerAnimationController.Animator.enabled = false;
+        }
 
         if (spriteRenderer != null) spriteRenderer.color = originalColor;
         if (deathSprite != null && spriteRenderer != null) spriteRenderer.sprite = deathSprite;
@@ -337,10 +355,24 @@ public class PlayerHealth : MonoBehaviour
         if (playerAutoAimShooter != null) playerAutoAimShooter.enabled = true;
         if (playerConeShooter != null) playerConeShooter.enabled = true;
 
+        // Must happen BEFORE the Animator is re-enabled below. The Animator
+        // Controller's idle state has Write Defaults on with no sprite
+        // keyframe of its own, so on re-enable Unity captures whatever the
+        // SpriteRenderer's sprite is AT THAT INSTANT as its new "default" and
+        // keeps re-applying it every frame the idle state is active. If the
+        // Animator comes back on first, it captures deathSprite and stomps
+        // aliveSprite right back to it the moment the player stops moving.
         if (spriteRenderer != null)
         {
             if (aliveSprite != null) spriteRenderer.sprite = aliveSprite;
             spriteRenderer.color = originalColor;
+        }
+
+        if (playerAnimationController != null)
+        {
+            playerAnimationController.enabled = true;
+            if (playerAnimationController.Animator != null)
+                playerAnimationController.Animator.enabled = true;
         }
 
         if (rb != null)
@@ -352,6 +384,15 @@ public class PlayerHealth : MonoBehaviour
         if (playerCollider != null) playerCollider.enabled = true;
 
         if (deathUIPanel != null) deathUIPanel.SetActive(false);
+
+        // TEMP (Phase 5, same class as GameSession.BridgeLegacyManagerResets):
+        // player is still DontDestroyOnLoad, so it keeps whatever position it
+        // died at instead of returning to the scene's spawn. RoguelikeMode's
+        // authored player-prefab position is (0,0,0) — confirmed from
+        // Temp -Player.prefab's root transform. Phase 6's PlayerSpawner
+        // replaces this with a proper per-scene PlayerSpawnPoint.
+        if (rb != null) rb.position = Vector2.zero;
+        else transform.position = Vector3.zero;
 
         Time.timeScale = 1f;
     }
