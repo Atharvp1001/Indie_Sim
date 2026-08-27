@@ -140,27 +140,40 @@ public class PlayerStompController : MonoBehaviour
             if (wallCheck.collider != null) continue;
 
             IDamageable damageable = enemyCol.GetComponent<IDamageable>();
-            if (damageable != null && !damageable.IsDead())
+            bool wasAlreadyDead = damageable != null && damageable.IsDead();
+            if (damageable != null && !wasAlreadyDead)
+            {
                 damageable.TakeDamage(damage); // uses upgraded damage
 
-            Vector2 pushDirection = toEnemy.normalized;
-            float targetDistance = radius + stompPushBeyondRadius;
-            Vector2 targetPosition = playerPos + (pushDirection * targetDistance);
-
-            RaycastHit2D pushWallCheck = Physics2D.Raycast(
-                enemyCol.transform.position, pushDirection,
-                Vector2.Distance(enemyCol.transform.position, targetPosition), stompWallLayer);
-
-            if (pushWallCheck.collider != null)
-            {
-                float safeDistance = pushWallCheck.distance - 0.5f;
-                targetPosition = (Vector2)enemyCol.transform.position + (pushDirection * safeDistance);
+                if (ScoreManager.Instance != null) ScoreManager.Instance.AddDamage(damage);
+                if (DamageNumberManager.Instance != null) DamageNumberManager.Instance.Spawn(enemyCol.transform.position, damage);
             }
 
-            enemyCol.transform.position = targetPosition;
-
+            // Only physically shove things that can actually move (have a Rigidbody2D) and
+            // weren't just killed by the damage above — stationary structures like the
+            // EnemySpawner have no Rigidbody2D, so without this guard they'd get teleported
+            // to the edge of the stomp radius instantly, looking like they vanished.
             Rigidbody2D enemyRb = enemyCol.GetComponent<Rigidbody2D>();
-            if (enemyRb != null) enemyRb.linearVelocity = Vector2.zero;
+            bool justDied = damageable != null && !wasAlreadyDead && damageable.IsDead();
+            if (enemyRb != null && !justDied)
+            {
+                Vector2 pushDirection = toEnemy.normalized;
+                float targetDistance = radius + stompPushBeyondRadius;
+                Vector2 targetPosition = playerPos + (pushDirection * targetDistance);
+
+                RaycastHit2D pushWallCheck = Physics2D.Raycast(
+                    enemyCol.transform.position, pushDirection,
+                    Vector2.Distance(enemyCol.transform.position, targetPosition), stompWallLayer);
+
+                if (pushWallCheck.collider != null)
+                {
+                    float safeDistance = pushWallCheck.distance - 0.5f;
+                    targetPosition = (Vector2)enemyCol.transform.position + (pushDirection * safeDistance);
+                }
+
+                enemyCol.transform.position = targetPosition;
+                enemyRb.linearVelocity = Vector2.zero;
+            }
         }
     }
 

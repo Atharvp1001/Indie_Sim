@@ -23,10 +23,10 @@ MonoBehaviour:
   leafNodePositionJitter: 1.5
   baseStartRoomSize: {x: 8, y: 8}
   baseEndRoomSize: {x: 8, y: 8}
-  baseMainArteryRoomSize: {x: 6, y: 6}
-  baseDistributiveRoomSize: {x: 4, y: 4}
-  baseLeafRoomSize: {x: 5, y: 5}
-  baseCornerRoomSize: {x: 3, y: 3}
+  baseMainArteryRoomSize: {x: 10, y: 10}
+  baseDistributiveRoomSize: {x: 6, y: 6}
+  baseLeafRoomSize: {x: 6, y: 6}
+  baseCornerRoomSize: {x: 5, y: 5}
   roomSizeVariationPercentage: 0.331
   minRoomDistance: 0
   maxRepositionAttempts: 30
@@ -34,4 +34,4 @@ MonoBehaviour:
   startRoomToArteryDistance: 12
   minStartToEndDistance: 40
   roomRotationChance: 0.5
-  corridorWidth: 2
+  corridorWidth: 4

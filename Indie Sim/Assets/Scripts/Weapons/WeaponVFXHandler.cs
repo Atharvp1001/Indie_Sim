@@ -38,6 +38,7 @@ public class WeaponVFXHandler : MonoBehaviour
     // Runtime tracking
     private WeaponData currentWeapon;
     private Coroutine currentLightFlashCoroutine = null;
+    private PlayerController playerController;
 
     #region Unity Lifecycle
 
@@ -63,6 +64,8 @@ public class WeaponVFXHandler : MonoBehaviour
 
         // Validate particle systems are set to manual emission
         ValidateParticleSystems();
+
+        if (playerController == null) playerController = FindObjectOfType<PlayerController>();
 
         // Scene-local player (Phase 6) — weaponButton is normally wired
         // directly in the Inspector on the scene-baked RoguelikeMode player
@@ -360,8 +363,14 @@ public class WeaponVFXHandler : MonoBehaviour
         if (!enableCameraRecoil) return;
         if (CinemachineCursorLead.Instance == null) return;
 
-        CinemachineCursorLead.Instance.ApplyRecoil(shootDirection);
+        float strength = currentWeapon != null ? currentWeapon.recoilStrength : 0.5f;
+        CinemachineCursorLead.Instance.ApplyRecoil(shootDirection, strength);
         CinemachineCursorLead.Instance.StartFiring();
+
+        if (currentWeapon != null && currentWeapon.playerKnockback > 0f && playerController != null)
+        {
+            playerController.ApplyKnockback(shootDirection, currentWeapon.playerKnockback);
+        }
     }
 
     #endregion

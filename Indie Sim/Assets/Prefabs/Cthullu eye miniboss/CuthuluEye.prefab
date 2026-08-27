@@ -95,8 +95,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  maxHealth: 600
-  currentHealth: 700
+  maxHealth: 300
+  currentHealth: 300
 --- !u!50 &1552801011318926664
 Rigidbody2D:
   serializedVersion: 5

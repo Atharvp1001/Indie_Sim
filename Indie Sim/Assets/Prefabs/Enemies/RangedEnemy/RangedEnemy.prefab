@@ -112,7 +112,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 14af62037243c544d973fe1af639ca81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TriangleEnemy
-  maxHealth: 200
+  maxHealth: 150
   bulletPoolOverride: {fileID: 0}
   bulletDamage: 10
   bulletSpeed: 4

@@ -48,16 +48,25 @@ public class WeaponAmmoManager : MonoBehaviour
         // now have more than one Canvas (e.g. BossArena's DemoCompleteCanvas
         // alongside the HUD), so FindFirstObjectByType<Canvas>() is no longer
         // reliable — it can return whichever canvas happens to exist first,
-        // not necessarily the one with AmmoText/ReloadIcon as children.
-        // Search all canvases for the one that actually has them.
+        // not necessarily the one with the ammo UI as a child.
+        //
+        // "AmmoText" was never the real object name (the ammo count TMP object
+        // is actually named "Bullet number" inside Player Canvas HardcoreMode.prefab)
+        // and it is not a direct child of the Canvas, so the previous single-level
+        // Transform.Find() could never match — this silently broke ammo UI on any
+        // runtime-instantiated player (BossArena) that has no scene-baked Inspector
+        // override to fall back on. Search recursively by the real name instead.
         Transform ammoTextTransform = null;
         Transform reloadIconTransform = null;
         foreach (Canvas c in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
         {
-            ammoTextTransform = c.transform.Find("AmmoText"); // ← match exact name
-            reloadIconTransform = c.transform.Find("ReloadIcon"); // ← match exact name
-            if (ammoTextTransform != null || reloadIconTransform != null)
-                break;
+            if (ammoTextTransform == null)
+                ammoTextTransform = FindDeepChild(c.transform, "Bullet number");
+            // TODO: "ReloadIcon" is an unconfirmed guess — no object with this name
+            // exists anywhere in the project. Confirm the real name of the reload
+            // fill-icon object in Player Canvas HardcoreMode.prefab and fix this string.
+            if (reloadIconTransform == null)
+                reloadIconTransform = FindDeepChild(c.transform, "ReloadIcon");
         }
 
         if (ammoTextTransform != null)
@@ -71,6 +80,19 @@ public class WeaponAmmoManager : MonoBehaviour
         Debug.Log($"[AmmoManager] UI re-grabbed — ammoText: {ammoText}, reloadIcon: {reloadIcon}, playerShooter: {playerShooter}");
 
         UpdateAmmoUI();
+    }
+
+    // Recursive child search — the ammo UI is nested more than one level under
+    // its Canvas, so Transform.Find() (direct children only) cannot locate it.
+    private static Transform FindDeepChild(Transform parent, string name)
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.name == name) return child;
+            Transform found = FindDeepChild(child, name);
+            if (found != null) return found;
+        }
+        return null;
     }
 
     private void OnDestroy()

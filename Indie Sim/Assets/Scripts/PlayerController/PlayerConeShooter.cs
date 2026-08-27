@@ -351,7 +351,7 @@ public class PlayerConeShooter : MonoBehaviour
     /// </summary>
     private void FireShotgun(Vector2 direction, int damage) // ✅ Added damage parameter
     {
-        int pelletsPerShot = 6;
+        int pelletsPerShot = 2;
         float spreadAngle = currentWeapon.GetAngleAtDistance(currentWeapon.coneRange);
 
         List<IDamageable> hitTargets = new List<IDamageable>();
@@ -461,6 +461,8 @@ public class PlayerConeShooter : MonoBehaviour
                 {
                     Instantiate(currentWeapon.hitEffect, targetGO.transform.position, Quaternion.identity);
                 }
+
+                ReportDamage(targetGO != null ? targetGO.transform.position : transform.position, damagePerTarget);
             }
         }
 
@@ -573,6 +575,8 @@ public class PlayerConeShooter : MonoBehaviour
             {
                 crosshair.ShowHitFeedback();
             }
+
+            ReportDamage(hitPosition != Vector3.zero ? hitPosition : target.GetGameObject().transform.position, damage);
         }
 
         // 2. SPAWN VISUAL PROJECTILE (just for show)
@@ -753,6 +757,16 @@ public class PlayerConeShooter : MonoBehaviour
         {
             vfxHandler.OnStopShooting();
         }
+    }
+
+    /// <summary>
+    /// Reports a landed hit to the score system and spawns a floating damage number.
+    /// Called from every damage-application point (standard/shotgun/piercer).
+    /// </summary>
+    private void ReportDamage(Vector3 worldPosition, int damage)
+    {
+        if (ScoreManager.Instance != null) ScoreManager.Instance.AddDamage(damage);
+        if (DamageNumberManager.Instance != null) DamageNumberManager.Instance.Spawn(worldPosition, damage);
     }
 
     #endregion

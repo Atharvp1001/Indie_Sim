@@ -19,6 +19,10 @@ public class BloodSplatterEffect : MonoBehaviour
     public string chunkSortingLayer = "Default";
     public int chunkSortingOrder = 0;
 
+    [Header("Color Tint")]
+    [Tooltip("Tints both the blood splatter prefab's particles and the blood chunks. White = untouched original colors.")]
+    public Color bloodTintColor = Color.white;
+
     /// <summary>
     /// Spawns blood splatter at enemy position
     /// </summary>
@@ -37,6 +41,7 @@ public class BloodSplatterEffect : MonoBehaviour
 
         // Instantiate blood effect at enemy position
         GameObject blood = Instantiate(randomBloodPrefab, enemyPosition, Quaternion.identity);
+        ApplyTint(blood);
 
         // Destroy after specified lifetime
         Destroy(blood, bloodLifetime);
@@ -66,6 +71,7 @@ public class BloodSplatterEffect : MonoBehaviour
 
         // Instantiate blood effect
         GameObject blood = Instantiate(randomBloodPrefab, hitPosition, Quaternion.identity);
+        ApplyTint(blood);
 
         // Destroy after specified lifetime
         Destroy(blood, bloodLifetime);
@@ -98,6 +104,7 @@ public class BloodSplatterEffect : MonoBehaviour
             renderer.sprite = bloodChunkSprite;
             renderer.sortingLayerName = chunkSortingLayer;
             renderer.sortingOrder = chunkSortingOrder;
+            renderer.color = bloodTintColor;
 
             // Calculate spread direction
             float spreadOffset = Random.Range(-chunkSpreadAngle / 2f, chunkSpreadAngle / 2f);
@@ -112,6 +119,22 @@ public class BloodSplatterEffect : MonoBehaviour
             // Add movement component
             BloodChunkMover mover = chunk.AddComponent<BloodChunkMover>();
             mover.Initialize(direction * chunkSpeed, chunkLifetime);
+        }
+    }
+
+    /// <summary>
+    /// Tints every particle system on the spawned blood prefab. Uses startColor.color
+    /// (not .color, which would only tint the multiplier) so it works whether the
+    /// particle's own gradient is white or already colored.
+    /// </summary>
+    private void ApplyTint(GameObject blood)
+    {
+        if (bloodTintColor == Color.white) return; // no-op, avoid touching original gradients needlessly
+
+        foreach (ParticleSystem ps in blood.GetComponentsInChildren<ParticleSystem>())
+        {
+            ParticleSystem.MainModule main = ps.main;
+            main.startColor = bloodTintColor;
         }
     }
 }

@@ -63,6 +63,10 @@ public class EnemySpawner : MonoBehaviour, IDamageable
     public AudioClip damageSound;
     public AudioClip deathSound;
 
+    [Header("Explode Effect")]
+    public BloodSplatterEffect explodeEffect; // Reused blood-splatter system, standing in for a spawner "explosion"
+    private Transform playerTransform;
+
     public System.Action<int, int> OnHealthChanged;
     public System.Action OnDeath;
     public System.Action OnActivated;
@@ -74,6 +78,11 @@ public class EnemySpawner : MonoBehaviour, IDamageable
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer != null) originalColor = spriteRenderer.color;
+
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject != null) playerTransform = playerObject.transform;
+
+        if (explodeEffect == null) explodeEffect = FindObjectOfType<BloodSplatterEffect>(true);
 
         if (!requiresActivation) ActivateSpawner();
     }
@@ -242,6 +251,7 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         if (audioSource && deathSound) audioSource.PlayOneShot(deathSound);
         OnDeath?.Invoke();
 
+        SpawnExplodeEffect();
         DropCoins();
 
         StartCoroutine(DeathSequence());
@@ -266,6 +276,30 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         }
     }
 
+    /// <summary>
+    /// Reuses BloodSplatterEffect to stand in for a spawner "explode" animation on death.
+    /// </summary>
+    private void SpawnExplodeEffect()
+    {
+        if (explodeEffect == null)
+        {
+            Debug.LogWarning($"[EnemySpawner] '{gameObject.name}': No BloodSplatterEffect assigned/found. Skipping explode effect.");
+            return;
+        }
+
+        Debug.Log($"[EnemySpawner] '{gameObject.name}': Firing explode effect at {transform.position}.");
+
+        if (playerTransform != null)
+        {
+            explodeEffect.SpawnBloodSplatter(transform.position, playerTransform.position);
+        }
+        else
+        {
+            Vector2 randomDirection = Random.insideUnitCircle.normalized;
+            explodeEffect.SpawnBloodSplatter(transform.position, randomDirection);
+        }
+    }
+
     private IEnumerator DeathSequence()
     {
         if (!isFlashing) StartCoroutine(FlashWhite());
@@ -275,6 +309,12 @@ public class EnemySpawner : MonoBehaviour, IDamageable
         {
             spriteRenderer.color = disabledColor;
             originalColor = disabledColor;
+
+            // The blood/explode effect renders at sortingOrder -10 on this same sorting
+            // layer. Normal enemies reveal it because their corpse sprite goes fully
+            // transparent on death; this spawner instead stays opaque and grey, so without
+            // dropping below the effect's order here it just paints over the VFX forever.
+            spriteRenderer.sortingOrder = -20;
         }
 
         Collider2D col = GetComponent<Collider2D>();

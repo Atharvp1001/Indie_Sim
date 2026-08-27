@@ -28,10 +28,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Image dashLightIcon; // Image Type: Filled, Radial360, Top
     [SerializeField] private Volume dashBlurVolume; // Drag DashBlurVolume GameObject here
 
+    [Header("Dash Trail")]
+    [SerializeField] private TrailRenderer dashTrail; // Drag the Sprite Body's TrailRenderer here
+
     private bool isDashing = false;
     private bool canDash = true;
     private Vector2 dashDirection;
     private float dashTimeRemaining;
+
+    [Header("Recoil Knockback")]
+    [SerializeField] private float knockbackDecay = 8f; // Higher = knockback fades out faster
+    private Vector2 knockbackVelocity = Vector2.zero;
 
     [Header("Bulldozer")]
     [SerializeField] private float pushRadius = 2f;
@@ -78,6 +85,8 @@ public class PlayerController : MonoBehaviour
 
         // ✅ NEW — start fully ready
         SetDashFill(1f);
+
+        if (dashTrail != null) dashTrail.emitting = false;
     }
 
     public void SetSpeed(float newSpeed) => currentMoveSpeed = newSpeed;
@@ -130,6 +139,9 @@ public class PlayerController : MonoBehaviour
         // Enable blur when dash starts
         if (dashBlurVolume != null) dashBlurVolume.weight = 1f;
 
+        // Start emitting the dash trail
+        if (dashTrail != null) dashTrail.emitting = true;
+
         float distanceTraveled = 0f;
 
         while (dashTimeRemaining > 0 && distanceTraveled < maxDistance)
@@ -160,6 +172,9 @@ public class PlayerController : MonoBehaviour
 
         // Disable blur when dash ends
         if (dashBlurVolume != null) dashBlurVolume.weight = 0f;
+
+        // Stop emitting the dash trail (existing trail segments still fade out naturally)
+        if (dashTrail != null) dashTrail.emitting = false;
 
         float elapsed = 0f;
         while (elapsed < dashCooldown)
@@ -193,12 +208,24 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        rb.linearVelocity = moveInput * currentMoveSpeed;
+        rb.linearVelocity = moveInput * currentMoveSpeed + knockbackVelocity;
+        knockbackVelocity = Vector2.Lerp(knockbackVelocity, Vector2.zero, knockbackDecay * Time.fixedDeltaTime);
 
         if (moveInput.magnitude > 0.1f)
         {
             HandleBulldozerPhysics();
         }
+    }
+
+    /// <summary>
+    /// Pushes the player backward, opposite to fireDirection. Call from weapon VFX on shoot.
+    /// Fades out over time rather than being an instant impulse, since FixedUpdate
+    /// overwrites rb.linearVelocity every step (a raw AddForce would be wiped next frame).
+    /// </summary>
+    public void ApplyKnockback(Vector2 fireDirection, float force)
+    {
+        if (force <= 0f || fireDirection == Vector2.zero) return;
+        knockbackVelocity += -fireDirection.normalized * force;
     }
 
     private void HandleBulldozerPhysics()

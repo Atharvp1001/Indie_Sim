@@ -31,6 +31,13 @@ public class WeaponData : ScriptableObject
     public GameObject muzzleFlashEffect;
     public GameObject hitEffect;
 
+    [Header("Camera Recoil")]
+    [Tooltip("Camera kick strength for this weapon, passed to CinemachineCursorLead.ApplyRecoil().")]
+    public float recoilStrength = 0.5f;
+
+    [Tooltip("Physical push-back applied to the player's Rigidbody2D on fire (0 = no push). Try 3-5 for shotgun.")]
+    public float playerKnockback = 0f;
+
     [Header("Ammo Settings")]
     public int magazineCapacity = 30;
     public float reloadTime = 2f;
