@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using TMPro;
 using System.Collections;
 
 public class RoguelikeManager : MonoBehaviour
@@ -18,6 +20,26 @@ public class RoguelikeManager : MonoBehaviour
     [SerializeField] private string bossSceneName = "BossLevel";
     [SerializeField] private string roguelikeScene2Name = "RoguelikeModeEmpty";
 
+    [Header("Dungeon Timer")]
+    [Tooltip("Master switch. When off, no countdown runs and the player is never killed by it.")]
+    [SerializeField] private bool dungeonTimerEnabled = false;
+    [Tooltip("Seconds the player has to clear a dungeon before dying. Resets on every new dungeon (teleporter -> next dungeon).")]
+    [SerializeField] private float dungeonTimeLimit = 120f;
+
+    [Header("Dungeon Timer UI (optional)")]
+    [Tooltip("Countdown label, e.g. \"1:23\".")]
+    [SerializeField] private TextMeshProUGUI dungeonTimerText;
+    [SerializeField] private TextMeshProUGUI dungeonTimerTextShadow;
+    [Tooltip("Image set to Image Type: Filled — drains as time runs out.")]
+    [SerializeField] private Image dungeonTimerFillImage;
+    [Tooltip("Fill/text colour once remaining time drops below the warning threshold.")]
+    [SerializeField] private Color dungeonTimerWarningColor = Color.red;
+    [SerializeField] private float dungeonTimerWarningThreshold = 15f;
+
+    private float dungeonTimeRemaining = 0f;
+    private bool dungeonTimerActive = false;
+    private Color dungeonTimerNormalColor = Color.white;
+
     private int dungeonsClearedCount = 0;
     private int dungeonSizeIncrement = 0;
     private const int BASE_DUNGEON_SIZE = 5;
@@ -32,6 +54,11 @@ public class RoguelikeManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+
+            if (dungeonTimerText != null)
+                dungeonTimerNormalColor = dungeonTimerText.color;
+            else if (dungeonTimerFillImage != null)
+                dungeonTimerNormalColor = dungeonTimerFillImage.color;
         }
         else
         {
@@ -134,10 +161,101 @@ public class RoguelikeManager : MonoBehaviour
         Debug.Log($"[RoguelikeManager] Generating dungeon #{dungeonsClearedCount + 1} (Level {currentLevel})");
         dungeonGenerator.GenerateNewMap(dungeonSize);
         Debug.Log($"[RoguelikeManager] Dungeon generation complete!");
+
+        StartDungeonTimer();
     }
+
+    #region Dungeon Timer
+
+    private void Update()
+    {
+        if (!dungeonTimerActive) return;
+
+        dungeonTimeRemaining -= Time.deltaTime;
+
+        if (dungeonTimeRemaining <= 0f)
+        {
+            dungeonTimeRemaining = 0f;
+            dungeonTimerActive = false;
+            RefreshTimerUI();
+            OnDungeonTimerExpired();
+            return;
+        }
+
+        RefreshTimerUI();
+    }
+
+    private void RefreshTimerUI()
+    {
+        bool warning = dungeonTimeRemaining <= dungeonTimerWarningThreshold;
+        Color c = warning ? dungeonTimerWarningColor : dungeonTimerNormalColor;
+
+        if (dungeonTimerText != null)
+        {
+            int minutes = Mathf.FloorToInt(dungeonTimeRemaining / 60f);
+            int seconds = Mathf.FloorToInt(dungeonTimeRemaining % 60f);
+            dungeonTimerText.text = $"{minutes}:{seconds:00}";
+            if (dungeonTimerTextShadow != null)
+                dungeonTimerTextShadow.text = $"{minutes}:{seconds:00}";
+            dungeonTimerText.color = c;
+        }
+
+        if (dungeonTimerFillImage != null)
+        {
+            dungeonTimerFillImage.fillAmount = dungeonTimeLimit > 0f
+                ? Mathf.Clamp01(dungeonTimeRemaining / dungeonTimeLimit)
+                : 0f;
+            dungeonTimerFillImage.color = c;
+        }
+    }
+
+    /// <summary>Starts / resets the dungeon countdown. Called on every new dungeon.</summary>
+    public void StartDungeonTimer()
+    {
+        if (!dungeonTimerEnabled)
+        {
+            dungeonTimerActive = false;
+            return;
+        }
+
+        dungeonTimeRemaining = dungeonTimeLimit;
+        dungeonTimerActive = true;
+        RefreshTimerUI();
+        Debug.Log($"[RoguelikeManager] Dungeon timer started: {dungeonTimeLimit}s");
+    }
+
+    public void StopDungeonTimer() => dungeonTimerActive = false;
+
+    public float GetDungeonTimeRemaining() => dungeonTimeRemaining;
+    public float GetDungeonTimeLimit() => dungeonTimeLimit;
+    public bool IsDungeonTimerActive() => dungeonTimerActive;
+
+    private void OnDungeonTimerExpired()
+    {
+        Debug.LogWarning("[RoguelikeManager] Dungeon timer EXPIRED — killing the player. " +
+                         "(Disable 'Dungeon Timer Enabled' or raise 'Dungeon Time Limit' if this is unwanted.)");
+
+        if (playerTransform == null)
+            playerTransform = FindFirstObjectByType<PlayerController>()?.transform;
+
+        PlayerHealth playerHealth = playerTransform != null
+            ? playerTransform.GetComponent<PlayerHealth>()
+            : FindFirstObjectByType<PlayerHealth>();
+
+        if (playerHealth != null)
+            playerHealth.KillPlayer();
+        else
+            Debug.LogError("[RoguelikeManager] Timer expired but no PlayerHealth found to kill!");
+    }
+
+    #endregion
 
     public void CompleteDungeon()
     {
+        // Dungeon cleared via teleporter — freeze the timer until the next
+        // dungeon is generated (ContinueDungeon -> GenerateNewDungeon).
+        StopDungeonTimer();
+
         dungeonsClearedCount++;
 
         // Kept in sync so GameSession.EndRun()'s BestRunDungeonsCleared means

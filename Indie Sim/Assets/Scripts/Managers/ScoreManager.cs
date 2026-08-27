@@ -39,7 +39,7 @@ public class ScoreManager : MonoBehaviour
         if (damage <= 0) return;
 
         _totalDamageDealt += damage;
-        int newScore = _totalDamageDealt / 10;
+        int newScore = _totalDamageDealt ;
 
         if (newScore != _score)
         {

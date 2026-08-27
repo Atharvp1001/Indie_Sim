@@ -14,6 +14,19 @@ public class ChunkedGorePainter : MonoBehaviour
     public Shader splatShader;
     public Shader displayShader;
     public Texture2D brushTexture;
+
+    [Header("Water Look (optional)")]
+    [Tooltip("Recommended: leave this empty and the painter uses the built-in " +
+             "Custom/BloodWaterDisplay shader — unlit, already masked to the blood shape. " +
+             "Only assign a Material here if you've added a '_BloodMask' Texture2D property " +
+             "to your own water ShaderGraph and multiplied its alpha into the master Alpha.")]
+    public Material waterMaterialTemplate;
+    [Tooltip("Built-in masked water shader. Auto-found if left empty.")]
+    public Shader bloodWaterShader;
+    [Tooltip("Caustic/ripple texture for the built-in water shader (e.g. Water/CausticTexture). " +
+             "Should tile seamlessly. Leave empty for a flat water tint.")]
+    public Texture2D waterCausticTexture;
+    public bool useWaterMaterial = false;
     
     [Header("Splat Settings")]
     public Vector2 splatSizeRange = new Vector2(0.2f, 0.6f);
@@ -35,12 +48,22 @@ public class ChunkedGorePainter : MonoBehaviour
     private Material splatMaterial;
     private CompositeCollider2D compositeCollider;
 
+    // Live display tint (multiplies every chunk's baked canvas via the
+    // BloodDisplay shader's _Tint). White = untouched. Driven at runtime by
+    // PsychedelicBloodController; applied to new chunks as they load.
+    private static readonly int TintID = Shader.PropertyToID("_Tint");
+    private static readonly int MainTexID = Shader.PropertyToID("_MainTex");
+    private static readonly int BloodMaskID = Shader.PropertyToID("_BloodMask");
+    private static readonly int MainColourID = Shader.PropertyToID("_MainColour");
+    private Color currentDisplayTint = Color.white;
+
     void Start()
     {
         compositeCollider = GetComponent<CompositeCollider2D>();
         
         if (splatShader == null) splatShader = Shader.Find("Hidden/SplatPainter");
         if (displayShader == null) displayShader = Shader.Find("Custom/BloodDisplay");
+        if (bloodWaterShader == null) bloodWaterShader = Shader.Find("Custom/BloodWaterDisplay");
         
         splatMaterial = new Material(splatShader);
         
@@ -153,16 +176,107 @@ public class ChunkedGorePainter : MonoBehaviour
         displayObj.transform.localScale = new Vector3(chunkSize, chunkSize, 1);
         
         Renderer renderer = displayObj.GetComponent<Renderer>();
-        renderer.material = chunk.displayMaterial;
         renderer.sortingLayerName = sortingLayerName;
         renderer.sortingOrder = sortingOrder;
-        
+
         renderer.receiveShadows = false;
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        
+
         chunk.displayObject = displayObj;
+
+        ApplyChunkMaterial(chunk);
+    }
+
+    // Assigns either the BloodDisplay material or a per-chunk instance of the
+    // water material, based on useWaterMaterial. The chunk's blood canvas is fed
+    // in ONLY as _BloodMask (a separate property you add to the graph) — the
+    // water material keeps its own _MainTex / textures untouched so its look
+    // survives. Also pushes the current tint.
+    private void ApplyChunkMaterial(BloodChunk chunk)
+    {
+        if (chunk.displayObject == null) return;
+        Renderer renderer = chunk.displayObject.GetComponent<Renderer>();
+        if (renderer == null) return;
+
+        bool usingCustomGraph = waterMaterialTemplate != null;
+        bool water = useWaterMaterial && (usingCustomGraph || bloodWaterShader != null);
+
+        if (water)
+        {
+            if (chunk.waterMaterialInstance == null)
+                chunk.waterMaterialInstance = usingCustomGraph
+                    ? new Material(waterMaterialTemplate)
+                    : new Material(bloodWaterShader);
+
+            Material m = chunk.waterMaterialInstance;
+
+            if (usingCustomGraph)
+            {
+                // The graph must expose a _BloodMask Texture2D and multiply its
+                // alpha into the master Alpha, otherwise water fills the whole chunk.
+                if (m.HasProperty(BloodMaskID)) m.SetTexture(BloodMaskID, chunk.canvas);
+                else Debug.LogWarning("[ChunkedGorePainter] Assigned water material has no '_BloodMask' " +
+                    "property — water will fill the whole chunk. Leave 'Water Material Template' empty to " +
+                    "use the built-in masked Custom/BloodWaterDisplay instead.");
+            }
+            else
+            {
+                // Built-in masked shader: blood canvas alpha IS the mask.
+                m.SetTexture(MainTexID, chunk.canvas);
+                if (waterCausticTexture != null) m.SetTexture("_CausticTex", waterCausticTexture);
+            }
+
+            if (m.HasProperty(MainColourID)) m.SetColor(MainColourID, currentDisplayTint);
+            if (m.HasProperty(TintID)) m.SetColor(TintID, currentDisplayTint);
+
+            renderer.material = m;
+        }
+        else
+        {
+            renderer.material = chunk.displayMaterial;
+            chunk.displayMaterial.SetColor(TintID, currentDisplayTint);
+        }
+    }
+
+    /// <summary>
+    /// Runtime swap between the flat BloodDisplay look and the water material.
+    /// Safe to call every frame or on a toggle.
+    /// </summary>
+    public void SetWaterMode(bool on)
+    {
+        if (useWaterMaterial == on) return;
+        useWaterMaterial = on;
+        foreach (var chunk in loadedChunks.Values)
+            ApplyChunkMaterial(chunk);
     }
     
+    /// <summary>
+    /// Runtime hue shift for ALL ground gore (already painted + future chunks).
+    /// Multiplies each chunk's canvas through the BloodDisplay shader's _Tint.
+    /// For vivid results paint splats near-white (set bloodColor bright) so the
+    /// tint fully controls the hue instead of stacking on dark red.
+    /// </summary>
+    public void SetDisplayTint(Color tint)
+    {
+        currentDisplayTint = tint;
+        foreach (var chunk in loadedChunks.Values)
+        {
+            if (chunk.displayMaterial != null)
+                chunk.displayMaterial.SetColor(TintID, tint);
+
+            if (chunk.waterMaterialInstance != null)
+            {
+                if (chunk.waterMaterialInstance.HasProperty(MainColourID))
+                    chunk.waterMaterialInstance.SetColor(MainColourID, tint);
+                if (chunk.waterMaterialInstance.HasProperty(TintID))
+                    chunk.waterMaterialInstance.SetColor(TintID, tint);
+            }
+        }
+    }
+
+    /// <summary>Sets the color future splats are painted with.</summary>
+    public void SetBloodColor(Color color) => bloodColor = color;
+
     Vector2Int WorldToChunkCoord(Vector3 worldPos) => new Vector2Int(Mathf.FloorToInt(worldPos.x / chunkSize), Mathf.FloorToInt(worldPos.y / chunkSize));
     Vector2 ChunkCoordToWorldOrigin(Vector2Int chunkCoord) => new Vector2(chunkCoord.x * chunkSize, chunkCoord.y * chunkSize);
 
@@ -221,6 +335,7 @@ public class BloodChunk
     public RenderTexture canvas;
     public GameObject displayObject;
     public Material displayMaterial;
+    public Material waterMaterialInstance;
     
     public BloodChunk(Vector2Int coord, int resolution, Shader displayShader)
     {
@@ -242,6 +357,7 @@ public class BloodChunk
     {
         if (canvas != null) { canvas.Release(); Object.Destroy(canvas); }
         if (displayMaterial != null) Object.Destroy(displayMaterial);
+        if (waterMaterialInstance != null) Object.Destroy(waterMaterialInstance);
         if (displayObject != null) Object.Destroy(displayObject);
     }
 }

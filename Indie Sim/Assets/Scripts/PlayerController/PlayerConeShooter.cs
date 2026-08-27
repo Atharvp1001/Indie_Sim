@@ -351,7 +351,7 @@ public class PlayerConeShooter : MonoBehaviour
     /// </summary>
     private void FireShotgun(Vector2 direction, int damage) // ✅ Added damage parameter
     {
-        int pelletsPerShot = 2;
+        int pelletsPerShot = 6;
         float spreadAngle = currentWeapon.GetAngleAtDistance(currentWeapon.coneRange);
 
         List<IDamageable> hitTargets = new List<IDamageable>();

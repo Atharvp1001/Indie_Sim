@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 5.73, y: -0.372, z: 0}
-  m_LocalScale: {x: 0.15, y: 0.15, z: 0}
+  m_LocalScale: {x: 0.13453124, y: 0.1345312, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -80,7 +80,7 @@ SpriteRenderer:
   m_SortingLayerID: -1247100275
   m_SortingLayer: 4
   m_SortingOrder: 3
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -117,7 +117,7 @@ TrailRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: aa3c85bf891e7ce46b0296aeb17b6c3e, type: 2}
+  - {fileID: 2100000, guid: 47a0df6ee0506af45894bcb482e75f7e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -139,7 +139,7 @@ TrailRenderer:
   m_SortingLayerID: -1247100275
   m_SortingLayer: 4
   m_SortingOrder: 3
-  m_Time: 0.1
+  m_Time: 0.2
   m_PreviewTimeScale: 1
   m_Parameters:
     serializedVersion: 3
@@ -157,22 +157,13 @@ TrailRenderer:
         inWeight: 0.33333334
         outWeight: 0.33333334
       - serializedVersion: 3
-        time: 0.2848131
-        value: 0.5758592
-        inSlope: -4.864511
-        outSlope: -4.864511
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0.33333334
-      - serializedVersion: 3
-        time: 0.30223367
+        time: 0.21957304
         value: 0
-        inSlope: 0
-        outSlope: 0
+        inSlope: -0.046755936
+        outSlope: -0.046755936
         tangentMode: 0
         weightedMode: 0
-        inWeight: 0
+        inWeight: 0.2732977
         outWeight: 0
       m_PreInfinity: 2
       m_PostInfinity: 2

@@ -8,7 +8,9 @@ public class ScoreUI : MonoBehaviour
 {
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI scoreText;
+    [SerializeField] private TextMeshProUGUI scoreTextShadow;
 
+    
     private void Start()
     {
         if (ScoreManager.Instance == null) return;
@@ -27,7 +29,13 @@ public class ScoreUI : MonoBehaviour
 
     private void RefreshUI(int score)
     {
+        // Zero-padded, minimum 5 digits: 0 -> "00000", 25 -> "00025",
+        // 123456 -> "123456" (grows past 5 when needed).
+        string text = Mathf.Max(0, score).ToString("D5");
+
         if (scoreText != null)
-            scoreText.text = $"SCORE: {score}";
+            scoreText.text = text;
+        if(scoreTextShadow != null )
+            scoreTextShadow.text = text;
     }
 }

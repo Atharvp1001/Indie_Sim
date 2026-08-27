@@ -17,7 +17,7 @@ MonoBehaviour:
   weaponType: 1
   coneAngle: 20
   coneRange: 30
-  fireRate: 1.6
+  fireRate: 3
   baseDamagePerShot: 150
   baseWidthMultiplier: 1
   topWidthMultiplier: 0.535
@@ -30,7 +30,7 @@ MonoBehaviour:
   hitEffect: {fileID: 0}
   recoilStrength: 1
   playerKnockback: 10
-  magazineCapacity: 6
+  magazineCapacity: 2
   reloadTime: 1
   hasInfiniteReserve: 1
   maxPierceCount: 3

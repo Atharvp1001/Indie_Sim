@@ -47,15 +47,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e63b8188e5e49e94e8fec3886b580bf8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startingBudget: 200
+  startingBudget: 400
   spawnInterval: 0.7
   fodderLevel1:
     prefab: {fileID: 1773204433277557146, guid: 56da4d5d08d2d3046b2ab1d007b5174e, type: 3}
     budgetCost: 10
-    spawnWeight: 1
+    spawnWeight: 2
     maxAllowed: 12
     currentSpawned: 0
-    spawnGroupSize: 4
+    spawnGroupSize: 8
   fodderLevel2:
     prefab: {fileID: 0}
     budgetCost: 0
@@ -73,14 +73,14 @@ MonoBehaviour:
   rangedEnemy:
     prefab: {fileID: 1595180837359364782, guid: 996caeec860be5148bb93d18dff4fc61, type: 3}
     budgetCost: 50
-    spawnWeight: 2
+    spawnWeight: 1
     maxAllowed: 2
     currentSpawned: 0
     spawnGroupSize: 1
   cthulhuEye:
     prefab: {fileID: 6048784882248778353, guid: b8bc32b551b4ab545a865cdfecdef7c7, type: 3}
     budgetCost: 100
-    spawnWeight: 2
+    spawnWeight: 1
     maxAllowed: 1
     currentSpawned: 0
     spawnGroupSize: 1
@@ -102,6 +102,7 @@ MonoBehaviour:
   activationSound: {fileID: 0}
   damageSound: {fileID: 0}
   deathSound: {fileID: 0}
+  explodeEffect: {fileID: 0}
   maxEnemies: 0
 --- !u!212 &3399380655111319332
 SpriteRenderer:

@@ -26,6 +26,17 @@ public class PlayerHealth : MonoBehaviour
     public float knockbackForce = 5f;
     public float knockbackDuration = 0.2f;
 
+    [Header("Invincibility (Debug)")]
+    [Tooltip("While true the player ignores all damage and cannot be killed (incl. the dungeon timer).")]
+    [SerializeField] private bool invincible = false;
+    [Tooltip("Press to toggle invincibility. Works in the build too. Set to None to disable.")]
+    [SerializeField] private KeyCode invincibilityToggleKey = KeyCode.I;
+    [Tooltip("Allow the toggle key even in a non-development build.")]
+    [SerializeField] private bool enableToggleInBuild = true;
+
+    public bool IsInvincible => invincible;
+    public void SetInvincible(bool value) => invincible = value;
+
     [Header("Death Settings")]
     public Sprite deathSprite;
     public float deathDelay = 3f;
@@ -115,8 +126,27 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log($"Player initialized with coin-based health system. Coins per hit: {coinsLostPerHit}");
     }
 
+    private void Update()
+    {
+        if (invincibilityToggleKey == KeyCode.None) return;
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+        if (!enableToggleInBuild) return;
+#endif
+        if (Input.GetKeyDown(invincibilityToggleKey))
+        {
+            invincible = !invincible;
+            Debug.Log($"[PlayerHealth] Invincibility {(invincible ? "ON" : "OFF")} (key '{invincibilityToggleKey}').");
+        }
+    }
+
     public void TakeDamage(int damage, Vector3 enemyPosition)
     {
+        if (invincible)
+        {
+            Debug.Log("[PlayerHealth] Damage ignored - invincible.");
+            return;
+        }
+
         if (Time.time < nextDamageTime || isDead)
         {
             Debug.Log("Player is on damage cooldown - cannot take damage yet");
@@ -262,6 +292,20 @@ public class PlayerHealth : MonoBehaviour
 
         isFlashing = false;
         Debug.Log("Flashing effect ended");
+    }
+
+    /// <summary>
+    /// Kills the player outright, bypassing coin-health. Used by the dungeon
+    /// timer in RoguelikeManager when time runs out.
+    /// </summary>
+    public void KillPlayer()
+    {
+        if (invincible)
+        {
+            Debug.Log("[PlayerHealth] KillPlayer ignored - invincible.");
+            return;
+        }
+        Die();
     }
 
     private void Die()
