@@ -19,7 +19,8 @@ using UnityEngine;
 public class PsychedelicBloodController : MonoBehaviour
 {
     [Header("Enable")]
-    [SerializeField] private bool active = true;
+    [Tooltip("Off by default. Toggle at runtime with the debug key (works in the build) or via SetActive().")]
+    [SerializeField] private bool active = false;
     [SerializeField] private bool affectKillSplatter = true;
     [SerializeField] private bool affectGroundGore = true;
 
