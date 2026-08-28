@@ -1,0 +1,12 @@
+# ninja log v5
+90	804	7734027315115268	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	29e310e925a775ff
+806	2520	7734027329835461	E:/Unity projects/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/1r4o284o/obj/arm64-v8a/libswappywrapper.so	4edc0857b74a061c
+81	3019	7734027337687710	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	8bc23e58a675096f
+1	3181	7734027337112356	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	78e42bbd5934b6e3
+31	3190	7734027337687710	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	7cb2588352632141
+53	3193	7734027337081862	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	4c42edc3a63f2bce
+13	3194	7734027338814529	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	ce950fd7725e64ef
+72	3198	7734027338687540	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	a8873855ec8f7cc7
+22	3354	7734027341099577	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	fafd22979f71e251
+62	3355	7734027341063173	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	5e88684f3122745f
+3356	3729	7734027344837685	E:/Unity projects/Indie_Sim/Indie Sim/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/Debug/1r4o284o/obj/arm64-v8a/libgame.so	9bbdbd5e9e5081c2

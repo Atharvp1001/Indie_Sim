@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 25703624c08d0354b8d83fdb27ca6f82
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - goreLayer: {fileID: 8400000, guid: c97b3463566f10e4888a16248da1221b, type: 2}
+  - paintMaterial: {fileID: 2100000, guid: 4adda61937d0fa543a9758447aea501b, type: 2}
+  - brushTexture: {fileID: 2800000, guid: f789040c740ccc94d99ad1e84ad4fe7a, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

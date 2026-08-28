@@ -1,0 +1,12 @@
+# ninja log v5
+55	483	7665163320854075	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	8cd20fc6a2a1b880
+487	801	7665163323737334	C:/Game Development/Indie_Sim/Indie Sim/Library/PramData/AndroidApplicationController/Cache/com.DefaultCompany.com.unity.template.mobile2D/gradle-project/unityLibrary/build/intermediates/cxx/Debug/4p40431t/obj/arm64-v8a/libswappywrapper.so	1528fadf300765d9
+30	1517	7665163331333628	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	880f8a2f5c82f1af
+1	1519	7665163331333628	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	d6869353f85d5c7d
+37	1540	7665163331540866	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	c2396bdd72d97af1
+45	1565	7665163331809772	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	b7308ad1cb0ff479
+12	1590	7665163332083849	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	aed93e5742520537
+24	1618	7665163332315465	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	3a74a64b76b35e1d
+18	1654	7665163332724551	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	4e1c0b68894ec73e
+7	1709	7665163333280393	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	2a01cd980c1d239d
+1709	1860	7665163334826909	C:/Game Development/Indie_Sim/Indie Sim/Library/PramData/AndroidApplicationController/Cache/com.DefaultCompany.com.unity.template.mobile2D/gradle-project/unityLibrary/build/intermediates/cxx/Debug/4p40431t/obj/arm64-v8a/libgame.so	e026b1c26bea843b
